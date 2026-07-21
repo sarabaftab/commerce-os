@@ -15,6 +15,16 @@ export async function findUserByEmail(email: string): Promise<User | null> {
   });
 }
 
+export async function findUsersByIds(ids: string[]) {
+  if (ids.length === 0) {
+    return [];
+  }
+  return prisma.user.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, email: true, displayName: true },
+  });
+}
+
 export async function linkSupabaseUserId(userId: string, supabaseUserId: string) {
   return prisma.user.update({
     where: { id: userId },

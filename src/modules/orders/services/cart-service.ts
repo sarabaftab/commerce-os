@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+
 import { findProductById } from "@/modules/catalog/repositories/product-repository";
 import { AppError } from "@/shared/errors/app-error";
 import { createGuestToken } from "@/shared/cart/cart-cookie";
@@ -60,6 +62,31 @@ function buildCartSummary(cart: CartWithItems, tenantCurrency: string): CartSumm
   };
 }
 
+async function createOpenGuestCart(tenantId: string, preferredToken?: string | null) {
+  if (preferredToken) {
+    try {
+      const cart = await createGuestCart(tenantId, preferredToken);
+      // Cookie already has this token.
+      return { cart, guestToken: undefined as string | undefined };
+    } catch (error) {
+      // Cookie still points at a converted/abandoned cart — rotate token.
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        const rotatedToken = createGuestToken();
+        const cart = await createGuestCart(tenantId, rotatedToken);
+        return { cart, guestToken: rotatedToken };
+      }
+      throw error;
+    }
+  }
+
+  const guestToken = createGuestToken();
+  const cart = await createGuestCart(tenantId, guestToken);
+  return { cart, guestToken };
+}
+
 export async function getOrCreateCart(
   identity: CartIdentity,
   tenantCurrency: string,
@@ -76,11 +103,9 @@ export async function getOrCreateCart(
   }
 
   if (!cart) {
-    const guestToken = identity.guestToken ?? createGuestToken();
-    cart = await createGuestCart(identity.tenantId, guestToken);
-    if (!identity.guestToken) {
-      newGuestToken = guestToken;
-    }
+    const created = await createOpenGuestCart(identity.tenantId, identity.guestToken);
+    cart = created.cart;
+    newGuestToken = created.guestToken;
   }
 
   return {

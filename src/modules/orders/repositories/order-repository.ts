@@ -1,17 +1,22 @@
-import type { FulfillmentMethod, PaymentMethod, Prisma } from "@prisma/client";
+import type {
+  FulfillmentMethod,
+  IdentityChannel,
+  PaymentMethod,
+  Prisma,
+} from "@prisma/client";
 
 import { prisma } from "@/shared/db/prisma";
 
 import type { OrderConfirmation, OrderLineView } from "../types";
 
-const orderInclude = {
+export const orderInclude = {
   customer: true,
   items: { orderBy: { id: "asc" as const } },
 } as const;
 
-type OrderWithRelations = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
+export type OrderWithRelations = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
 
-function toOrderConfirmation(order: OrderWithRelations): OrderConfirmation {
+export function toOrderConfirmation(order: OrderWithRelations): OrderConfirmation {
   const items: OrderLineView[] = order.items.map((item) => ({
     id: item.id,
     productId: item.productId,
@@ -25,11 +30,15 @@ function toOrderConfirmation(order: OrderWithRelations): OrderConfirmation {
     id: order.id,
     orderNumber: order.orderNumber,
     status: order.status,
+    channel: order.channel,
     currency: order.currency,
     subtotalMinor: order.subtotalMinor,
     deliveryFeeMinor: order.deliveryFeeMinor,
     discountMinor: order.discountMinor,
     totalMinor: order.totalMinor,
+    promotionId: order.promotionId,
+    referralCode: order.referralCode,
+    campaignId: order.campaignId,
     fulfillmentMethod: order.fulfillmentMethod,
     addressLine: order.addressLine,
     cityOrArea: order.cityOrArea,
@@ -46,6 +55,16 @@ function toOrderConfirmation(order: OrderWithRelations): OrderConfirmation {
     },
     items,
   };
+}
+
+export async function findOrderById(
+  tenantId: string,
+  orderId: string,
+): Promise<OrderWithRelations | null> {
+  return prisma.order.findFirst({
+    where: { id: orderId, tenantId },
+    include: orderInclude,
+  });
 }
 
 export async function findOrderByIdempotencyKey(
@@ -70,11 +89,12 @@ export async function findOrderByOrderNumber(
   return order ? toOrderConfirmation(order) : null;
 }
 
-export type CreateOrderInput = {
+export type CreateOrderRecordInput = {
   tenantId: string;
   customerId: string;
   orderNumber: string;
-  idempotencyKey: string;
+  channel: IdentityChannel;
+  idempotencyKey?: string;
   fulfillmentMethod: FulfillmentMethod;
   addressLine?: string;
   cityOrArea?: string;
@@ -88,6 +108,9 @@ export type CreateOrderInput = {
   deliveryFeeMinor: number;
   discountMinor: number;
   totalMinor: number;
+  promotionId?: string;
+  referralCode?: string;
+  campaignId?: string;
   items: {
     productId: string;
     nameSnapshot: string;
@@ -97,11 +120,15 @@ export type CreateOrderInput = {
   }[];
 };
 
-export async function createOrderInTransaction(
+/**
+ * Low-level insert of order + items. Prefer `createOrder` in order-service
+ * for application orchestration (idempotency, numbering, initial status).
+ */
+export async function createOrderRecordInTransaction(
   tx: Prisma.TransactionClient,
-  input: CreateOrderInput,
-): Promise<OrderConfirmation> {
-  const order = await tx.order.create({
+  input: CreateOrderRecordInput,
+): Promise<OrderWithRelations> {
+  return tx.order.create({
     data: {
       tenantId: input.tenantId,
       customerId: input.customerId,
@@ -120,8 +147,11 @@ export async function createOrderInTransaction(
       deliveryFeeMinor: input.deliveryFeeMinor,
       discountMinor: input.discountMinor,
       totalMinor: input.totalMinor,
-      channel: "web",
-      idempotencyKey: input.idempotencyKey,
+      channel: input.channel,
+      promotionId: input.promotionId ?? null,
+      referralCode: input.referralCode ?? null,
+      campaignId: input.campaignId ?? null,
+      idempotencyKey: input.idempotencyKey ?? null,
       items: {
         create: input.items.map((item) => ({
           tenantId: input.tenantId,
@@ -132,19 +162,9 @@ export async function createOrderInTransaction(
           lineTotalMinor: item.lineTotalMinor,
         })),
       },
-      statusHistory: {
-        create: {
-          tenantId: input.tenantId,
-          fromStatus: null,
-          toStatus: "pending",
-          note: "Order placed",
-        },
-      },
     },
     include: orderInclude,
   });
-
-  return toOrderConfirmation(order);
 }
 
 export function formatOrderNumber(tenantSlug: string, sequence: number): string {
@@ -187,10 +207,105 @@ export async function convertCartInTransaction(
   customerId: string,
 ) {
   await tx.cartItem.deleteMany({ where: { tenantId, cartId } });
+  // Clear guestToken so the same browser cookie can open a fresh cart later
+  // (unique is on tenant_id + guest_token across all statuses).
   await tx.cart.update({
     where: { id: cartId },
-    data: { status: "converted", customerId },
+    data: { status: "converted", customerId, guestToken: null },
   });
 }
 
-export { toOrderConfirmation };
+export const adminOrderListInclude = {
+  customer: {
+    select: {
+      id: true,
+      displayName: true,
+      phone: true,
+      email: true,
+    },
+  },
+} as const;
+
+export const adminOrderDetailInclude = {
+  customer: true,
+  items: { orderBy: { id: "asc" as const } },
+  statusHistory: { orderBy: { createdAt: "asc" as const } },
+} as const;
+
+export type AdminOrderListRow = Prisma.OrderGetPayload<{
+  include: typeof adminOrderListInclude;
+}>;
+
+export type AdminOrderDetailRecord = Prisma.OrderGetPayload<{
+  include: typeof adminOrderDetailInclude;
+}>;
+
+export type ListOrdersForAdminParams = {
+  tenantId: string;
+  q?: string;
+  status?: string;
+  paymentMethod?: string;
+  fulfillmentMethod?: string;
+  placedFrom?: Date;
+  placedTo?: Date;
+  skip: number;
+  take: number;
+};
+
+export async function listOrdersForAdmin(params: ListOrdersForAdminParams) {
+  const where: Prisma.OrderWhereInput = {
+    tenantId: params.tenantId,
+  };
+
+  if (params.status) {
+    where.status = params.status as Prisma.EnumOrderStatusFilter["equals"];
+  }
+  if (params.paymentMethod) {
+    where.paymentMethod = params.paymentMethod as Prisma.EnumPaymentMethodFilter["equals"];
+  }
+  if (params.fulfillmentMethod) {
+    where.fulfillmentMethod =
+      params.fulfillmentMethod as Prisma.EnumFulfillmentMethodFilter["equals"];
+  }
+  if (params.placedFrom || params.placedTo) {
+    where.placedAt = {
+      ...(params.placedFrom ? { gte: params.placedFrom } : {}),
+      ...(params.placedTo ? { lte: params.placedTo } : {}),
+    };
+  }
+
+  const q = params.q?.trim();
+  if (q) {
+    const phoneDigits = q.replace(/\D/g, "");
+    where.OR = [
+      { orderNumber: { contains: q, mode: "insensitive" } },
+      { customer: { displayName: { contains: q, mode: "insensitive" } } },
+      ...(phoneDigits
+        ? [{ customer: { phone: { contains: phoneDigits } } }]
+        : [{ customer: { phone: { contains: q } } }]),
+    ];
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      include: adminOrderListInclude,
+      orderBy: { placedAt: "desc" },
+      skip: params.skip,
+      take: params.take,
+    }),
+    prisma.order.count({ where }),
+  ]);
+
+  return { rows, total };
+}
+
+export async function findOrderDetailForAdmin(
+  tenantId: string,
+  orderId: string,
+): Promise<AdminOrderDetailRecord | null> {
+  return prisma.order.findFirst({
+    where: { id: orderId, tenantId },
+    include: adminOrderDetailInclude,
+  });
+}

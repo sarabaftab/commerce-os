@@ -3,6 +3,7 @@ import type {
   CartItem,
   CartStatus,
   FulfillmentMethod,
+  IdentityChannel,
   Order,
   OrderItem,
   OrderStatus,
@@ -15,6 +16,7 @@ export type {
   CartItem,
   CartStatus,
   FulfillmentMethod,
+  IdentityChannel,
   Order,
   OrderItem,
   OrderStatus,
@@ -83,11 +85,15 @@ export type OrderConfirmation = {
   id: string;
   orderNumber: string;
   status: OrderStatus;
+  channel: IdentityChannel;
   currency: string;
   subtotalMinor: number;
   deliveryFeeMinor: number;
   discountMinor: number;
   totalMinor: number;
+  promotionId: string | null;
+  referralCode: string | null;
+  campaignId: string | null;
   fulfillmentMethod: FulfillmentMethod;
   addressLine: string | null;
   cityOrArea: string | null;
@@ -111,4 +117,68 @@ export type CheckoutPreview = {
   deliveryFeeMinor: number;
   abaInstructions: string;
   pickupLocations: { id: string; name: string; address: string }[];
+};
+
+export type AdminOrderListItem = {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  fulfillmentMethod: FulfillmentMethod;
+  totalMinor: number;
+  currency: string;
+  placedAt: Date;
+  customer: {
+    displayName: string | null;
+    phone: string | null;
+  };
+};
+
+export type AdminOrderListResult = {
+  items: AdminOrderListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+export type OrderStatusHistoryEntry = {
+  id: string;
+  fromStatus: OrderStatus | null;
+  toStatus: OrderStatus;
+  note: string | null;
+  createdAt: Date;
+  createdBy: string | null;
+  actorLabel: string;
+};
+
+export type AdminOrderDetail = {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  channel: IdentityChannel;
+  currency: string;
+  subtotalMinor: number;
+  deliveryFeeMinor: number;
+  discountMinor: number;
+  totalMinor: number;
+  notes: string | null;
+  fulfillmentMethod: FulfillmentMethod;
+  addressLine: string | null;
+  cityOrArea: string | null;
+  deliveryInstructions: string | null;
+  pickupLocationKey: string | null;
+  pickupLocationName: string | null;
+  paymentMethod: PaymentMethod;
+  paymentReference: string | null;
+  placedAt: Date;
+  customer: {
+    id: string;
+    displayName: string | null;
+    phone: string | null;
+    email: string | null;
+  };
+  items: OrderLineView[];
+  statusHistory: OrderStatusHistoryEntry[];
+  allowedNextStatuses: OrderStatus[];
 };

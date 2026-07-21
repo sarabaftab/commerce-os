@@ -216,6 +216,10 @@ model Order {
   totalMinor           Int               @map("total_minor")
   notes                String?
   channel              IdentityChannel   @default(manual)
+  // Optional attribution — stored only; no promotion/referral/campaign logic yet.
+  promotionId          String?           @map("promotion_id")
+  referralCode         String?           @map("referral_code")
+  campaignId           String?           @map("campaign_id")
   idempotencyKey       String?           @map("idempotency_key")
   placedAt             DateTime          @default(now()) @map("placed_at")
   createdAt            DateTime          @default(now()) @map("created_at")
@@ -230,6 +234,8 @@ model Order {
   @@unique([tenantId, idempotencyKey])
   @@index([tenantId, status])
   @@index([customerId])
+  @@index([tenantId, promotionId])
+  @@index([tenantId, campaignId])
   @@map("orders")
 }
 

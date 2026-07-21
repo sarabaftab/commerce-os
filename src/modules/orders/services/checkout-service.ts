@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma as PrismaNamespace } from "@prisma/client";
 import { randomUUID } from "crypto";
 
 import { upsertCustomerByPhone } from "@/modules/customers/repositories/customer-repository";
@@ -7,18 +7,16 @@ import { AppError } from "@/shared/errors/app-error";
 
 import { findOpenCartByGuestTokenInTransaction } from "../repositories/cart-repository";
 import {
-  allocateOrderNumber,
   convertCartInTransaction,
-  createOrderInTransaction,
   findOrderByIdempotencyKey,
   findOrderByOrderNumber,
-  toOrderConfirmation,
 } from "../repositories/order-repository";
 import type { CheckoutInput } from "../schemas/checkout";
 import { parseCheckoutConfig } from "../schemas/checkout-config";
 import type { CheckoutPreview, OrderConfirmation } from "../types";
 import type { CartIdentity } from "./cart-service";
 import { getCartSummary } from "./cart-service";
+import { createOrderInTransaction } from "./order-service";
 
 type PlaceGuestOrderContext = {
   tenantId: string;
@@ -85,6 +83,11 @@ export async function getCheckoutPreview(
   };
 }
 
+/**
+ * Guest web checkout adapter: resolve cart + customer, then call the shared
+ * `createOrderInTransaction` application path. Recurring / Telegram / WhatsApp
+ * flows should call `createOrder` / `createOrderInTransaction` directly.
+ */
 export async function placeGuestOrder(
   context: PlaceGuestOrderContext,
   input: CheckoutInput,
@@ -119,21 +122,6 @@ export async function placeGuestOrder(
 
   try {
     return await prisma.$transaction(async (tx) => {
-      const replay = await tx.order.findFirst({
-        where: {
-          tenantId: context.tenantId,
-          idempotencyKey: input.idempotencyKey,
-        },
-        include: {
-          customer: true,
-          items: { orderBy: { id: "asc" } },
-        },
-      });
-
-      if (replay) {
-        return toOrderConfirmation(replay);
-      }
-
       let cart: CartWithProducts | null = null;
 
       if (context.cartIdentity.customerId) {
@@ -179,12 +167,12 @@ export async function placeGuestOrder(
         email: input.email,
       });
 
-      const orderNumber = await allocateOrderNumber(tx, context.tenantId, context.tenantSlug);
-
       const order = await createOrderInTransaction(tx, {
         tenantId: context.tenantId,
+        tenantSlug: context.tenantSlug,
         customerId: customer.id,
-        orderNumber,
+        channel: "web",
+        currency: context.currency,
         idempotencyKey: input.idempotencyKey,
         fulfillmentMethod: input.fulfillmentMethod,
         addressLine: input.fulfillmentMethod === "delivery" ? input.addressLine : undefined,
@@ -197,7 +185,6 @@ export async function placeGuestOrder(
           input.fulfillmentMethod === "pickup" ? pickupLocation?.name : undefined,
         paymentMethod: input.paymentMethod,
         paymentReference: input.paymentReference,
-        currency: context.currency,
         subtotalMinor,
         deliveryFeeMinor,
         discountMinor,
@@ -217,7 +204,7 @@ export async function placeGuestOrder(
     });
   } catch (error) {
     if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error instanceof PrismaNamespace.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
       const replay = await findOrderByIdempotencyKey(context.tenantId, input.idempotencyKey);

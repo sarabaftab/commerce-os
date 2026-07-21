@@ -7,6 +7,7 @@ import { cn } from "@/ui/lib/utils";
 
 const links = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/orders", label: "Orders" },
   { href: "/admin/products", label: "Products" },
   { href: "/admin/categories", label: "Categories" },
 ];
