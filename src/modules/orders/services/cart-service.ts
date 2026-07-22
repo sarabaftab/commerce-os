@@ -6,6 +6,7 @@ import { createGuestToken } from "@/shared/cart/cart-cookie";
 
 import {
   clearCartItems,
+  createCustomerCart,
   createGuestCart,
   deleteCartItem,
   findCartById,
@@ -100,6 +101,10 @@ export async function getOrCreateCart(
 
   if (!cart && identity.guestToken) {
     cart = await findOpenCartByGuestToken(identity.tenantId, identity.guestToken);
+  }
+
+  if (!cart && identity.customerId) {
+    cart = await createCustomerCart(identity.tenantId, identity.customerId);
   }
 
   if (!cart) {

@@ -134,6 +134,7 @@ export async function getOrderDetailForAdmin(
     deliveryInstructions: order.deliveryInstructions,
     pickupLocationKey: order.pickupLocationKey,
     pickupLocationName: order.pickupLocationName,
+    pickupLocationAddress: order.pickupLocationAddress,
     paymentMethod: order.paymentMethod,
     paymentReference: order.paymentReference,
     placedAt: order.placedAt,

@@ -53,7 +53,7 @@ Never accept a single client-supplied total as the source of truth. Totals are v
 
 | Caller | Responsibility |
 |--------|------------------|
-| `placeGuestOrder` (web) | Load cart, upsert guest customer, set `channel: "web"`, convert cart after create |
+| `placeGuestOrder` (web / Telegram storefront) | Load cart, resolve guest or session customer, set `channel` from session (`web` \| `telegram`), convert cart after create |
 | Telegram / WhatsApp (future) | Resolve identity → customer, build command with `channel: "telegram"` / etc. Channel payloads stay in `src/channels/*`, not on `Order` |
 | Recurring / subscription runner (future) | Build the same `CreateOrderCommand` from a saved template or prior order; call `createOrder` — no cart required |
 

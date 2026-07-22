@@ -50,15 +50,15 @@ Included:
 
 - Foundation (env, Prisma schema, money helpers, lint/test)
 - Admin authentication (Supabase)
-- Admin shell
-- Product CRUD
-- KIN seed data
+- Admin shell, product CRUD, KIN seed
+- Customer storefront, cart, guest checkout, admin orders
+- Tenant settings (delivery / pickup / payments)
+- Telegram Mini App channel adapter ([docs/telegram.md](docs/telegram.md))
 
 Not included yet:
 
-- Storefront / Telegram shopping
-- Checkout & order ops UI
-- Promotions, loyalty, referrals, recurring, analytics
+- Loyalty, referrals engine, Telegram notifications
+- WhatsApp / LINE / Stars payments
 - SaaS billing / tenant onboarding
 
 ## License

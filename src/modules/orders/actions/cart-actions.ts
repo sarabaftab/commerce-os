@@ -8,11 +8,10 @@ import {
   addItemToCart,
   clearCart,
   getCartSummary,
-  getOrCreateCart,
   removeCartItem,
   updateCartItemQty,
 } from "@/modules/orders";
-import { readGuestTokenFromCookies } from "@/shared/cart/cart-cookie";
+import { resolveCartIdentityFromCookies } from "@/shared/cart/cart-request";
 import type { CartSummary } from "@/modules/orders";
 
 const EMPTY_CART = (currency: string): CartSummary => ({
@@ -25,15 +24,8 @@ const EMPTY_CART = (currency: string): CartSummary => ({
 
 async function resolveTenantAndIdentity(tenantSlug: string) {
   const tenant = await getTenantBySlug(tenantSlug);
-  const guestToken = await readGuestTokenFromCookies();
-  return {
-    tenant,
-    identity: {
-      tenantId: tenant.id,
-      guestToken,
-      customerId: null as string | null,
-    },
-  };
+  const identity = await resolveCartIdentityFromCookies(tenant.id);
+  return { tenant, identity };
 }
 
 async function setGuestCookieIfNeeded(guestToken?: string) {
@@ -92,7 +84,6 @@ export async function removeCartItemAction(tenantSlug: string, itemId: string) {
 
 export async function clearCartAction(tenantSlug: string) {
   const { tenant, identity } = await resolveTenantAndIdentity(tenantSlug);
-  // If no guest cookie yet, nothing to clear.
   if (!identity.guestToken && !identity.customerId) {
     return EMPTY_CART(tenant.currency);
   }

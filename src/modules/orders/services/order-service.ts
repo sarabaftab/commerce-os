@@ -37,6 +37,7 @@ export type CreateOrderCommand = {
   deliveryInstructions?: string;
   pickupLocationKey?: string;
   pickupLocationName?: string;
+  pickupLocationAddress?: string;
   paymentMethod: PaymentMethod;
   paymentReference?: string;
   /** Explicit money breakdown — never trust a single client total. */
@@ -135,6 +136,7 @@ export async function createOrderInTransaction(
     deliveryInstructions: command.deliveryInstructions,
     pickupLocationKey: command.pickupLocationKey,
     pickupLocationName: command.pickupLocationName,
+    pickupLocationAddress: command.pickupLocationAddress,
     paymentMethod: command.paymentMethod,
     paymentReference: command.paymentReference,
     currency: command.currency,

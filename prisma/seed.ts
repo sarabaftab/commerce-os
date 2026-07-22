@@ -18,23 +18,11 @@ async function main() {
       name: "KIN A2 Milk",
       currency: "USD",
       isActive: true,
+      // Do not reset orderSequence — that reuses existing order numbers.
       config: {
         brand: "KIN A2",
         timezone: "Asia/Phnom_Penh",
         channels: ["telegram"],
-        orderSequence: 1,
-        checkout: {
-          deliveryFeeMinor: 0,
-          abaInstructions:
-            "Transfer to ABA account KIN A2 Milk. Include your phone number as the payment reference.",
-          pickupLocations: [
-            {
-              id: "kin-showroom",
-              name: "KIN Showroom",
-              address: "Phnom Penh",
-            },
-          ],
-        },
       },
     },
     create: {
@@ -42,24 +30,62 @@ async function main() {
       name: "KIN A2 Milk",
       currency: "USD",
       isActive: true,
+      orderSequence: 1,
       config: {
         brand: "KIN A2",
         timezone: "Asia/Phnom_Penh",
         channels: ["telegram"],
-        orderSequence: 1,
-        checkout: {
-          deliveryFeeMinor: 0,
-          abaInstructions:
-            "Transfer to ABA account KIN A2 Milk. Include your phone number as the payment reference.",
-          pickupLocations: [
-            {
-              id: "kin-showroom",
-              name: "KIN Showroom",
-              address: "Phnom Penh",
-            },
-          ],
-        },
       },
+    },
+  });
+
+  await prisma.tenantSettings.upsert({
+    where: { tenantId: tenant.id },
+    update: {
+      displayName: "KIN A2",
+      timezone: "Asia/Phnom_Penh",
+      deliveryEnabled: true,
+      deliveryFeeMinor: 0,
+      pickupEnabled: true,
+      codEnabled: true,
+      abaEnabled: true,
+      abaAccountName: "KIN A2 Milk",
+      abaAccountNumber: "000 000 000",
+      abaInstructions:
+        "Transfer to ABA account KIN A2 Milk. Include your phone number as the payment reference.",
+    },
+    create: {
+      tenantId: tenant.id,
+      displayName: "KIN A2",
+      timezone: "Asia/Phnom_Penh",
+      deliveryEnabled: true,
+      deliveryFeeMinor: 0,
+      pickupEnabled: true,
+      codEnabled: true,
+      abaEnabled: true,
+      abaAccountName: "KIN A2 Milk",
+      abaAccountNumber: "000 000 000",
+      abaInstructions:
+        "Transfer to ABA account KIN A2 Milk. Include your phone number as the payment reference.",
+    },
+  });
+
+  await prisma.pickupLocation.upsert({
+    where: { id: "kin-showroom" },
+    update: {
+      tenantId: tenant.id,
+      name: "KIN Showroom",
+      address: "Phnom Penh",
+      isActive: true,
+      sortOrder: 0,
+    },
+    create: {
+      id: "kin-showroom",
+      tenantId: tenant.id,
+      name: "KIN Showroom",
+      address: "Phnom Penh",
+      isActive: true,
+      sortOrder: 0,
     },
   });
 

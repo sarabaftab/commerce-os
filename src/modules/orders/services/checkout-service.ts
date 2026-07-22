@@ -1,7 +1,11 @@
-import { Prisma as PrismaNamespace } from "@prisma/client";
+import { Prisma as PrismaNamespace, type IdentityChannel } from "@prisma/client";
 import { randomUUID } from "crypto";
 
-import { upsertCustomerByPhone } from "@/modules/customers/repositories/customer-repository";
+import {
+  updateCustomerContact,
+  upsertCustomerByPhone,
+} from "@/modules/customers/repositories/customer-repository";
+import { assertCheckoutOptions, getCheckoutSettings } from "@/modules/settings";
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
 
@@ -12,18 +16,22 @@ import {
   findOrderByOrderNumber,
 } from "../repositories/order-repository";
 import type { CheckoutInput } from "../schemas/checkout";
-import { parseCheckoutConfig } from "../schemas/checkout-config";
 import type { CheckoutPreview, OrderConfirmation } from "../types";
 import type { CartIdentity } from "./cart-service";
 import { getCartSummary } from "./cart-service";
 import { createOrderInTransaction } from "./order-service";
 
-type PlaceGuestOrderContext = {
+type PlaceStorefrontOrderContext = {
   tenantId: string;
   tenantSlug: string;
   currency: string;
-  tenantConfig: unknown;
   cartIdentity: CartIdentity;
+  /** Defaults to web when no authenticated customer session. */
+  channel?: IdentityChannel;
+  /** Opaque start_param / attribution — stored as referralCode, no referral logic. */
+  referralCode?: string | null;
+  /** Prefill-only; checkout still collects contact fields. */
+  customerDisplayName?: string | null;
 };
 
 type CartWithProducts = NonNullable<
@@ -65,31 +73,50 @@ function computeLineItems(cart: CartWithProducts) {
 }
 
 export async function getCheckoutPreview(
-  context: PlaceGuestOrderContext,
+  context: PlaceStorefrontOrderContext,
 ): Promise<CheckoutPreview | null> {
   const summary = await getCartSummary(context.cartIdentity, context.currency);
   if (!summary || summary.itemCount === 0) {
     return null;
   }
 
-  const checkoutConfig = parseCheckoutConfig(context.tenantConfig);
+  const settings = await getCheckoutSettings(context.tenantId);
+  const previewDeliveryFee =
+    settings.deliveryEnabled
+      ? settings.freeDeliveryThresholdMinor != null &&
+        summary.subtotalMinor >= settings.freeDeliveryThresholdMinor
+        ? 0
+        : settings.deliveryFeeMinor
+      : 0;
 
   return {
     cart: summary,
     idempotencyKey: randomUUID(),
-    deliveryFeeMinor: checkoutConfig.deliveryFeeMinor,
-    abaInstructions: checkoutConfig.abaInstructions,
-    pickupLocations: checkoutConfig.pickupLocations,
+    currency: settings.currency,
+    deliveryEnabled: settings.deliveryEnabled,
+    pickupEnabled: settings.pickupEnabled,
+    deliveryFeeMinor: previewDeliveryFee,
+    freeDeliveryThresholdMinor: settings.freeDeliveryThresholdMinor,
+    deliveryNotes: settings.deliveryNotes,
+    pickupLocations: settings.activePickupLocations,
+    codEnabled: settings.codEnabled,
+    abaAvailable: settings.abaAvailable,
+    abaInstructions: settings.abaInstructions,
+    abaAccountName: settings.abaAccountName,
+    abaAccountNumber: settings.abaAccountNumber,
+    abaQrImageUrl: settings.abaQrImageUrl,
+    abaCustomerNote: settings.abaCustomerNote,
+    checkoutBlockedReason: settings.checkoutBlockedReason,
+    prefillDisplayName: context.customerDisplayName ?? null,
   };
 }
 
 /**
- * Guest web checkout adapter: resolve cart + customer, then call the shared
- * `createOrderInTransaction` application path. Recurring / Telegram / WhatsApp
- * flows should call `createOrder` / `createOrderInTransaction` directly.
+ * Storefront checkout adapter (web guest or Telegram-authenticated).
+ * Resolves cart + customer, then calls shared `createOrderInTransaction`.
  */
 export async function placeGuestOrder(
-  context: PlaceGuestOrderContext,
+  context: PlaceStorefrontOrderContext,
   input: CheckoutInput,
 ): Promise<OrderConfirmation> {
   const existing = await findOrderByIdempotencyKey(context.tenantId, input.idempotencyKey);
@@ -97,28 +124,11 @@ export async function placeGuestOrder(
     return existing;
   }
 
-  const checkoutConfig = parseCheckoutConfig(context.tenantConfig);
-
-  if (input.fulfillmentMethod === "pickup") {
-    const location = checkoutConfig.pickupLocations.find(
-      (loc) => loc.id === input.pickupLocationKey,
-    );
-    if (!location) {
-      throw new AppError("VALIDATION", "Invalid pickup location");
-    }
-  }
-
-  const pickupLocation =
-    input.fulfillmentMethod === "pickup"
-      ? checkoutConfig.pickupLocations.find((loc) => loc.id === input.pickupLocationKey)
-      : undefined;
-
-  const deliveryFeeMinor =
-    input.fulfillmentMethod === "delivery" ? checkoutConfig.deliveryFeeMinor : 0;
-
   if (!context.cartIdentity.guestToken && !context.cartIdentity.customerId) {
     throw new AppError("VALIDATION", "Cart not found");
   }
+
+  const channel: IdentityChannel = context.channel ?? "web";
 
   try {
     return await prisma.$transaction(async (tx) => {
@@ -144,7 +154,9 @@ export async function placeGuestOrder(
             },
           },
         });
-      } else if (context.cartIdentity.guestToken) {
+      }
+
+      if (!cart && context.cartIdentity.guestToken) {
         cart = await findOpenCartByGuestTokenInTransaction(
           tx,
           context.tenantId,
@@ -157,38 +169,61 @@ export async function placeGuestOrder(
       }
 
       const { availableLines, subtotalMinor } = computeLineItems(cart);
+
+      const { deliveryFeeMinor, pickup, settings } = await assertCheckoutOptions(
+        context.tenantId,
+        {
+          fulfillmentMethod: input.fulfillmentMethod,
+          paymentMethod: input.paymentMethod,
+          pickupLocationKey: input.pickupLocationKey,
+          subtotalMinor,
+        },
+      );
+
       const discountMinor = 0;
       const totalMinor = subtotalMinor - discountMinor + deliveryFeeMinor;
 
-      const customer = await upsertCustomerByPhone(tx, {
-        tenantId: context.tenantId,
-        displayName: input.displayName,
-        phone: input.phone,
-        email: input.email,
-      });
+      let customer;
+      if (context.cartIdentity.customerId) {
+        customer = await updateCustomerContact(tx, {
+          tenantId: context.tenantId,
+          customerId: context.cartIdentity.customerId,
+          displayName: input.displayName,
+          phone: input.phone,
+          email: input.email,
+        });
+      } else {
+        customer = await upsertCustomerByPhone(tx, {
+          tenantId: context.tenantId,
+          displayName: input.displayName,
+          phone: input.phone,
+          email: input.email,
+        });
+      }
 
       const order = await createOrderInTransaction(tx, {
         tenantId: context.tenantId,
         tenantSlug: context.tenantSlug,
         customerId: customer.id,
-        channel: "web",
-        currency: context.currency,
+        channel,
+        currency: settings.currency,
         idempotencyKey: input.idempotencyKey,
         fulfillmentMethod: input.fulfillmentMethod,
         addressLine: input.fulfillmentMethod === "delivery" ? input.addressLine : undefined,
         cityOrArea: input.fulfillmentMethod === "delivery" ? input.cityOrArea : undefined,
         deliveryInstructions:
           input.fulfillmentMethod === "delivery" ? input.deliveryInstructions : undefined,
-        pickupLocationKey:
-          input.fulfillmentMethod === "pickup" ? input.pickupLocationKey : undefined,
-        pickupLocationName:
-          input.fulfillmentMethod === "pickup" ? pickupLocation?.name : undefined,
+        pickupLocationKey: input.fulfillmentMethod === "pickup" ? pickup?.id : undefined,
+        pickupLocationName: input.fulfillmentMethod === "pickup" ? pickup?.name : undefined,
+        pickupLocationAddress:
+          input.fulfillmentMethod === "pickup" ? pickup?.address : undefined,
         paymentMethod: input.paymentMethod,
         paymentReference: input.paymentReference,
         subtotalMinor,
         deliveryFeeMinor,
         discountMinor,
         totalMinor,
+        referralCode: context.referralCode ?? undefined,
         items: availableLines.map((line) => ({
           productId: line.productId,
           nameSnapshot: line.name,

@@ -11,7 +11,9 @@ function formatPaymentMethod(method: OrderConfirmation["paymentMethod"]) {
 
 function formatFulfillment(order: OrderConfirmation) {
   if (order.fulfillmentMethod === "pickup") {
-    return order.pickupLocationName ?? "Pickup";
+    return [order.pickupLocationName, order.pickupLocationAddress]
+      .filter(Boolean)
+      .join(" — ") || "Pickup";
   }
   const parts = [order.addressLine, order.cityOrArea].filter(Boolean);
   return parts.join(", ");

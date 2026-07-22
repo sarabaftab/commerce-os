@@ -1,6 +1,7 @@
 import type { IdentityChannel, Prisma } from "@prisma/client";
 
 import { prisma } from "@/shared/db/prisma";
+import { AppError } from "@/shared/errors/app-error";
 
 export async function findCustomerById(tenantId: string, customerId: string) {
   return prisma.customer.findFirst({
@@ -85,4 +86,37 @@ export async function upsertCustomerByPhone(
   }
 
   return customer;
+}
+
+/** Update contact fields on an already-authenticated customer (no phone merge). */
+export async function updateCustomerContact(
+  tx: Prisma.TransactionClient,
+  input: {
+    tenantId: string;
+    customerId: string;
+    displayName: string;
+    phone: string;
+    email?: string;
+  },
+) {
+  const existing = await tx.customer.findFirst({
+    where: {
+      id: input.customerId,
+      tenantId: input.tenantId,
+      deletedAt: null,
+    },
+  });
+
+  if (!existing) {
+    throw new AppError("NOT_FOUND", "Customer not found");
+  }
+
+  return tx.customer.update({
+    where: { id: existing.id },
+    data: {
+      displayName: input.displayName,
+      phone: input.phone,
+      ...(input.email ? { email: input.email } : {}),
+    },
+  });
 }

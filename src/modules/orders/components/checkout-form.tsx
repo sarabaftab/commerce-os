@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 
 import type { CheckoutPreview } from "@/modules/orders";
 import {
@@ -24,17 +24,38 @@ const fieldClass =
 const initialState: PlaceOrderActionState = {};
 
 export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
-  const hasPickup = preview.pickupLocations.length > 0;
-  const [fulfillmentMethod, setFulfillmentMethod] = useState<"delivery" | "pickup">("delivery");
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "aba_transfer">("cod");
+  const initialFulfillment = preview.deliveryEnabled
+    ? "delivery"
+    : preview.pickupEnabled
+      ? "pickup"
+      : "delivery";
+  const initialPayment = preview.codEnabled
+    ? "cod"
+    : preview.abaAvailable
+      ? "aba_transfer"
+      : "cod";
+
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<"delivery" | "pickup">(
+    initialFulfillment,
+  );
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "aba_transfer">(initialPayment);
   const [state, formAction, pending] = useActionState(
     placeOrderAction.bind(null, tenantSlug),
     initialState,
   );
 
-  const deliveryFeeMinor =
-    fulfillmentMethod === "delivery" ? preview.deliveryFeeMinor : 0;
+  const deliveryFeeMinor = fulfillmentMethod === "delivery" ? preview.deliveryFeeMinor : 0;
   const totalMinor = preview.cart.subtotalMinor + deliveryFeeMinor;
+
+  const abaCopy = useMemo(() => {
+    const parts = [
+      preview.abaAccountName ? `Account: ${preview.abaAccountName}` : null,
+      preview.abaAccountNumber ? `Number: ${preview.abaAccountNumber}` : null,
+      preview.abaInstructions,
+      preview.abaCustomerNote,
+    ].filter(Boolean);
+    return parts.join("\n");
+  }, [preview]);
 
   return (
     <form action={formAction} className="space-y-4 pb-28">
@@ -54,6 +75,7 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
               autoComplete="name"
               className={fieldClass}
               placeholder="Your name"
+              defaultValue={preview.prefillDisplayName ?? ""}
             />
           </div>
           <div>
@@ -72,7 +94,8 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
           </div>
           <div>
             <label htmlFor="email" className="mb-1 block text-xs font-medium">
-              Email <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
+              Email{" "}
+              <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
             </label>
             <input
               id="email"
@@ -91,19 +114,25 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
         onFulfillmentMethodChange={setFulfillmentMethod}
         pickupLocations={preview.pickupLocations}
         defaultPickupLocationKey={preview.pickupLocations[0]?.id}
-        showPickup={hasPickup}
+        deliveryEnabled={preview.deliveryEnabled}
+        pickupEnabled={preview.pickupEnabled}
+        deliveryNotes={preview.deliveryNotes}
       />
 
       <CheckoutPaymentFields
         paymentMethod={paymentMethod}
         onPaymentMethodChange={setPaymentMethod}
-        abaInstructions={preview.abaInstructions}
+        codEnabled={preview.codEnabled}
+        abaAvailable={preview.abaAvailable}
+        abaInstructions={abaCopy}
+        abaQrImageUrl={preview.abaQrImageUrl}
       />
 
       <CheckoutOrderReview
         cart={preview.cart}
         deliveryFeeMinor={preview.deliveryFeeMinor}
         fulfillmentMethod={fulfillmentMethod}
+        freeDeliveryThresholdMinor={preview.freeDeliveryThresholdMinor}
       />
 
       {state.error ? (

@@ -65,6 +65,17 @@ export async function createGuestCart(tenantId: string, guestToken: string) {
   });
 }
 
+export async function createCustomerCart(tenantId: string, customerId: string) {
+  return prisma.cart.create({
+    data: {
+      tenantId,
+      customerId,
+      status: "open",
+    },
+    include: cartInclude,
+  });
+}
+
 export async function findCartItemById(tenantId: string, itemId: string) {
   return prisma.cartItem.findFirst({
     where: { id: itemId, tenantId },

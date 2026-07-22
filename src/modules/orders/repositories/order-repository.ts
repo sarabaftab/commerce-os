@@ -45,6 +45,7 @@ export function toOrderConfirmation(order: OrderWithRelations): OrderConfirmatio
     deliveryInstructions: order.deliveryInstructions,
     pickupLocationKey: order.pickupLocationKey,
     pickupLocationName: order.pickupLocationName,
+    pickupLocationAddress: order.pickupLocationAddress,
     paymentMethod: order.paymentMethod,
     paymentReference: order.paymentReference,
     placedAt: order.placedAt,
@@ -101,6 +102,7 @@ export type CreateOrderRecordInput = {
   deliveryInstructions?: string;
   pickupLocationKey?: string;
   pickupLocationName?: string;
+  pickupLocationAddress?: string;
   paymentMethod: PaymentMethod;
   paymentReference?: string;
   currency: string;
@@ -140,6 +142,7 @@ export async function createOrderRecordInTransaction(
       deliveryInstructions: input.deliveryInstructions ?? null,
       pickupLocationKey: input.pickupLocationKey ?? null,
       pickupLocationName: input.pickupLocationName ?? null,
+      pickupLocationAddress: input.pickupLocationAddress ?? null,
       paymentMethod: input.paymentMethod,
       paymentReference: input.paymentReference ?? null,
       currency: input.currency,
@@ -177,27 +180,26 @@ export async function allocateOrderNumber(
   tenantSlug: string,
 ): Promise<string> {
   const tenant = await tx.tenant.findUniqueOrThrow({ where: { id: tenantId } });
-  const config = (tenant.config ?? {}) as Record<string, unknown>;
-  const sequence =
-    typeof config.orderSequence === "number" &&
-    Number.isInteger(config.orderSequence) &&
-    config.orderSequence > 0
-      ? config.orderSequence
-      : 1;
+  let sequence = tenant.orderSequence > 0 ? tenant.orderSequence : 1;
 
-  const orderNumber = formatOrderNumber(tenantSlug, sequence);
+  // Skip numbers that already exist (e.g. after seed reset orderSequence).
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const orderNumber = formatOrderNumber(tenantSlug, sequence);
+    const exists = await tx.order.findFirst({
+      where: { tenantId, orderNumber },
+      select: { id: true },
+    });
+    if (!exists) {
+      await tx.tenant.update({
+        where: { id: tenantId },
+        data: { orderSequence: sequence + 1 },
+      });
+      return orderNumber;
+    }
+    sequence += 1;
+  }
 
-  await tx.tenant.update({
-    where: { id: tenantId },
-    data: {
-      config: {
-        ...config,
-        orderSequence: sequence + 1,
-      },
-    },
-  });
-
-  return orderNumber;
+  throw new Error("Unable to allocate a unique order number");
 }
 
 export async function convertCartInTransaction(

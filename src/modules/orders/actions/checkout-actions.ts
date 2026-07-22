@@ -3,8 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import {
+  readAttributionFromCookies,
+  readAttributionFromRequest,
+  readCustomerSessionFromCookies,
+  readCustomerSessionFromRequest,
+} from "@/channels/telegram/server/customer-session";
+import { findCustomerById } from "@/modules/customers/repositories/customer-repository";
 import { getTenantBySlug } from "@/modules/identity";
-import { readGuestTokenFromCookies } from "@/shared/cart/cart-cookie";
+import { readGuestTokenFromCookies, readGuestTokenFromRequest } from "@/shared/cart/cart-cookie";
 import { AppError, isAppError } from "@/shared/errors/app-error";
 
 import {
@@ -27,13 +34,39 @@ function isNextRedirect(error: unknown): boolean {
   );
 }
 
+async function resolveCheckoutContext(tenantSlug: string) {
+  const tenant = await getTenantBySlug(tenantSlug);
+  const [guestToken, session, referralCode] = await Promise.all([
+    readGuestTokenFromCookies(),
+    readCustomerSessionFromCookies(tenant.id),
+    readAttributionFromCookies(),
+  ]);
+
+  let customerDisplayName: string | null = null;
+  if (session?.customerId) {
+    const customer = await findCustomerById(tenant.id, session.customerId);
+    customerDisplayName = customer?.displayName ?? null;
+  }
+
+  return {
+    tenant,
+    cartIdentity: {
+      tenantId: tenant.id,
+      guestToken,
+      customerId: session?.customerId ?? null,
+    },
+    channel: session?.channel ?? ("web" as const),
+    referralCode,
+    customerDisplayName,
+  };
+}
+
 export async function placeOrderAction(
   tenantSlug: string,
   _prevState: PlaceOrderActionState,
   formData: FormData,
 ): Promise<PlaceOrderActionState> {
-  const tenant = await getTenantBySlug(tenantSlug);
-  const guestToken = await readGuestTokenFromCookies();
+  const ctx = await resolveCheckoutContext(tenantSlug);
 
   const parsed = checkoutInputSchema.safeParse(checkoutFormDataToObject(formData));
   if (!parsed.success) {
@@ -43,15 +76,13 @@ export async function placeOrderAction(
   try {
     const order = await placeGuestOrder(
       {
-        tenantId: tenant.id,
-        tenantSlug: tenant.slug,
-        currency: tenant.currency,
-        tenantConfig: tenant.config,
-        cartIdentity: {
-          tenantId: tenant.id,
-          guestToken,
-          customerId: null,
-        },
+        tenantId: ctx.tenant.id,
+        tenantSlug: ctx.tenant.slug,
+        currency: ctx.tenant.currency,
+        cartIdentity: ctx.cartIdentity,
+        channel: ctx.channel,
+        referralCode: ctx.referralCode,
+        customerDisplayName: ctx.customerDisplayName,
       },
       parsed.data,
     );
@@ -73,7 +104,7 @@ export async function placeOrderAction(
 export async function placeOrderFromJson(
   tenantSlug: string,
   body: unknown,
-  guestToken: string | null,
+  request: Request,
 ) {
   const tenant = await getTenantBySlug(tenantSlug);
   const parsed = checkoutInputSchema.safeParse(body);
@@ -81,17 +112,22 @@ export async function placeOrderFromJson(
     throw new AppError("VALIDATION", parsed.error.issues[0]?.message ?? "Invalid checkout details");
   }
 
+  const guestToken = readGuestTokenFromRequest(request);
+  const session = await readCustomerSessionFromRequest(tenant.id, request);
+  const referralCode = readAttributionFromRequest(request);
+
   return placeGuestOrder(
     {
       tenantId: tenant.id,
       tenantSlug: tenant.slug,
       currency: tenant.currency,
-      tenantConfig: tenant.config,
       cartIdentity: {
         tenantId: tenant.id,
         guestToken,
-        customerId: null,
+        customerId: session?.customerId ?? null,
       },
+      channel: session?.channel ?? "web",
+      referralCode,
     },
     parsed.data,
   );

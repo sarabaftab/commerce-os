@@ -30,7 +30,7 @@ export async function GET(request: Request, context: RouteContext) {
   try {
     const { tenantSlug } = await context.params;
     const tenant = await resolveTenantFromSlug(tenantSlug);
-    const identity = resolveCartIdentityFromRequest(tenant.id, request);
+    const identity = await resolveCartIdentityFromRequest(tenant.id, request);
 
     const result = await getOrCreateCart(identity, tenant.currency);
     return withCartCookie(result);
@@ -43,7 +43,7 @@ export async function DELETE(request: Request, context: RouteContext) {
   try {
     const { tenantSlug } = await context.params;
     const tenant = await resolveTenantFromSlug(tenantSlug);
-    const identity = resolveCartIdentityFromRequest(tenant.id, request);
+    const identity = await resolveCartIdentityFromRequest(tenant.id, request);
 
     const result = await clearCart(identity, tenant.currency);
     return withCartCookie(result);

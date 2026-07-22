@@ -5,12 +5,14 @@ type CheckoutOrderReviewProps = {
   cart: CartSummary;
   deliveryFeeMinor: number;
   fulfillmentMethod: "delivery" | "pickup";
+  freeDeliveryThresholdMinor?: number | null;
 };
 
 export function CheckoutOrderReview({
   cart,
   deliveryFeeMinor,
   fulfillmentMethod,
+  freeDeliveryThresholdMinor,
 }: CheckoutOrderReviewProps) {
   const fee = fulfillmentMethod === "delivery" ? deliveryFeeMinor : 0;
   const totalMinor = cart.subtotalMinor + fee;
@@ -44,7 +46,10 @@ export function CheckoutOrderReview({
         </div>
         {fulfillmentMethod === "delivery" ? (
           <div className="flex justify-between">
-            <span className="text-[color:var(--shop-ink-muted)]">Delivery</span>
+            <span className="text-[color:var(--shop-ink-muted)]">
+              Delivery
+              {freeDeliveryThresholdMinor != null && fee === 0 ? " (free)" : ""}
+            </span>
             <span>{formatMoney(fee, cart.currency)}</span>
           </div>
         ) : null}

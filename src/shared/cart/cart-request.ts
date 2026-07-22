@@ -1,5 +1,9 @@
 import { getTenantBySlug } from "@/modules/identity";
 import type { CartIdentity } from "@/modules/orders/services/cart-service";
+import {
+  readCustomerSessionFromCookies,
+  readCustomerSessionFromRequest,
+} from "@/channels/telegram/server/customer-session";
 import { AppError, isAppError } from "@/shared/errors/app-error";
 import {
   readGuestTokenFromCookies,
@@ -20,22 +24,26 @@ export async function resolveTenantFromSlug(tenantSlug: string) {
 export async function resolveCartIdentityFromCookies(
   tenantId: string,
 ): Promise<CartIdentity> {
-  const guestToken = await readGuestTokenFromCookies();
+  const [guestToken, session] = await Promise.all([
+    readGuestTokenFromCookies(),
+    readCustomerSessionFromCookies(tenantId),
+  ]);
   return {
     tenantId,
     guestToken,
-    customerId: null,
+    customerId: session?.customerId ?? null,
   };
 }
 
-export function resolveCartIdentityFromRequest(
+export async function resolveCartIdentityFromRequest(
   tenantId: string,
   request: Request,
-): CartIdentity {
+): Promise<CartIdentity> {
   const guestToken = readGuestTokenFromRequest(request);
+  const session = await readCustomerSessionFromRequest(tenantId, request);
   return {
     tenantId,
     guestToken,
-    customerId: null,
+    customerId: session?.customerId ?? null,
   };
 }

@@ -17,7 +17,7 @@ export async function POST(request: Request, context: RouteContext) {
   try {
     const { tenantSlug } = await context.params;
     const tenant = await resolveTenantFromSlug(tenantSlug);
-    const identity = resolveCartIdentityFromRequest(tenant.id, request);
+    const identity = await resolveCartIdentityFromRequest(tenant.id, request);
 
     const body = await request.json();
     const parsed = addCartItemSchema.safeParse(body);

@@ -100,6 +100,7 @@ export type OrderConfirmation = {
   deliveryInstructions: string | null;
   pickupLocationKey: string | null;
   pickupLocationName: string | null;
+  pickupLocationAddress: string | null;
   paymentMethod: PaymentMethod;
   paymentReference: string | null;
   placedAt: Date;
@@ -114,9 +115,22 @@ export type OrderConfirmation = {
 export type CheckoutPreview = {
   cart: CartSummary;
   idempotencyKey: string;
+  currency: string;
+  deliveryEnabled: boolean;
+  pickupEnabled: boolean;
   deliveryFeeMinor: number;
-  abaInstructions: string;
-  pickupLocations: { id: string; name: string; address: string }[];
+  freeDeliveryThresholdMinor: number | null;
+  deliveryNotes: string | null;
+  pickupLocations: { id: string; name: string; address: string; instructions: string | null }[];
+  codEnabled: boolean;
+  abaAvailable: boolean;
+  abaInstructions: string | null;
+  abaAccountName: string | null;
+  abaAccountNumber: string | null;
+  abaQrImageUrl: string | null;
+  abaCustomerNote: string | null;
+  checkoutBlockedReason: string | null;
+  prefillDisplayName?: string | null;
 };
 
 export type AdminOrderListItem = {
@@ -169,6 +183,7 @@ export type AdminOrderDetail = {
   deliveryInstructions: string | null;
   pickupLocationKey: string | null;
   pickupLocationName: string | null;
+  pickupLocationAddress: string | null;
   paymentMethod: PaymentMethod;
   paymentReference: string | null;
   placedAt: Date;

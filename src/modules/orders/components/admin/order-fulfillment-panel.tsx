@@ -24,6 +24,9 @@ export function OrderFulfillmentPanel({ order }: OrderFulfillmentPanelProps) {
         ) : (
           <>
             <p>{order.pickupLocationName ?? order.pickupLocationKey}</p>
+            {order.pickupLocationAddress ? (
+              <p className="text-muted-foreground">{order.pickupLocationAddress}</p>
+            ) : null}
             {order.pickupLocationKey ? (
               <p className="text-muted-foreground">Key: {order.pickupLocationKey}</p>
             ) : null}

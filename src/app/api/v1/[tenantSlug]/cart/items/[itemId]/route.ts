@@ -17,7 +17,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { tenantSlug, itemId } = await context.params;
     const tenant = await resolveTenantFromSlug(tenantSlug);
-    const identity = resolveCartIdentityFromRequest(tenant.id, request);
+    const identity = await resolveCartIdentityFromRequest(tenant.id, request);
 
     const body = await request.json();
     const parsed = updateCartItemSchema.safeParse(body);
@@ -48,7 +48,7 @@ export async function DELETE(request: Request, context: RouteContext) {
   try {
     const { tenantSlug, itemId } = await context.params;
     const tenant = await resolveTenantFromSlug(tenantSlug);
-    const identity = resolveCartIdentityFromRequest(tenant.id, request);
+    const identity = await resolveCartIdentityFromRequest(tenant.id, request);
 
     const result = await removeCartItem(identity, tenant.currency, itemId);
     const response = jsonOk(result.summary);

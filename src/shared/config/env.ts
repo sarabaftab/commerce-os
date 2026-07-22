@@ -6,6 +6,15 @@ const serverSchema = z.object({
   DIRECT_URL: z.string().min(1, "DIRECT_URL is required"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   DEFAULT_TENANT_SLUG: z.string().min(1).default("kin-a2"),
+  /** Phase 1: single bot mapped to one tenant slug. Optional until Telegram is used. */
+  TELEGRAM_BOT_TOKEN: z.string().min(1).optional(),
+  TELEGRAM_TENANT_SLUG: z.string().min(1).default("kin-a2"),
+  TELEGRAM_INIT_DATA_MAX_AGE_SECONDS: z.coerce.number().int().positive().default(300),
+  CUSTOMER_SESSION_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(60 * 60 * 24 * 30),
 });
 
 const publicSchema = z.object({
@@ -27,6 +36,10 @@ function getServerEnv(): ServerEnv {
     DIRECT_URL: process.env.DIRECT_URL,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     DEFAULT_TENANT_SLUG: process.env.DEFAULT_TENANT_SLUG,
+    TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || undefined,
+    TELEGRAM_TENANT_SLUG: process.env.TELEGRAM_TENANT_SLUG,
+    TELEGRAM_INIT_DATA_MAX_AGE_SECONDS: process.env.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS,
+    CUSTOMER_SESSION_TTL_SECONDS: process.env.CUSTOMER_SESSION_TTL_SECONDS,
   });
 
   if (!parsed.success) {

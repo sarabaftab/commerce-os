@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import {
+  readAttributionFromCookies,
+  readCustomerSessionFromCookies,
+} from "@/channels/telegram/server/customer-session";
+import { findCustomerById } from "@/modules/customers/repositories/customer-repository";
 import { CheckoutForm } from "@/modules/orders/components/checkout-form";
+import { getCheckoutPreview } from "@/modules/orders";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { readGuestTokenFromCookies } from "@/shared/cart/cart-cookie";
-import { getCheckoutPreview } from "@/modules/orders";
 
 export const dynamic = "force-dynamic";
 
@@ -15,18 +20,30 @@ type CheckoutPageProps = {
 export default async function StorefrontCheckoutPage({ params }: CheckoutPageProps) {
   const { tenantSlug } = await params;
   const { tenant, basePath } = await resolveStorefrontTenant(tenantSlug);
-  const guestToken = await readGuestTokenFromCookies();
+  const [guestToken, session, referralCode] = await Promise.all([
+    readGuestTokenFromCookies(),
+    readCustomerSessionFromCookies(tenant.id),
+    readAttributionFromCookies(),
+  ]);
+
+  let customerDisplayName: string | null = null;
+  if (session?.customerId) {
+    const customer = await findCustomerById(tenant.id, session.customerId);
+    customerDisplayName = customer?.displayName ?? null;
+  }
 
   const preview = await getCheckoutPreview({
     tenantId: tenant.id,
     tenantSlug: tenant.slug,
     currency: tenant.currency,
-    tenantConfig: tenant.config,
     cartIdentity: {
       tenantId: tenant.id,
       guestToken,
-      customerId: null,
+      customerId: session?.customerId ?? null,
     },
+    channel: session?.channel ?? "web",
+    referralCode,
+    customerDisplayName,
   });
 
   if (!preview) {
@@ -50,7 +67,13 @@ export default async function StorefrontCheckoutPage({ params }: CheckoutPagePro
         </p>
       </div>
 
-      <CheckoutForm tenantSlug={tenantSlug} preview={preview} />
+      {preview.checkoutBlockedReason ? (
+        <p className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {preview.checkoutBlockedReason}
+        </p>
+      ) : (
+        <CheckoutForm tenantSlug={tenantSlug} preview={preview} />
+      )}
     </div>
   );
 }

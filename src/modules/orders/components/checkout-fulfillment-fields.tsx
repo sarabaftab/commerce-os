@@ -3,9 +3,11 @@
 type CheckoutFulfillmentFieldsProps = {
   fulfillmentMethod: "delivery" | "pickup";
   onFulfillmentMethodChange: (method: "delivery" | "pickup") => void;
-  pickupLocations: { id: string; name: string; address: string }[];
+  pickupLocations: { id: string; name: string; address: string; instructions?: string | null }[];
   defaultPickupLocationKey?: string;
-  showPickup?: boolean;
+  deliveryEnabled: boolean;
+  pickupEnabled: boolean;
+  deliveryNotes?: string | null;
 };
 
 const fieldClass =
@@ -16,15 +18,22 @@ export function CheckoutFulfillmentFields({
   onFulfillmentMethodChange,
   pickupLocations,
   defaultPickupLocationKey,
-  showPickup = true,
+  deliveryEnabled,
+  pickupEnabled,
+  deliveryNotes,
 }: CheckoutFulfillmentFieldsProps) {
+  const methods = [
+    ...(deliveryEnabled ? (["delivery"] as const) : []),
+    ...(pickupEnabled ? (["pickup"] as const) : []),
+  ];
+
   return (
     <div className="space-y-4 rounded-2xl bg-white/80 p-4 ring-1 ring-[color:var(--shop-line)]">
       <h2 className="text-sm font-semibold">Fulfillment</h2>
 
-      {showPickup ? (
+      {methods.length > 1 ? (
         <div className="grid grid-cols-2 gap-2">
-          {(["delivery", "pickup"] as const).map((method) => (
+          {methods.map((method) => (
             <label
               key={method}
               className={`flex cursor-pointer items-center justify-center rounded-xl border px-3 py-3 text-sm font-medium capitalize ${
@@ -46,11 +55,14 @@ export function CheckoutFulfillmentFields({
           ))}
         </div>
       ) : (
-        <input type="hidden" name="fulfillmentMethod" value="delivery" />
+        <input type="hidden" name="fulfillmentMethod" value={methods[0] ?? "delivery"} />
       )}
 
-      {fulfillmentMethod === "delivery" ? (
+      {fulfillmentMethod === "delivery" && deliveryEnabled ? (
         <div className="space-y-3">
+          {deliveryNotes ? (
+            <p className="text-xs text-[color:var(--shop-ink-muted)]">{deliveryNotes}</p>
+          ) : null}
           <div>
             <label htmlFor="addressLine" className="mb-1 block text-xs font-medium">
               Address
@@ -77,7 +89,8 @@ export function CheckoutFulfillmentFields({
           </div>
           <div>
             <label htmlFor="deliveryInstructions" className="mb-1 block text-xs font-medium">
-              Delivery instructions <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
+              Delivery instructions{" "}
+              <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
             </label>
             <textarea
               id="deliveryInstructions"
@@ -88,7 +101,9 @@ export function CheckoutFulfillmentFields({
             />
           </div>
         </div>
-      ) : (
+      ) : null}
+
+      {fulfillmentMethod === "pickup" && pickupEnabled ? (
         <div>
           <label htmlFor="pickupLocationKey" className="mb-1 block text-xs font-medium">
             Pickup location
@@ -107,7 +122,7 @@ export function CheckoutFulfillmentFields({
             ))}
           </select>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
