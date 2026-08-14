@@ -38,6 +38,7 @@ export type { AddCartItemInput, UpdateCartItemInput } from "./schemas/cart";
 export {
   addItemToCart,
   clearCart,
+  getCartItemCount,
   getCartSummary,
   getOrCreateCart,
   removeCartItem,
@@ -46,6 +47,7 @@ export {
 export type { CartIdentity } from "./services/cart-service";
 export {
   getCheckoutPreview,
+  getAuthorizedOrderConfirmation,
   getOrderConfirmation,
   placeGuestOrder,
 } from "./services/checkout-service";

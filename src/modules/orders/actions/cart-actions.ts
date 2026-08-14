@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
@@ -7,6 +8,7 @@ import { getTenantBySlug } from "@/modules/identity";
 import {
   addItemToCart,
   clearCart,
+  getCartItemCount,
   getCartSummary,
   removeCartItem,
   updateCartItemQty,
@@ -42,12 +44,18 @@ async function setGuestCookieIfNeeded(guestToken?: string) {
   });
 }
 
-/** Read-only — safe from Server Components / layouts (does not write cookies). */
-export async function getCartAction(tenantSlug: string): Promise<CartSummary> {
+/** Read-only full cart — deduped per request for cart/checkout pages. */
+export const getCartAction = cache(async (tenantSlug: string): Promise<CartSummary> => {
   const { tenant, identity } = await resolveTenantAndIdentity(tenantSlug);
   const summary = await getCartSummary(identity, tenant.currency);
   return summary ?? EMPTY_CART(tenant.currency);
-}
+});
+
+/** Header badge — lean count, deduped per request. */
+export const getCartItemCountAction = cache(async (tenantSlug: string): Promise<number> => {
+  const { identity } = await resolveTenantAndIdentity(tenantSlug);
+  return getCartItemCount(identity);
+});
 
 export async function addToCartAction(
   tenantSlug: string,

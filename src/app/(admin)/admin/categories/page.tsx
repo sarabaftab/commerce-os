@@ -1,6 +1,8 @@
 import { getCategoriesForTenant } from "@/modules/catalog";
 import { requireAdminSession } from "@/shared/auth/admin-session";
 import { createTimer } from "@/shared/observability/timing";
+import { AdminPageHeader } from "@/ui/admin/admin-page-header";
+import { TimingBadge } from "@/ui/admin/timing-badge";
 import { Badge } from "@/ui/components/ui/badge";
 import {
   Table,
@@ -10,7 +12,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/ui/components/ui/table";
-import { TimingBadge } from "@/ui/admin/timing-badge";
 
 export default async function AdminCategoriesPage() {
   const timer = createTimer("page.admin.categories");
@@ -34,14 +35,12 @@ export default async function AdminCategoriesPage() {
         }}
       />
 
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Categories</h1>
-        <p className="text-sm text-muted-foreground">
-          Read-only list for Phase 1. Manage via seed or SQL for now.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Categories"
+        description="Read-only list for Phase 1. Manage via seed or SQL for now."
+      />
 
-      <div className="rounded-lg border">
+      <div className="overflow-hidden rounded-2xl border border-[color:var(--admin-line)] bg-[color:var(--admin-surface-elevated)] shadow-[var(--admin-shadow)]">
         <Table>
           <TableHeader>
             <TableRow>

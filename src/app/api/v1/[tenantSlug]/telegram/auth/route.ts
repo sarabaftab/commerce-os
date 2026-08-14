@@ -4,6 +4,10 @@ import {
   applyTelegramAuthCookies,
   authenticateTelegramInitData,
 } from "@/channels/telegram/server/auth-service";
+import {
+  attachAttributionCookie,
+  readCustomerSessionFromRequest,
+} from "@/channels/telegram/server/customer-session";
 import { mergeGuestCartIntoCustomer } from "@/modules/orders/services/cart-merge";
 import { readGuestTokenFromRequest } from "@/shared/cart/cart-cookie";
 import { resolveTenantFromSlug } from "@/shared/cart/cart-request";
@@ -31,27 +35,42 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
-    const { result, sessionToken, startParam } = await authenticateTelegramInitData({
-      tenantId: tenant.id,
-      tenantSlug: tenant.slug,
-      initData: parsed.data.initData,
-    });
+    const existingSession = await readCustomerSessionFromRequest(tenant.id, request);
+
+    const { result, sessionToken, startParam, sessionReused } =
+      await authenticateTelegramInitData({
+        tenantId: tenant.id,
+        tenantSlug: tenant.slug,
+        initData: parsed.data.initData,
+        existingSession,
+      });
 
     const guestToken = readGuestTokenFromRequest(request);
-    await mergeGuestCartIntoCustomer({
-      tenantId: tenant.id,
-      guestToken,
-      customerId: result.customerId,
-    });
+    let mergedGuestCart = false;
+    if (guestToken) {
+      await mergeGuestCartIntoCustomer({
+        tenantId: tenant.id,
+        guestToken,
+        customerId: result.customerId,
+      });
+      mergedGuestCart = true;
+    }
 
     const response = jsonOk({
       customerId: result.customerId,
       displayName: result.displayName,
       isNewCustomer: result.isNewCustomer,
       startParam: result.startParam ?? null,
+      sessionReused,
+      mergedGuestCart,
     });
 
-    applyTelegramAuthCookies(response, sessionToken, startParam);
+    if (sessionToken) {
+      applyTelegramAuthCookies(response, sessionToken, startParam);
+    } else if (startParam) {
+      attachAttributionCookie(response, startParam);
+    }
+
     return response;
   } catch (error) {
     return jsonError(error);

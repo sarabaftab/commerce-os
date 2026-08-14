@@ -37,82 +37,92 @@ type Props = {
 };
 
 export function SettingsSectionForm({ bundle, section }: Props) {
-  const s = bundle.settings;
-
   if (section === "general") {
-    const [state, action, pending] = useActionState(saveGeneralSettingsAction, initial);
-    return (
-      <form action={action} className="max-w-xl space-y-4">
-        <Field label="Display name" name="displayName" defaultValue={s.displayName ?? ""} />
-        <Field label="Currency" name="currency" defaultValue={bundle.currency} />
-        <Field label="Phone" name="phone" defaultValue={s.phone ?? ""} />
-        <Field label="Email" name="email" defaultValue={s.email ?? ""} type="email" />
-        <Field label="Address" name="address" defaultValue={s.address ?? ""} />
-        <Field label="Timezone" name="timezone" defaultValue={s.timezone} />
-        <div className="space-y-1.5">
-          <Label htmlFor="businessHours">Business hours</Label>
-          <Textarea
-            id="businessHours"
-            name="businessHours"
-            rows={3}
-            defaultValue={s.businessHours ?? ""}
-          />
-        </div>
-        <Status state={state} />
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save general settings"}
-        </Button>
-      </form>
-    );
+    return <GeneralSection bundle={bundle} />;
   }
-
   if (section === "fulfillment") {
     return <FulfillmentSection bundle={bundle} />;
   }
-
   if (section === "payments") {
-    const [state, action, pending] = useActionState(savePaymentSettingsAction, initial);
-    return (
-      <form action={action} className="max-w-xl space-y-4">
-        <Checkbox name="codEnabled" label="Enable Cash on Delivery" defaultChecked={s.codEnabled} />
-        <Checkbox name="abaEnabled" label="Enable ABA Transfer" defaultChecked={s.abaEnabled} />
-        <Field label="ABA account name" name="abaAccountName" defaultValue={s.abaAccountName ?? ""} />
-        <Field
-          label="ABA account number"
-          name="abaAccountNumber"
-          defaultValue={s.abaAccountNumber ?? ""}
-        />
-        <div className="space-y-1.5">
-          <Label htmlFor="abaInstructions">ABA instructions</Label>
-          <Textarea
-            id="abaInstructions"
-            name="abaInstructions"
-            rows={4}
-            defaultValue={s.abaInstructions ?? ""}
-          />
-        </div>
-        <Field
-          label="ABA QR / payment image URL"
-          name="abaQrImageUrl"
-          defaultValue={s.abaQrImageUrl ?? ""}
-        />
-        <div className="space-y-1.5">
-          <Label htmlFor="abaCustomerNote">Customer-facing payment note</Label>
-          <Textarea
-            id="abaCustomerNote"
-            name="abaCustomerNote"
-            rows={2}
-            defaultValue={s.abaCustomerNote ?? ""}
-          />
-        </div>
-        <Status state={state} />
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save payment settings"}
-        </Button>
-      </form>
-    );
+    return <PaymentsSection bundle={bundle} />;
   }
+  return <BrandingSection bundle={bundle} />;
+}
 
+function GeneralSection({ bundle }: { bundle: TenantSettingsBundle }) {
+  const s = bundle.settings;
+  const [state, action, pending] = useActionState(saveGeneralSettingsAction, initial);
+  return (
+    <form action={action} className="max-w-xl space-y-4">
+      <Field label="Display name" name="displayName" defaultValue={s.displayName ?? ""} />
+      <Field label="Currency" name="currency" defaultValue={bundle.currency} />
+      <Field label="Phone" name="phone" defaultValue={s.phone ?? ""} />
+      <Field label="Email" name="email" defaultValue={s.email ?? ""} type="email" />
+      <Field label="Address" name="address" defaultValue={s.address ?? ""} />
+      <Field label="Timezone" name="timezone" defaultValue={s.timezone} />
+      <div className="space-y-1.5">
+        <Label htmlFor="businessHours">Business hours</Label>
+        <Textarea
+          id="businessHours"
+          name="businessHours"
+          rows={3}
+          defaultValue={s.businessHours ?? ""}
+        />
+      </div>
+      <Status state={state} />
+      <Button type="submit" disabled={pending}>
+        {pending ? "Saving…" : "Save general settings"}
+      </Button>
+    </form>
+  );
+}
+
+function PaymentsSection({ bundle }: { bundle: TenantSettingsBundle }) {
+  const s = bundle.settings;
+  const [state, action, pending] = useActionState(savePaymentSettingsAction, initial);
+  return (
+    <form action={action} className="max-w-xl space-y-4">
+      <Checkbox name="codEnabled" label="Enable Cash on Delivery" defaultChecked={s.codEnabled} />
+      <Checkbox name="abaEnabled" label="Enable ABA Transfer" defaultChecked={s.abaEnabled} />
+      <Field label="ABA account name" name="abaAccountName" defaultValue={s.abaAccountName ?? ""} />
+      <Field
+        label="ABA account number"
+        name="abaAccountNumber"
+        defaultValue={s.abaAccountNumber ?? ""}
+      />
+      <div className="space-y-1.5">
+        <Label htmlFor="abaInstructions">ABA instructions</Label>
+        <Textarea
+          id="abaInstructions"
+          name="abaInstructions"
+          rows={4}
+          defaultValue={s.abaInstructions ?? ""}
+        />
+      </div>
+      <Field
+        label="ABA QR / payment image URL"
+        name="abaQrImageUrl"
+        defaultValue={s.abaQrImageUrl ?? ""}
+      />
+      <div className="space-y-1.5">
+        <Label htmlFor="abaCustomerNote">Customer-facing payment note</Label>
+        <Textarea
+          id="abaCustomerNote"
+          name="abaCustomerNote"
+          rows={2}
+          defaultValue={s.abaCustomerNote ?? ""}
+        />
+      </div>
+      <Status state={state} />
+      <Button type="submit" disabled={pending}>
+        {pending ? "Saving…" : "Save payment settings"}
+      </Button>
+    </form>
+  );
+}
+
+function BrandingSection({ bundle }: { bundle: TenantSettingsBundle }) {
+  const s = bundle.settings;
   const [state, action, pending] = useActionState(saveBrandingSettingsAction, initial);
   return (
     <form action={action} className="max-w-xl space-y-4">

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
@@ -11,6 +11,7 @@ import {
   productFormToUpdateInput,
   updateProductForTenant,
 } from "@/modules/catalog";
+import { catalogTag } from "@/modules/catalog/cache-tags";
 import { requireAdminSession } from "@/shared/auth/admin-session";
 import { isAppError } from "@/shared/errors/app-error";
 
@@ -32,6 +33,12 @@ function formDataToObject(formData: FormData) {
     sortOrder: String(formData.get("sortOrder") ?? "0"),
     mediaUrl: String(formData.get("mediaUrl") ?? ""),
   };
+}
+
+function revalidateStorefrontCatalog(tenantId: string, tenantSlug: string) {
+  revalidateTag(catalogTag(tenantId));
+  revalidatePath(`/${tenantSlug}`);
+  revalidatePath(`/${tenantSlug}/products`);
 }
 
 export async function createProductAction(
@@ -57,6 +64,7 @@ export async function createProductAction(
   }
 
   revalidatePath("/admin/products");
+  revalidateStorefrontCatalog(session.tenantId, session.tenantSlug);
   redirect("/admin/products");
 }
 
@@ -87,6 +95,7 @@ export async function updateProductAction(
 
   revalidatePath("/admin/products");
   revalidatePath(`/admin/products/${productId}/edit`);
+  revalidateStorefrontCatalog(session.tenantId, session.tenantSlug);
   redirect("/admin/products");
 }
 
@@ -102,5 +111,6 @@ export async function deleteProductAction(productId: string): Promise<ActionStat
   }
 
   revalidatePath("/admin/products");
+  revalidateStorefrontCatalog(session.tenantId, session.tenantSlug);
   return {};
 }

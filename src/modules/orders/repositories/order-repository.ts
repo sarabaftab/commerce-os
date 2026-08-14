@@ -6,6 +6,8 @@ import type {
 } from "@prisma/client";
 
 import { prisma } from "@/shared/db/prisma";
+import { AppError } from "@/shared/errors/app-error";
+import { createOrderConfirmationToken } from "@/shared/orders/confirmation-cookie";
 
 import type { OrderConfirmation, OrderLineView } from "../types";
 
@@ -16,7 +18,10 @@ export const orderInclude = {
 
 export type OrderWithRelations = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
 
-export function toOrderConfirmation(order: OrderWithRelations): OrderConfirmation {
+export function toOrderConfirmation(
+  order: OrderWithRelations,
+  options?: { includeConfirmationToken?: boolean },
+): OrderConfirmation {
   const items: OrderLineView[] = order.items.map((item) => ({
     id: item.id,
     productId: item.productId,
@@ -49,6 +54,9 @@ export function toOrderConfirmation(order: OrderWithRelations): OrderConfirmatio
     paymentMethod: order.paymentMethod,
     paymentReference: order.paymentReference,
     placedAt: order.placedAt,
+    ...(options?.includeConfirmationToken
+      ? { confirmationToken: order.confirmationToken }
+      : {}),
     customer: {
       displayName: order.customer.displayName,
       phone: order.customer.phone,
@@ -76,18 +84,43 @@ export async function findOrderByIdempotencyKey(
     where: { tenantId, idempotencyKey },
     include: orderInclude,
   });
-  return order ? toOrderConfirmation(order) : null;
+  return order ? toOrderConfirmation(order, { includeConfirmationToken: true }) : null;
 }
 
 export async function findOrderByOrderNumber(
   tenantId: string,
   orderNumber: string,
-): Promise<OrderConfirmation | null> {
-  const order = await prisma.order.findFirst({
+): Promise<OrderWithRelations | null> {
+  return prisma.order.findFirst({
     where: { tenantId, orderNumber },
     include: orderInclude,
   });
-  return order ? toOrderConfirmation(order) : null;
+}
+
+export async function findOrderByConfirmationToken(
+  tenantId: string,
+  orderNumber: string,
+  confirmationToken: string,
+): Promise<OrderWithRelations | null> {
+  return prisma.order.findFirst({
+    where: {
+      tenantId,
+      orderNumber,
+      confirmationToken,
+    },
+    include: orderInclude,
+  });
+}
+
+export async function findOwnedOrderByOrderNumber(
+  tenantId: string,
+  customerId: string,
+  orderNumber: string,
+): Promise<OrderWithRelations | null> {
+  return prisma.order.findFirst({
+    where: { tenantId, customerId, orderNumber },
+    include: orderInclude,
+  });
 }
 
 export type CreateOrderRecordInput = {
@@ -98,7 +131,16 @@ export type CreateOrderRecordInput = {
   idempotencyKey?: string;
   fulfillmentMethod: FulfillmentMethod;
   addressLine?: string;
+  addressLine2?: string;
   cityOrArea?: string;
+  provinceOrState?: string;
+  postalCode?: string;
+  countryCode?: string;
+  recipientFirstName?: string;
+  recipientLastName?: string;
+  recipientPhone?: string;
+  addressLabel?: string;
+  sourceAddressId?: string;
   deliveryInstructions?: string;
   pickupLocationKey?: string;
   pickupLocationName?: string;
@@ -120,6 +162,7 @@ export type CreateOrderRecordInput = {
     quantity: number;
     lineTotalMinor: number;
   }[];
+  confirmationToken?: string;
 };
 
 /**
@@ -138,7 +181,16 @@ export async function createOrderRecordInTransaction(
       status: "pending",
       fulfillmentMethod: input.fulfillmentMethod,
       addressLine: input.addressLine ?? null,
+      addressLine2: input.addressLine2 ?? null,
       cityOrArea: input.cityOrArea ?? null,
+      provinceOrState: input.provinceOrState ?? null,
+      postalCode: input.postalCode ?? null,
+      countryCode: input.countryCode ?? null,
+      recipientFirstName: input.recipientFirstName ?? null,
+      recipientLastName: input.recipientLastName ?? null,
+      recipientPhone: input.recipientPhone ?? null,
+      addressLabel: input.addressLabel ?? null,
+      sourceAddressId: input.sourceAddressId ?? null,
       deliveryInstructions: input.deliveryInstructions ?? null,
       pickupLocationKey: input.pickupLocationKey ?? null,
       pickupLocationName: input.pickupLocationName ?? null,
@@ -155,6 +207,7 @@ export async function createOrderRecordInTransaction(
       referralCode: input.referralCode ?? null,
       campaignId: input.campaignId ?? null,
       idempotencyKey: input.idempotencyKey ?? null,
+      confirmationToken: input.confirmationToken ?? createOrderConfirmationToken(),
       items: {
         create: input.items.map((item) => ({
           tenantId: input.tenantId,
@@ -208,13 +261,24 @@ export async function convertCartInTransaction(
   cartId: string,
   customerId: string,
 ) {
-  await tx.cartItem.deleteMany({ where: { tenantId, cartId } });
-  // Clear guestToken so the same browser cookie can open a fresh cart later
-  // (unique is on tenant_id + guest_token across all statuses).
-  await tx.cart.update({
-    where: { id: cartId },
-    data: { status: "converted", customerId, guestToken: null },
+  const claimed = await tx.cart.updateMany({
+    where: {
+      id: cartId,
+      tenantId,
+      status: "open",
+    },
+    data: {
+      status: "converted",
+      customerId,
+      guestToken: null,
+    },
   });
+
+  if (claimed.count !== 1) {
+    throw new AppError("CONFLICT", "This cart was already checked out");
+  }
+
+  await tx.cartItem.deleteMany({ where: { tenantId, cartId } });
 }
 
 export const adminOrderListInclude = {

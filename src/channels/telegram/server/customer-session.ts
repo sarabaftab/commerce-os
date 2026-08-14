@@ -95,6 +95,7 @@ export async function revokeCustomerSessionByToken(token: string) {
 
 async function resolveSessionFromToken(
   token: string,
+  options?: { touchLastSeen?: boolean },
 ): Promise<CustomerSessionPayload | null> {
   const row = await prisma.customerSession.findUnique({
     where: { tokenHash: hashToken(token) },
@@ -109,12 +110,19 @@ async function resolveSessionFromToken(
     return null;
   }
 
-  await prisma.customerSession
-    .update({
-      where: { id: row.id },
-      data: { lastSeenAt: new Date() },
-    })
-    .catch(() => undefined);
+  const touch = options?.touchLastSeen !== false;
+  const LAST_SEEN_THROTTLE_MS = 5 * 60 * 1000;
+  if (
+    touch &&
+    (!row.lastSeenAt || Date.now() - row.lastSeenAt.getTime() >= LAST_SEEN_THROTTLE_MS)
+  ) {
+    await prisma.customerSession
+      .update({
+        where: { id: row.id },
+        data: { lastSeenAt: new Date() },
+      })
+      .catch(() => undefined);
+  }
 
   return {
     sessionId: row.id,

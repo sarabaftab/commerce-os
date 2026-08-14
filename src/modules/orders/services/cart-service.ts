@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 
-import { findProductById } from "@/modules/catalog/repositories/product-repository";
+import { findProductAvailability } from "@/modules/catalog/repositories/product-repository";
 import { AppError } from "@/shared/errors/app-error";
 import { createGuestToken } from "@/shared/cart/cart-cookie";
 
@@ -13,6 +13,7 @@ import {
   findCartItemById,
   findOpenCartByCustomerId,
   findOpenCartByGuestToken,
+  sumOpenCartItemQuantities,
   touchCart,
   upsertCartItem,
   updateCartItemQuantity,
@@ -25,6 +26,28 @@ export type CartIdentity = {
   guestToken?: string | null;
   customerId?: string | null;
 };
+
+function assertCartLineOwnedByIdentity(
+  identity: CartIdentity,
+  cart: { customerId: string | null; guestToken: string | null },
+) {
+  if (identity.customerId) {
+    if (cart.customerId === identity.customerId) {
+      return;
+    }
+    // Allow mutating a guest cart that has not yet been associated.
+    if (!cart.customerId && identity.guestToken && cart.guestToken === identity.guestToken) {
+      return;
+    }
+    throw new AppError("NOT_FOUND", "Cart item not found");
+  }
+
+  if (identity.guestToken && cart.guestToken === identity.guestToken) {
+    return;
+  }
+
+  throw new AppError("NOT_FOUND", "Cart item not found");
+}
 
 function buildCartSummary(cart: CartWithItems, tenantCurrency: string): CartSummary {
   const items = cart.items
@@ -91,7 +114,7 @@ async function createOpenGuestCart(tenantId: string, preferredToken?: string | n
 export async function getOrCreateCart(
   identity: CartIdentity,
   tenantCurrency: string,
-): Promise<{ summary: CartSummary; guestToken?: string }> {
+): Promise<{ summary: CartSummary; cart: CartWithItems; guestToken?: string }> {
   let cart: CartWithItems | null = null;
   let newGuestToken: string | undefined;
 
@@ -115,6 +138,7 @@ export async function getOrCreateCart(
 
   return {
     summary: buildCartSummary(cart, tenantCurrency),
+    cart,
     guestToken: newGuestToken,
   };
 }
@@ -127,7 +151,9 @@ export async function getCartSummary(
 
   if (identity.customerId) {
     cart = await findOpenCartByCustomerId(identity.tenantId, identity.customerId);
-  } else if (identity.guestToken) {
+  }
+
+  if (!cart && identity.guestToken) {
     cart = await findOpenCartByGuestToken(identity.tenantId, identity.guestToken);
   }
 
@@ -138,13 +164,20 @@ export async function getCartSummary(
   return buildCartSummary(cart, tenantCurrency);
 }
 
-async function resolveOpenCart(identity: CartIdentity, tenantCurrency: string) {
-  const result = await getOrCreateCart(identity, tenantCurrency);
-  return result;
+/** Header badge only — avoids loading product/media graphs on every page. */
+export async function getCartItemCount(identity: CartIdentity): Promise<number> {
+  if (!identity.customerId && !identity.guestToken) {
+    return 0;
+  }
+  return sumOpenCartItemQuantities({
+    tenantId: identity.tenantId,
+    customerId: identity.customerId,
+    guestToken: identity.guestToken,
+  });
 }
 
 async function assertProductCanBeAdded(tenantId: string, productId: string) {
-  const product = await findProductById(tenantId, productId);
+  const product = await findProductAvailability(tenantId, productId);
   if (!product || product.deletedAt) {
     throw new AppError("NOT_FOUND", "Product not found");
   }
@@ -159,27 +192,28 @@ export async function addItemToCart(
   tenantCurrency: string,
   input: { productId: string; quantity: number },
 ): Promise<{ summary: CartSummary; guestToken?: string }> {
-  await assertProductCanBeAdded(identity.tenantId, input.productId);
+  const [, openCart] = await Promise.all([
+    assertProductCanBeAdded(identity.tenantId, input.productId),
+    getOrCreateCart(identity, tenantCurrency),
+  ]);
 
-  const { summary: cartResult, guestToken } = await resolveOpenCart(identity, tenantCurrency);
-  const cart = await findCartById(identity.tenantId, cartResult.id);
-  if (!cart) {
-    throw new AppError("NOT_FOUND", "Cart not found");
-  }
-
+  const cart = openCart.cart;
   const existing = cart.items.find((item) => item.productId === input.productId);
   const nextQuantity = Math.min(
     (existing?.quantity ?? 0) + input.quantity,
     MAX_CART_QUANTITY,
   );
 
-  await upsertCartItem({
-    tenantId: identity.tenantId,
-    cartId: cart.id,
-    productId: input.productId,
-    quantity: nextQuantity,
-  });
-  await touchCart(cart.id);
+  await Promise.all([
+    upsertCartItem({
+      tenantId: identity.tenantId,
+      cartId: cart.id,
+      productId: input.productId,
+      quantity: nextQuantity,
+      skipCartCheck: true,
+    }),
+    touchCart(identity.tenantId, cart.id),
+  ]);
 
   const refreshed = await findCartById(identity.tenantId, cart.id);
   if (!refreshed) {
@@ -188,7 +222,7 @@ export async function addItemToCart(
 
   return {
     summary: buildCartSummary(refreshed, tenantCurrency),
-    guestToken,
+    guestToken: openCart.guestToken,
   };
 }
 
@@ -202,15 +236,17 @@ export async function updateCartItemQty(
   if (!line || line.cart.status !== "open") {
     throw new AppError("NOT_FOUND", "Cart item not found");
   }
+  assertCartLineOwnedByIdentity(identity, line.cart);
 
   await assertProductCanBeAdded(identity.tenantId, line.productId);
 
-  const result = await updateCartItemQuantity(identity.tenantId, itemId, quantity);
+  const [result] = await Promise.all([
+    updateCartItemQuantity(identity.tenantId, itemId, quantity),
+    touchCart(identity.tenantId, line.cartId),
+  ]);
   if (result.count === 0) {
     throw new AppError("NOT_FOUND", "Cart item not found");
   }
-
-  await touchCart(line.cartId);
 
   const refreshed = await findCartById(identity.tenantId, line.cartId);
   if (!refreshed) {
@@ -232,9 +268,12 @@ export async function removeCartItem(
   if (!line || line.cart.status !== "open") {
     throw new AppError("NOT_FOUND", "Cart item not found");
   }
+  assertCartLineOwnedByIdentity(identity, line.cart);
 
-  await deleteCartItem(identity.tenantId, itemId);
-  await touchCart(line.cartId);
+  await Promise.all([
+    deleteCartItem(identity.tenantId, itemId),
+    touchCart(identity.tenantId, line.cartId),
+  ]);
 
   const refreshed = await findCartById(identity.tenantId, line.cartId);
   if (!refreshed) {
@@ -251,17 +290,14 @@ export async function clearCart(
   identity: CartIdentity,
   tenantCurrency: string,
 ): Promise<{ summary: CartSummary; guestToken?: string }> {
-  const { summary, guestToken } = await getOrCreateCart(identity, tenantCurrency);
-  await clearCartItems(identity.tenantId, summary.id);
-  await touchCart(summary.id);
-
-  const refreshed = await findCartById(identity.tenantId, summary.id);
-  if (!refreshed) {
-    throw new AppError("NOT_FOUND", "Cart not found");
-  }
+  const { cart, guestToken } = await getOrCreateCart(identity, tenantCurrency);
+  await Promise.all([
+    clearCartItems(identity.tenantId, cart.id),
+    touchCart(identity.tenantId, cart.id),
+  ]);
 
   return {
-    summary: buildCartSummary(refreshed, tenantCurrency),
+    summary: buildCartSummary({ ...cart, items: [] }, tenantCurrency),
     guestToken,
   };
 }

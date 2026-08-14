@@ -18,7 +18,7 @@ export function CheckoutOrderReview({
   const totalMinor = cart.subtotalMinor + fee;
 
   return (
-    <div className="space-y-4 rounded-2xl bg-white/80 p-4 ring-1 ring-[color:var(--shop-line)]">
+    <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
       <h2 className="text-sm font-semibold">Order review</h2>
 
       <ul className="space-y-3">

@@ -7,6 +7,7 @@ import { parseOrderAdminListSearchParams } from "@/modules/orders/schemas/order-
 import { listOrdersForAdminTenant } from "@/modules/orders/services/order-admin-service";
 import { requireAdminSession } from "@/shared/auth/admin-session";
 import { createTimer } from "@/shared/observability/timing";
+import { AdminPageHeader } from "@/ui/admin/admin-page-header";
 import { TimingBadge } from "@/ui/admin/timing-badge";
 
 type AdminOrdersPageProps = {
@@ -43,15 +44,19 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
         }}
       />
 
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Orders</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage fulfillment for {session.tenantName}
-        </p>
+      <AdminPageHeader
+        title="Orders"
+        description={`Manage fulfillment for ${session.tenantName}`}
+      />
+
+      <div className="rounded-2xl border border-[color:var(--admin-line)] bg-[color:var(--admin-surface-elevated)] p-4 shadow-[var(--admin-shadow)] sm:p-5">
+        <OrderListFilters query={query} />
       </div>
 
-      <OrderListFilters query={query} />
-      <OrderListTable orders={result.items} />
+      <div className="overflow-hidden rounded-2xl border border-[color:var(--admin-line)] bg-[color:var(--admin-surface-elevated)] shadow-[var(--admin-shadow)]">
+        <OrderListTable orders={result.items} />
+      </div>
+
       <OrderListPagination
         page={result.page}
         totalPages={result.totalPages}
@@ -59,9 +64,12 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
         searchParams={paginationParams}
       />
 
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-[color:var(--admin-ink-muted)]">
         Tip: open an order to update status.{" "}
-        <Link href="/admin" className="underline-offset-4 hover:underline">
+        <Link
+          href="/admin"
+          className="font-medium text-[color:var(--admin-ink)] underline decoration-[color:var(--admin-primary)] underline-offset-4"
+        >
           Back to dashboard
         </Link>
       </p>

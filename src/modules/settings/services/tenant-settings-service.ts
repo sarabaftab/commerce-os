@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
 
@@ -95,21 +97,27 @@ export async function getStorefrontSettings(
   tenantId: string,
   tenantSlug: string,
 ): Promise<StorefrontSettings> {
-  const bundle = await loadBundle(tenantId);
-  const s = bundle.settings;
-  return {
-    tenantId,
-    tenantSlug,
-    currency: bundle.currency,
-    displayName: s.displayName?.trim() || bundle.tenantName,
-    logoUrl: s.logoUrl,
-    primaryColor: s.primaryColor,
-    phone: s.phone,
-    email: s.email,
-    address: s.address,
-    businessHours: s.businessHours,
-  };
+  return getStorefrontSettingsCached(tenantId, tenantSlug);
 }
+
+const getStorefrontSettingsCached = cache(
+  async (tenantId: string, tenantSlug: string): Promise<StorefrontSettings> => {
+    const bundle = await loadBundle(tenantId);
+    const s = bundle.settings;
+    return {
+      tenantId,
+      tenantSlug,
+      currency: bundle.currency,
+      displayName: s.displayName?.trim() || bundle.tenantName,
+      logoUrl: s.logoUrl,
+      primaryColor: s.primaryColor,
+      phone: s.phone,
+      email: s.email,
+      address: s.address,
+      businessHours: s.businessHours,
+    };
+  },
+);
 
 export async function getCheckoutSettings(
   tenantId: string,

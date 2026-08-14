@@ -104,6 +104,8 @@ export type OrderConfirmation = {
   paymentMethod: PaymentMethod;
   paymentReference: string | null;
   placedAt: Date;
+  /** Present on create/replay for cookie handoff — never required from clients. */
+  confirmationToken?: string;
   customer: {
     displayName: string | null;
     phone: string | null;
@@ -131,6 +133,28 @@ export type CheckoutPreview = {
   abaCustomerNote: string | null;
   checkoutBlockedReason: string | null;
   prefillDisplayName?: string | null;
+  prefillFirstName?: string | null;
+  prefillLastName?: string | null;
+  prefillPhone?: string | null;
+  prefillEmail?: string | null;
+  savedAddresses?: {
+    id: string;
+    label: string;
+    recipientFirstName: string;
+    recipientLastName: string;
+    phone: string;
+    addressLine1: string;
+    addressLine2: string | null;
+    cityOrDistrict: string;
+    provinceOrState: string;
+    postalCode: string | null;
+    countryCode: string;
+    deliveryInstructions: string | null;
+    isDefault: boolean;
+    formattedShort: string;
+  }[];
+  defaultAddressId?: string | null;
+  isAuthenticated?: boolean;
 };
 
 export type AdminOrderListItem = {

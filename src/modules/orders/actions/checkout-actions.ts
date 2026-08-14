@@ -13,6 +13,7 @@ import { findCustomerById } from "@/modules/customers/repositories/customer-repo
 import { getTenantBySlug } from "@/modules/identity";
 import { readGuestTokenFromCookies, readGuestTokenFromRequest } from "@/shared/cart/cart-cookie";
 import { AppError, isAppError } from "@/shared/errors/app-error";
+import { setOrderConfirmationCookie } from "@/shared/orders/confirmation-cookie";
 
 import {
   checkoutFormDataToObject,
@@ -43,9 +44,17 @@ async function resolveCheckoutContext(tenantSlug: string) {
   ]);
 
   let customerDisplayName: string | null = null;
+  let customerFirstName: string | null = null;
+  let customerLastName: string | null = null;
+  let customerPhone: string | null = null;
+  let customerEmail: string | null = null;
   if (session?.customerId) {
     const customer = await findCustomerById(tenant.id, session.customerId);
     customerDisplayName = customer?.displayName ?? null;
+    customerFirstName = customer?.firstName ?? null;
+    customerLastName = customer?.lastName ?? null;
+    customerPhone = customer?.phone ?? null;
+    customerEmail = customer?.email ?? null;
   }
 
   return {
@@ -58,6 +67,10 @@ async function resolveCheckoutContext(tenantSlug: string) {
     channel: session?.channel ?? ("web" as const),
     referralCode,
     customerDisplayName,
+    customerFirstName,
+    customerLastName,
+    customerPhone,
+    customerEmail,
   };
 }
 
@@ -83,12 +96,20 @@ export async function placeOrderAction(
         channel: ctx.channel,
         referralCode: ctx.referralCode,
         customerDisplayName: ctx.customerDisplayName,
+        customerFirstName: ctx.customerFirstName,
+        customerLastName: ctx.customerLastName,
+        customerPhone: ctx.customerPhone,
+        customerEmail: ctx.customerEmail,
       },
       parsed.data,
     );
 
     revalidatePath(`/${tenantSlug}/cart`);
     revalidatePath(`/${tenantSlug}`, "layout");
+    revalidatePath(`/${tenantSlug}/account/orders`);
+    if (order.confirmationToken) {
+      await setOrderConfirmationCookie(order.orderNumber, order.confirmationToken);
+    }
     redirect(`/${tenantSlug}/orders/${order.orderNumber}/confirmation`);
   } catch (error) {
     if (isNextRedirect(error)) {

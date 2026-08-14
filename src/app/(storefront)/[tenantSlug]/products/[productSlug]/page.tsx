@@ -6,8 +6,11 @@ import { AddToCartButton } from "@/modules/orders/components/add-to-cart-button"
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { isAppError } from "@/shared/errors/app-error";
 import { formatMoney } from "@/shared/money/money";
+import { createTimer } from "@/shared/observability/timing";
+import { ProductImage } from "@/ui/storefront/product-image";
 
-export const dynamic = "force-dynamic";
+/** Public catalog ISR — aligned with catalog data-cache TTL. */
+export const revalidate = 60;
 
 type ProductDetailPageProps = {
   params: Promise<{ tenantSlug: string; productSlug: string }>;
@@ -16,8 +19,10 @@ type ProductDetailPageProps = {
 export default async function StorefrontProductDetailPage({
   params,
 }: ProductDetailPageProps) {
+  const timer = createTimer("page.storefront.pdp");
   const { tenantSlug, productSlug } = await params;
   const { tenant, basePath } = await resolveStorefrontTenant(tenantSlug);
+  timer.mark("tenantMs");
 
   let product;
   try {
@@ -28,6 +33,8 @@ export default async function StorefrontProductDetailPage({
     }
     throw error;
   }
+  timer.mark("productMs");
+  timer.log({ tenantSlug, productSlug });
 
   const imageUrl = product.media[0]?.url;
   const imageAlt = product.media[0]?.alt ?? product.name;
@@ -36,18 +43,22 @@ export default async function StorefrontProductDetailPage({
     <div className="space-y-5 pt-4">
       <Link
         href={`${basePath}/products${product.category ? `?category=${product.category.slug}` : ""}`}
-        className="inline-flex text-sm font-medium text-[color:var(--shop-accent)]"
+        className="inline-flex text-sm font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
       >
         ← Back to shop
       </Link>
 
-      <div className="overflow-hidden rounded-[1.75rem] bg-white/80 ring-1 ring-[color:var(--shop-line)]">
+      <div className="overflow-hidden rounded-[1.75rem] bg-[color:var(--shop-surface-elevated)] ring-1 ring-[color:var(--shop-line)]">
         <div className="relative aspect-[5/4] bg-[color:var(--shop-surface)]">
           {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt={imageAlt} className="h-full w-full object-cover" />
+            <ProductImage
+              src={imageUrl}
+              alt={imageAlt}
+              priority
+              sizes="(max-width: 512px) 100vw, 512px"
+            />
           ) : (
-            <div className="flex h-full w-full items-end bg-[radial-gradient(circle_at_30%_20%,#d7efe4,transparent_55%),linear-gradient(160deg,#eef6f2,#d9ebe3)] p-6">
+            <div className="flex h-full w-full items-end bg-[radial-gradient(circle_at_30%_20%,#fae588,transparent_55%),linear-gradient(160deg,#fffdf4,#fff1b9)] p-6">
               <span className="text-sm text-[color:var(--shop-ink-muted)]">
                 {product.category?.name ?? tenant.name}
               </span>
@@ -57,7 +68,7 @@ export default async function StorefrontProductDetailPage({
 
         <div className="space-y-4 p-5">
           {product.category ? (
-            <p className="text-[11px] font-medium tracking-[0.16em] text-[color:var(--shop-accent)] uppercase">
+            <p className="text-[11px] font-medium tracking-[0.16em] text-[color:var(--shop-ink-muted)] uppercase">
               {product.category.name}
             </p>
           ) : null}

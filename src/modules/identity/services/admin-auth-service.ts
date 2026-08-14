@@ -26,20 +26,27 @@ export async function resolveAdminSession(input: {
   });
   timer.mark("lookupMs");
 
-  // First login after seed: link by email if supabase id was not set yet.
+  // First login after seed: link by email ONLY when explicitly allowed.
+  // Disabled in production unless ALLOW_ADMIN_EMAIL_LINK=1 to prevent account takeover.
   if (!membership) {
-    const byEmail = await findUserByEmail(input.email);
-    if (byEmail && !byEmail.supabaseUserId) {
-      await linkSupabaseUserId(byEmail.id, input.supabaseUserId);
-      membership = await prisma.userTenantMembership.findFirst({
-        where: { userId: byEmail.id },
-        include: {
-          tenant: true,
-          user: true,
-        },
-        orderBy: { createdAt: "asc" },
-      });
-      timer.mark("linkMs");
+    const allowEmailLink =
+      process.env.ALLOW_ADMIN_EMAIL_LINK === "1" ||
+      process.env.NODE_ENV !== "production";
+
+    if (allowEmailLink) {
+      const byEmail = await findUserByEmail(input.email);
+      if (byEmail && !byEmail.supabaseUserId) {
+        await linkSupabaseUserId(byEmail.id, input.supabaseUserId);
+        membership = await prisma.userTenantMembership.findFirst({
+          where: { userId: byEmail.id },
+          include: {
+            tenant: true,
+            user: true,
+          },
+          orderBy: { createdAt: "asc" },
+        });
+        timer.mark("linkMs");
+      }
     }
   }
 

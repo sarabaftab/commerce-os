@@ -15,7 +15,7 @@ export function ProductGrid({
 }: ProductGridProps) {
   if (products.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-[color:var(--shop-line)] px-4 py-12 text-center text-sm text-[color:var(--shop-ink-muted)]">
+      <div className="rounded-2xl border border-dashed border-[color:var(--shop-line)] bg-[color:var(--shop-surface)]/50 px-4 py-12 text-center text-sm text-[color:var(--shop-ink-muted)]">
         {emptyMessage}
       </div>
     );

@@ -9,6 +9,7 @@ import {
   attachAttributionCookie,
   attachCustomerSessionCookie,
   createCustomerSession,
+  type CustomerSessionPayload,
 } from "./customer-session";
 import {
   telegramDisplayName,
@@ -62,13 +63,15 @@ async function upsertTelegramCustomer(input: {
       },
     });
 
-    const customer = await prisma.customer.update({
-      where: { id: existing.customerId },
-      data: {
-        displayName:
-          existing.customer.displayName?.trim() || displayName,
-      },
-    });
+    // Never overwrite customer-edited profile fields on re-auth.
+    // Only seed displayName when still empty.
+    let customer = existing.customer;
+    if (!existing.customer.displayName?.trim()) {
+      customer = await prisma.customer.update({
+        where: { id: existing.customerId },
+        data: { displayName },
+      });
+    }
 
     return { customer, isNewCustomer: false };
   }
@@ -77,6 +80,8 @@ async function upsertTelegramCustomer(input: {
     const created = await tx.customer.create({
       data: {
         tenantId: input.tenantId,
+        firstName: input.user.first_name?.trim() || null,
+        lastName: input.user.last_name?.trim() || null,
         displayName,
       },
     });
@@ -102,10 +107,12 @@ export async function authenticateTelegramInitData(input: {
   tenantId: string;
   tenantSlug: string;
   initData: string;
+  existingSession?: CustomerSessionPayload | null;
 }): Promise<{
   result: TelegramAuthResult;
-  sessionToken: string;
+  sessionToken: string | null;
   startParam?: string;
+  sessionReused: boolean;
 }> {
   const botToken = getTelegramBotTokenForTenantSlug(input.tenantSlug);
   const validated = validateTelegramInitData(input.initData, botToken, {
@@ -117,6 +124,27 @@ export async function authenticateTelegramInitData(input: {
     user: validated.user,
   });
 
+  const canReuse =
+    input.existingSession &&
+    input.existingSession.tenantId === input.tenantId &&
+    input.existingSession.customerId === customer.id;
+
+  if (canReuse) {
+    return {
+      sessionToken: null,
+      sessionReused: true,
+      startParam: validated.startParam,
+      result: {
+        customerId: customer.id,
+        tenantId: input.tenantId,
+        displayName: customer.displayName ?? telegramDisplayName(validated.user),
+        telegramUserId: String(validated.user.id),
+        startParam: validated.startParam,
+        isNewCustomer: false,
+      },
+    };
+  }
+
   const { token } = await createCustomerSession({
     tenantId: input.tenantId,
     customerId: customer.id,
@@ -124,6 +152,7 @@ export async function authenticateTelegramInitData(input: {
 
   return {
     sessionToken: token,
+    sessionReused: false,
     startParam: validated.startParam,
     result: {
       customerId: customer.id,

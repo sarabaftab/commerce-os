@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Category } from "@prisma/client";
 
 import { cn } from "@/ui/lib/utils";
+import { shop } from "@/ui/storefront/shop-classes";
 
 type CategoryChipsProps = {
   categories: Category[];
@@ -48,9 +49,7 @@ function Chip({
       href={href}
       className={cn(
         "shrink-0 rounded-full px-4 py-2 text-sm font-medium transition",
-        active
-          ? "bg-[color:var(--shop-accent)] text-white"
-          : "bg-white/70 text-[color:var(--shop-ink)] ring-1 ring-[color:var(--shop-line)]",
+        active ? shop.chipActive : shop.chipIdle,
       )}
     >
       {label}

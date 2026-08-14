@@ -20,7 +20,7 @@ export function CartSummaryPanel({ tenantSlug, summary }: CartSummaryPanelProps)
   const hasAvailableItems = summary.items.some((item) => item.isAvailable);
 
   return (
-    <div className="space-y-4 rounded-2xl bg-white/80 p-4 ring-1 ring-[color:var(--shop-line)]">
+    <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
       <div className="flex items-center justify-between text-sm">
         <span className="text-[color:var(--shop-ink-muted)]">Subtotal</span>
         <span className="font-semibold">
@@ -34,7 +34,7 @@ export function CartSummaryPanel({ tenantSlug, summary }: CartSummaryPanelProps)
       {hasAvailableItems ? (
         <Link
           href={`/${tenantSlug}/checkout`}
-          className="flex h-12 w-full items-center justify-center rounded-full bg-[color:var(--shop-accent)] text-sm font-semibold text-white"
+          className="flex h-12 w-full items-center justify-center rounded-full bg-[color:var(--shop-primary)] text-sm font-semibold text-[color:var(--shop-on-primary)]"
         >
           Proceed to checkout
         </Link>
@@ -42,7 +42,7 @@ export function CartSummaryPanel({ tenantSlug, summary }: CartSummaryPanelProps)
         <button
           type="button"
           disabled
-          className="flex h-12 w-full items-center justify-center rounded-full bg-[color:var(--shop-accent)] text-sm font-semibold text-white opacity-70"
+          className="flex h-12 w-full items-center justify-center rounded-full bg-[color:var(--shop-primary)] text-sm font-semibold text-[color:var(--shop-on-primary)] opacity-70"
         >
           Proceed to checkout
         </button>

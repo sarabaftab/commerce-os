@@ -37,7 +37,7 @@ export function AddToCartButton({
             }
           });
         }}
-        className="flex h-12 w-full items-center justify-center rounded-full bg-[color:var(--shop-accent)] text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-70"
+        className="flex h-12 w-full items-center justify-center rounded-full bg-[color:var(--shop-primary)] text-sm font-semibold text-[color:var(--shop-on-primary)] shadow-[var(--shop-shadow-sm)] transition hover:bg-[color:var(--shop-accent-soft)] active:scale-[0.98] disabled:opacity-70"
       >
         {pending ? "Adding…" : label}
       </button>

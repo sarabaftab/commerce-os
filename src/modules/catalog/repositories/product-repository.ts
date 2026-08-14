@@ -15,6 +15,64 @@ export async function listProducts(tenantId: string): Promise<ProductWithRelatio
   });
 }
 
+/** Admin table rows — no media join; category name only. */
+export async function listAdminProductSummaries(
+  tenantId: string,
+  options?: { skip?: number; take?: number },
+): Promise<{
+  items: {
+    id: string;
+    name: string;
+    slug: string;
+    priceMinor: number;
+    currency: string;
+    isAvailable: boolean;
+    category: { id: string; name: string } | null;
+  }[];
+  total: number;
+}> {
+  const skip = options?.skip ?? 0;
+  const take = options?.take ?? 50;
+
+  const where = { tenantId, deletedAt: null } as const;
+
+  const [items, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        priceMinor: true,
+        currency: true,
+        isAvailable: true,
+        category: { select: { id: true, name: true } },
+      },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      skip,
+      take,
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  return { items, total };
+}
+
+export async function countProductsForTenant(tenantId: string): Promise<{
+  total: number;
+  available: number;
+}> {
+  const [total, available] = await Promise.all([
+    prisma.product.count({
+      where: { tenantId, deletedAt: null },
+    }),
+    prisma.product.count({
+      where: { tenantId, deletedAt: null, isAvailable: true },
+    }),
+  ]);
+  return { total, available };
+}
+
 export async function listAvailableProducts(
   tenantId: string,
   options?: { categoryId?: string; limit?: number },
@@ -28,10 +86,20 @@ export async function listAvailableProducts(
     },
     include: {
       category: true,
-      media: { orderBy: { sortOrder: "asc" } },
+      media: { orderBy: { sortOrder: "asc" }, take: 1 },
     },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     ...(options?.limit ? { take: options.limit } : {}),
+  });
+}
+
+export async function findProductAvailability(
+  tenantId: string,
+  productId: string,
+): Promise<{ id: string; isAvailable: boolean; deletedAt: Date | null } | null> {
+  return prisma.product.findFirst({
+    where: { id: productId, tenantId },
+    select: { id: true, isAvailable: true, deletedAt: true },
   });
 }
 
@@ -70,7 +138,7 @@ export async function findAvailableProductBySlug(
     },
     include: {
       category: true,
-      media: { orderBy: { sortOrder: "asc" } },
+      media: { orderBy: { sortOrder: "asc" }, take: 1 },
     },
   });
 }

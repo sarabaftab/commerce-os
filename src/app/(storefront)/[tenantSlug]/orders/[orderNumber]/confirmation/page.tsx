@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getOrderConfirmation } from "@/modules/orders";
+import { getOptionalCustomerSession } from "@/modules/customers";
+import { getAuthorizedOrderConfirmation } from "@/modules/orders";
 import { OrderConfirmationView } from "@/modules/orders/components/order-confirmation";
 import { resolveStorefrontTenant } from "@/modules/storefront";
+import { readOrderConfirmationCookie } from "@/shared/orders/confirmation-cookie";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +17,21 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
   const { tenantSlug, orderNumber } = await params;
   const { tenant, basePath } = await resolveStorefrontTenant(tenantSlug);
 
-  const order = await getOrderConfirmation(tenant.id, orderNumber);
+  const [session, confirmCookie] = await Promise.all([
+    getOptionalCustomerSession(tenant.id),
+    readOrderConfirmationCookie(),
+  ]);
+
+  const token =
+    confirmCookie?.orderNumber === orderNumber ? confirmCookie.token : null;
+
+  const order = await getAuthorizedOrderConfirmation({
+    tenantId: tenant.id,
+    orderNumber,
+    confirmationToken: token,
+    customerId: session?.customerId ?? null,
+  });
+
   if (!order) {
     notFound();
   }
@@ -25,7 +41,7 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
       <div>
         <Link
           href={`${basePath}/products`}
-          className="inline-flex text-sm font-medium text-[color:var(--shop-accent)]"
+          className="inline-flex text-sm font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
         >
           Continue shopping
         </Link>

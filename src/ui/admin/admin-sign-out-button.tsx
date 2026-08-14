@@ -4,8 +4,13 @@ import { useRouter } from "next/navigation";
 
 import { createSupabaseBrowserClient } from "@/shared/auth/supabase/client";
 import { Button } from "@/ui/components/ui/button";
+import { cn } from "@/ui/lib/utils";
 
-export function AdminSignOutButton() {
+type AdminSignOutButtonProps = {
+  compact?: boolean;
+};
+
+export function AdminSignOutButton({ compact = false }: AdminSignOutButtonProps) {
   const router = useRouter();
 
   return (
@@ -13,7 +18,10 @@ export function AdminSignOutButton() {
       type="button"
       variant="outline"
       size="sm"
-      className="w-full"
+      className={cn(
+        "border-[color:var(--admin-line)] bg-transparent text-[color:var(--admin-ink)] hover:bg-[color:var(--admin-surface)]",
+        compact ? "h-8 px-3" : "w-full",
+      )}
       onClick={async () => {
         const supabase = createSupabaseBrowserClient();
         await supabase.auth.signOut();

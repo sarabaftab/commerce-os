@@ -1,5 +1,7 @@
 "use client";
 
+import { ProductImage } from "@/ui/storefront/product-image";
+
 type CheckoutPaymentFieldsProps = {
   paymentMethod: "cod" | "aba_transfer";
   onPaymentMethodChange: (method: "cod" | "aba_transfer") => void;
@@ -10,7 +12,7 @@ type CheckoutPaymentFieldsProps = {
 };
 
 const fieldClass =
-  "h-11 w-full rounded-xl border border-[color:var(--shop-line)] bg-white px-3 text-sm outline-none focus:border-[color:var(--shop-accent)]";
+  "h-11 w-full rounded-xl border border-[color:var(--shop-line)] bg-[color:var(--shop-surface-elevated)] px-3 text-sm outline-none focus:border-[color:var(--shop-primary)]";
 
 export function CheckoutPaymentFields({
   paymentMethod,
@@ -26,7 +28,7 @@ export function CheckoutPaymentFields({
   ];
 
   return (
-    <div className="space-y-4 rounded-2xl bg-white/80 p-4 ring-1 ring-[color:var(--shop-line)]">
+    <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
       <h2 className="text-sm font-semibold">Payment</h2>
 
       {methods.length > 1 ? (
@@ -35,7 +37,7 @@ export function CheckoutPaymentFields({
             <label
               className={`flex cursor-pointer flex-col rounded-xl border px-3 py-3 text-sm ${
                 paymentMethod === "cod"
-                  ? "border-[color:var(--shop-accent)] bg-[color:var(--shop-accent)]/10"
+                  ? "border-[color:var(--shop-primary)] bg-[color:var(--shop-primary)]/20"
                   : "border-[color:var(--shop-line)]"
               }`}
             >
@@ -58,7 +60,7 @@ export function CheckoutPaymentFields({
             <label
               className={`flex cursor-pointer flex-col rounded-xl border px-3 py-3 text-sm ${
                 paymentMethod === "aba_transfer"
-                  ? "border-[color:var(--shop-accent)] bg-[color:var(--shop-accent)]/10"
+                  ? "border-[color:var(--shop-primary)] bg-[color:var(--shop-primary)]/20"
                   : "border-[color:var(--shop-line)]"
               }`}
             >
@@ -89,12 +91,14 @@ export function CheckoutPaymentFields({
             </div>
           ) : null}
           {abaQrImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={abaQrImageUrl}
-              alt="ABA payment QR"
-              className="mx-auto max-h-48 rounded-xl object-contain"
-            />
+            <div className="relative mx-auto h-48 w-48 overflow-hidden rounded-xl">
+              <ProductImage
+                src={abaQrImageUrl}
+                alt="ABA payment QR"
+                sizes="192px"
+                className="object-contain"
+              />
+            </div>
           ) : null}
           <div>
             <label htmlFor="paymentReference" className="mb-1 block text-xs font-medium">

@@ -1,7 +1,5 @@
 import Link from "next/link";
 
-import type { ProductWithRelations } from "@/modules/catalog";
-import { formatMoney } from "@/shared/money/money";
 import { Badge } from "@/ui/components/ui/badge";
 import { Button } from "@/ui/components/ui/button";
 import {
@@ -12,24 +10,35 @@ import {
   TableHeader,
   TableRow,
 } from "@/ui/components/ui/table";
+import { formatMoney } from "@/shared/money/money";
 
 import { DeleteProductButton } from "./delete-product-button";
 
+export type AdminProductListRow = {
+  id: string;
+  name: string;
+  slug: string;
+  priceMinor: number;
+  currency: string;
+  isAvailable: boolean;
+  category: { id: string; name: string } | null;
+};
+
 type ProductTableProps = {
-  products: ProductWithRelations[];
+  products: AdminProductListRow[];
 };
 
 export function ProductTable({ products }: ProductTableProps) {
   if (products.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+      <div className="px-4 py-12 text-center text-sm text-[color:var(--admin-ink-muted)]">
         No products yet. Create your first product to start selling.
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border">
+    <div>
       <Table>
         <TableHeader>
           <TableRow>

@@ -23,14 +23,14 @@ function formatPayment(method: AdminOrderListItem["paymentMethod"]) {
 export function OrderListTable({ orders }: OrderListTableProps) {
   if (orders.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed px-4 py-12 text-center text-sm text-muted-foreground">
+      <div className="px-4 py-12 text-center text-sm text-[color:var(--admin-ink-muted)]">
         No orders match these filters.
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border">
+    <div>
       <Table>
         <TableHeader>
           <TableRow>

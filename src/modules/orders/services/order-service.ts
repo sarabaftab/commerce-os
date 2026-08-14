@@ -33,7 +33,16 @@ export type CreateOrderCommand = {
   idempotencyKey?: string;
   fulfillmentMethod: FulfillmentMethod;
   addressLine?: string;
+  addressLine2?: string;
   cityOrArea?: string;
+  provinceOrState?: string;
+  postalCode?: string;
+  countryCode?: string;
+  recipientFirstName?: string;
+  recipientLastName?: string;
+  recipientPhone?: string;
+  addressLabel?: string;
+  sourceAddressId?: string;
   deliveryInstructions?: string;
   pickupLocationKey?: string;
   pickupLocationName?: string;
@@ -118,7 +127,7 @@ export async function createOrderInTransaction(
       include: orderInclude,
     });
     if (replay) {
-      return toOrderConfirmation(replay);
+      return toOrderConfirmation(replay, { includeConfirmationToken: true });
     }
   }
 
@@ -132,7 +141,16 @@ export async function createOrderInTransaction(
     idempotencyKey: command.idempotencyKey,
     fulfillmentMethod: command.fulfillmentMethod,
     addressLine: command.addressLine,
+    addressLine2: command.addressLine2,
     cityOrArea: command.cityOrArea,
+    provinceOrState: command.provinceOrState,
+    postalCode: command.postalCode,
+    countryCode: command.countryCode,
+    recipientFirstName: command.recipientFirstName,
+    recipientLastName: command.recipientLastName,
+    recipientPhone: command.recipientPhone,
+    addressLabel: command.addressLabel,
+    sourceAddressId: command.sourceAddressId,
     deliveryInstructions: command.deliveryInstructions,
     pickupLocationKey: command.pickupLocationKey,
     pickupLocationName: command.pickupLocationName,
@@ -155,7 +173,7 @@ export async function createOrderInTransaction(
     orderId: record.id,
   });
 
-  return toOrderConfirmation(record);
+  return toOrderConfirmation(record, { includeConfirmationToken: true });
 }
 
 /**

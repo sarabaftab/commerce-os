@@ -1,10 +1,9 @@
 import { prisma } from "@/shared/db/prisma";
 
 import {
-  findOpenCartByCustomerId,
-  findOpenCartByGuestToken,
+  findOpenCartLinesForMerge,
   touchCart,
-  upsertCartItem,
+  upsertCartItemsInTransaction,
 } from "../repositories/cart-repository";
 import { MAX_CART_QUANTITY } from "../types";
 
@@ -21,7 +20,11 @@ export async function mergeGuestCartIntoCustomer(input: {
     return;
   }
 
-  const guestCart = await findOpenCartByGuestToken(input.tenantId, input.guestToken);
+  const [guestCart, customerCart] = await Promise.all([
+    findOpenCartLinesForMerge(input.tenantId, { guestToken: input.guestToken }),
+    findOpenCartLinesForMerge(input.tenantId, { customerId: input.customerId }),
+  ]);
+
   if (!guestCart) {
     return;
   }
@@ -30,17 +33,15 @@ export async function mergeGuestCartIntoCustomer(input: {
     return;
   }
 
-  const customerCart = await findOpenCartByCustomerId(input.tenantId, input.customerId);
-
   if (!customerCart) {
-    await prisma.cart.update({
-      where: { id: guestCart.id },
+    await prisma.cart.updateMany({
+      where: { id: guestCart.id, tenantId: input.tenantId },
       data: {
         customerId: input.customerId,
         guestToken: null,
       },
     });
-    await touchCart(guestCart.id);
+    await touchCart(input.tenantId, guestCart.id);
     return;
   }
 
@@ -48,26 +49,44 @@ export async function mergeGuestCartIntoCustomer(input: {
     return;
   }
 
-  for (const item of guestCart.items) {
-    const existing = customerCart.items.find((line) => line.productId === item.productId);
-    const nextQuantity = Math.min(
-      (existing?.quantity ?? 0) + item.quantity,
-      MAX_CART_QUANTITY,
-    );
-    await upsertCartItem({
-      tenantId: input.tenantId,
-      cartId: customerCart.id,
-      productId: item.productId,
-      quantity: nextQuantity,
+  if (guestCart.items.length === 0) {
+    await prisma.cart.updateMany({
+      where: { id: guestCart.id, tenantId: input.tenantId },
+      data: {
+        status: "abandoned",
+        guestToken: null,
+      },
     });
+    return;
   }
 
-  await prisma.cart.update({
-    where: { id: guestCart.id },
-    data: {
-      status: "abandoned",
-      guestToken: null,
-    },
+  const mergedLines = guestCart.items.map((item) => {
+    const existing = customerCart.items.find((line) => line.productId === item.productId);
+    return {
+      productId: item.productId,
+      quantity: Math.min(
+        (existing?.quantity ?? 0) + item.quantity,
+        MAX_CART_QUANTITY,
+      ),
+    };
   });
-  await touchCart(customerCart.id);
+
+  await prisma.$transaction(async (tx) => {
+    await upsertCartItemsInTransaction(tx, {
+      tenantId: input.tenantId,
+      cartId: customerCart.id,
+      lines: mergedLines,
+    });
+    await tx.cart.updateMany({
+      where: { id: guestCart.id, tenantId: input.tenantId },
+      data: {
+        status: "abandoned",
+        guestToken: null,
+      },
+    });
+    await tx.cart.updateMany({
+      where: { id: customerCart.id, tenantId: input.tenantId },
+      data: { updatedAt: new Date() },
+    });
+  });
 }

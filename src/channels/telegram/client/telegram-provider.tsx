@@ -142,10 +142,78 @@ function loadTelegramScript(): Promise<void> {
 
 type TelegramProviderProps = {
   tenantSlug: string;
+  /** True when a customer session cookie is already present (SSR hint). */
+  initiallyAuthenticated?: boolean;
   children: ReactNode;
 };
 
-export function TelegramProvider({ tenantSlug, children }: TelegramProviderProps) {
+/** In-flight dedupe across Strict Mode remounts (same tab). */
+const authInflight = new Map<string, Promise<AuthResponse>>();
+
+type AuthResponse = {
+  ok: boolean;
+  displayName: string | null;
+  sessionReused: boolean;
+  mergedGuestCart: boolean;
+  isNewCustomer: boolean;
+};
+
+async function postTelegramAuth(
+  tenantSlug: string,
+  initData: string,
+): Promise<AuthResponse> {
+  const key = `${tenantSlug}:${initData.slice(0, 64)}`;
+  const existing = authInflight.get(key);
+  if (existing) {
+    return existing;
+  }
+
+  const promise = (async (): Promise<AuthResponse> => {
+    try {
+      const res = await fetch(`/api/v1/${tenantSlug}/telegram/auth`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData }),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        return {
+          ok: false,
+          displayName: null,
+          sessionReused: false,
+          mergedGuestCart: false,
+          isNewCustomer: false,
+        };
+      }
+      const payload = (await res.json()) as {
+        data?: {
+          displayName?: string;
+          sessionReused?: boolean;
+          mergedGuestCart?: boolean;
+          isNewCustomer?: boolean;
+        };
+      };
+      return {
+        ok: true,
+        displayName: payload.data?.displayName ?? null,
+        sessionReused: Boolean(payload.data?.sessionReused),
+        mergedGuestCart: Boolean(payload.data?.mergedGuestCart),
+        isNewCustomer: Boolean(payload.data?.isNewCustomer),
+      };
+    } finally {
+      authInflight.delete(key);
+    }
+  })();
+
+  authInflight.set(key, promise);
+  return promise;
+}
+
+export function TelegramProvider({
+  tenantSlug,
+  initiallyAuthenticated = false,
+  children,
+}: TelegramProviderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [ready, setReady] = useState(false);
@@ -156,6 +224,8 @@ export function TelegramProvider({ tenantSlug, children }: TelegramProviderProps
   const [themeParams, setThemeParams] = useState<TelegramThemeParams>({});
   const routerRef = useRef(router);
   routerRef.current = router;
+  const initiallyAuthenticatedRef = useRef(initiallyAuthenticated);
+  initiallyAuthenticatedRef.current = initiallyAuthenticated;
 
   useEffect(() => {
     let cancelled = false;
@@ -170,23 +240,24 @@ export function TelegramProvider({ tenantSlug, children }: TelegramProviderProps
       }
       setAuthStatus("loading");
       try {
-        const res = await fetch(`/api/v1/${tenantSlug}/telegram/auth`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ initData: app.initData }),
-          credentials: "include",
-        });
+        const result = await postTelegramAuth(tenantSlug, app.initData);
         if (cancelled) return;
-        if (!res.ok) {
+        if (!result.ok) {
           setAuthStatus("error");
           return;
         }
-        const payload = (await res.json()) as {
-          data?: { displayName?: string };
-        };
-        setDisplayName(payload.data?.displayName ?? null);
+        setDisplayName(result.displayName);
         setAuthStatus("authenticated");
-        routerRef.current.refresh();
+
+        // Skip full RSC refresh when session cookie already valid and nothing merged.
+        const needsRefresh =
+          result.mergedGuestCart ||
+          result.isNewCustomer ||
+          (!result.sessionReused && !initiallyAuthenticatedRef.current);
+
+        if (needsRefresh) {
+          routerRef.current.refresh();
+        }
       } catch {
         if (!cancelled) {
           setAuthStatus("error");
@@ -238,10 +309,9 @@ export function TelegramProvider({ tenantSlug, children }: TelegramProviderProps
       webApp.onEvent("themeChanged", onThemeChanged);
       webApp.onEvent("viewportChanged", onViewportChanged);
 
+      // Mark shell ready before auth network completes (theme/viewport usable).
+      setReady(true);
       await authenticate(webApp);
-      if (!cancelled) {
-        setReady(true);
-      }
     }
 
     void boot();

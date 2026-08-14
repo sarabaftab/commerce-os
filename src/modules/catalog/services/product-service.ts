@@ -3,9 +3,11 @@ import { AppError } from "@/shared/errors/app-error";
 import { findCategoryById } from "../repositories/category-repository";
 import { replacePrimaryMedia } from "../repositories/product-media-repository";
 import {
+  countProductsForTenant,
   createProduct,
   findProductById,
   findProductBySlug,
+  listAdminProductSummaries,
   listProducts,
   softDeleteProduct,
   updateProduct,
@@ -14,6 +16,29 @@ import type { CreateProductInput, UpdateProductInput } from "../types";
 
 export async function getProductsForTenant(tenantId: string) {
   return listProducts(tenantId);
+}
+
+export async function getAdminProductList(
+  tenantId: string,
+  options?: { page?: number; pageSize?: number },
+) {
+  const pageSize = Math.min(Math.max(options?.pageSize ?? 50, 1), 100);
+  const page = Math.max(options?.page ?? 1, 1);
+  const { items, total } = await listAdminProductSummaries(tenantId, {
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+  });
+  return {
+    items,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+  };
+}
+
+export async function getProductCountsForTenant(tenantId: string) {
+  return countProductsForTenant(tenantId);
 }
 
 export async function getProductForTenant(tenantId: string, productId: string) {

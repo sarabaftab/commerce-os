@@ -26,8 +26,8 @@ function formatStatus(status: OrderConfirmation["status"]) {
 export function OrderConfirmationView({ order }: OrderConfirmationViewProps) {
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-white/80 p-4 ring-1 ring-[color:var(--shop-line)]">
-        <p className="text-xs font-medium tracking-[0.14em] text-[color:var(--shop-accent)] uppercase">
+      <div className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
+        <p className="text-xs font-medium tracking-[0.14em] text-[color:var(--shop-ink-muted)] uppercase">
           Order confirmed
         </p>
         <h1 className="mt-2 font-[family-name:var(--font-shop-display)] text-3xl tracking-tight">
@@ -38,7 +38,7 @@ export function OrderConfirmationView({ order }: OrderConfirmationViewProps) {
         </p>
       </div>
 
-      <div className="space-y-4 rounded-2xl bg-white/80 p-4 ring-1 ring-[color:var(--shop-line)]">
+      <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
         <section>
           <h2 className="text-sm font-semibold">Customer</h2>
           <p className="mt-2 text-sm">{order.customer.displayName}</p>
@@ -72,7 +72,7 @@ export function OrderConfirmationView({ order }: OrderConfirmationViewProps) {
         </section>
       </div>
 
-      <div className="space-y-4 rounded-2xl bg-white/80 p-4 ring-1 ring-[color:var(--shop-line)]">
+      <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
         <h2 className="text-sm font-semibold">Items</h2>
         <ul className="space-y-3">
           {order.items.map((item) => (

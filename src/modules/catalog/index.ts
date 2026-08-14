@@ -2,6 +2,8 @@ export { getCategoriesForTenant } from "./services/category-service";
 export {
   createProductForTenant,
   deleteProductForTenant,
+  getAdminProductList,
+  getProductCountsForTenant,
   getProductForTenant,
   getProductsForTenant,
   updateProductForTenant,

@@ -129,17 +129,44 @@
   }
 }
 
-/* Storefront theme — pasture / fresh dairy, Telegram Mini App ready */
+/* Storefront theme — Billion Consulting Co., Ltd. (Telegram Mini App ready) */
 .shop-shell {
-  --shop-bg: #eef3f0;
-  --shop-surface: #f7faf8;
-  --shop-ink: #14241c;
-  --shop-ink-muted: #5d7268;
-  --shop-accent: #1f6b4a;
-  --shop-line: rgba(20, 36, 28, 0.1);
+  --shop-bg: #fffdf4;
+  --shop-surface: #fff1b9;
+  --shop-surface-elevated: #ffffff;
+  --shop-primary: #f9dc5c;
+  --shop-accent: #f9dc5c;
+  --shop-accent-soft: #fae588;
+  --shop-on-primary: #1a1710;
+  --shop-on-accent: #1a1710;
+  --shop-ink: #1a1710;
+  --shop-ink-muted: #6b6456;
+  --shop-line: rgba(26, 23, 16, 0.12);
+  --shop-shadow-sm: 0 1px 2px rgba(26, 23, 16, 0.06);
+  --shop-shadow-md: 0 8px 24px rgba(26, 23, 16, 0.08);
   background:
-    radial-gradient(ellipse 120% 80% at 10% -10%, rgba(31, 107, 74, 0.12), transparent 50%),
-    radial-gradient(ellipse 90% 60% at 100% 0%, rgba(120, 170, 150, 0.18), transparent 45%),
-    linear-gradient(180deg, #f4f7f5 0%, var(--shop-bg) 40%, #e8efeb 100%);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    radial-gradient(ellipse 120% 80% at 8% -12%, rgba(249, 220, 92, 0.35), transparent 52%),
+    radial-gradient(ellipse 90% 55% at 100% 0%, rgba(250, 229, 136, 0.45), transparent 48%),
+    linear-gradient(180deg, #fffdf4 0%, var(--shop-bg) 45%, #fff8e0 100%);
+  font-family: var(--font-shop-sans), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  color: var(--shop-ink);
+}
+
+/* Admin console — Billion-aligned, client-ready */
+.admin-shell {
+  --admin-bg: #fffdf4;
+  --admin-sidebar: #fffdf8;
+  --admin-surface: #fff1b9;
+  --admin-surface-elevated: #ffffff;
+  --admin-primary: #f9dc5c;
+  --admin-accent: #fae588;
+  --admin-on-primary: #1a1710;
+  --admin-ink: #1a1710;
+  --admin-ink-muted: #6b6456;
+  --admin-line: rgba(26, 23, 16, 0.1);
+  --admin-shadow: 0 1px 2px rgba(26, 23, 16, 0.05), 0 8px 24px rgba(26, 23, 16, 0.04);
+  background:
+    radial-gradient(ellipse 80% 50% at 100% 0%, rgba(249, 220, 92, 0.18), transparent 50%),
+    linear-gradient(180deg, #fffdf4 0%, #faf7ec 100%);
+  font-family: var(--font-admin-sans), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }

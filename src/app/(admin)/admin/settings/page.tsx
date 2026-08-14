@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SettingsSectionForm } from "@/modules/settings/components/settings-section-form";
 import { getSettingsForAdmin } from "@/modules/settings";
 import { requireAdminSession } from "@/shared/auth/admin-session";
+import { AdminPageHeader } from "@/ui/admin/admin-page-header";
 import { cn } from "@/ui/lib/utils";
 
 const tabs = [
@@ -24,23 +25,21 @@ export default async function AdminSettingsPage({ searchParams }: SettingsPagePr
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Configure {session.tenantName} storefront, checkout, and payments
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Settings"
+        description={`Configure ${session.tenantName} storefront, checkout, and payments`}
+      />
 
-      <div className="flex flex-wrap gap-2 border-b pb-3">
+      <div className="flex flex-wrap gap-1.5">
         {tabs.map((item) => (
           <Link
             key={item.id}
             href={`/admin/settings?tab=${item.id}`}
             className={cn(
-              "rounded-md px-3 py-1.5 text-sm",
+              "rounded-full px-3.5 py-1.5 text-sm font-medium transition",
               tab === item.id
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/80",
+                ? "bg-[color:var(--admin-primary)] text-[color:var(--admin-on-primary)] shadow-sm"
+                : "bg-[color:var(--admin-surface-elevated)] text-[color:var(--admin-ink-muted)] ring-1 ring-[color:var(--admin-line)] hover:bg-[color:var(--admin-surface)]",
             )}
           >
             {item.label}
@@ -48,7 +47,9 @@ export default async function AdminSettingsPage({ searchParams }: SettingsPagePr
         ))}
       </div>
 
-      <SettingsSectionForm bundle={bundle} section={tab} />
+      <div className="rounded-2xl border border-[color:var(--admin-line)] bg-[color:var(--admin-surface-elevated)] p-5 shadow-[var(--admin-shadow)] sm:p-6">
+        <SettingsSectionForm bundle={bundle} section={tab} />
+      </div>
     </div>
   );
 }

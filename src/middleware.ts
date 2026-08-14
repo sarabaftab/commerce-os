@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
 import { updateSession } from "@/shared/auth/supabase/middleware";
 
@@ -21,12 +22,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
-  // Lightweight cookie presence check; full membership checked in layouts/actions.
-  const hasAuthCookie = request.cookies
-    .getAll()
-    .some((cookie) => cookie.name.includes("auth-token") || cookie.name.includes("sb-"));
+  // Validate the session with Supabase Auth (not cookie-name presence).
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => {
+          request.cookies.set(name, value);
+        });
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options);
+        });
+      },
+    },
+  });
 
-  if (!hasAuthCookie) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
     const loginUrl = new URL("/admin/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);

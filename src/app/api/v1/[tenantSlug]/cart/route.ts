@@ -31,6 +31,14 @@ export async function GET(request: Request, context: RouteContext) {
     const { tenantSlug } = await context.params;
     const tenant = await resolveTenantFromSlug(tenantSlug);
     const identity = await resolveCartIdentityFromRequest(tenant.id, request);
+    const url = new URL(request.url);
+
+    // Header badge: lean count without creating an empty cart.
+    if (url.searchParams.get("view") === "count") {
+      const { getCartItemCount } = await import("@/modules/orders");
+      const itemCount = await getCartItemCount(identity);
+      return jsonOk({ itemCount });
+    }
 
     const result = await getOrCreateCart(identity, tenant.currency);
     return withCartCookie(result);

@@ -11,6 +11,7 @@ import {
   updateCartItemAction,
 } from "@/modules/orders/actions/cart-actions";
 import { formatMoney } from "@/shared/money/money";
+import { ProductImage } from "@/ui/storefront/product-image";
 
 type CartLineItemProps = {
   tenantSlug: string;
@@ -38,18 +39,22 @@ export function CartLineItem({ tenantSlug, basePath, line }: CartLineItemProps) 
 
   return (
     <div
-      className={`flex gap-3 rounded-2xl bg-white/80 p-3 ring-1 ring-[color:var(--shop-line)] ${!line.isAvailable ? "opacity-60" : ""}`}
+      className={`flex gap-3 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-3 ring-1 ring-[color:var(--shop-line)] ${!line.isAvailable ? "opacity-60" : ""}`}
     >
       <Link
         href={`${basePath}/products/${line.slug}`}
         className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-[color:var(--shop-surface)]"
       >
         {line.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={line.imageUrl} alt={line.name} className="h-full w-full object-cover" />
+          <ProductImage
+            src={line.imageUrl}
+            alt={line.name}
+            sizes="80px"
+            className="h-full w-full"
+          />
         ) : (
-          <div className="flex h-full w-full items-end bg-[radial-gradient(circle_at_30%_20%,#d7efe4,transparent_55%),linear-gradient(160deg,#eef6f2,#d9ebe3)] p-2">
-            <span className="text-[10px] text-[color:var(--shop-ink-muted)]">Fresh</span>
+          <div className="flex h-full w-full items-end bg-[radial-gradient(circle_at_30%_20%,#fae588,transparent_55%),linear-gradient(160deg,#fffdf4,#fff1b9)] p-2">
+            <span className="text-[10px] text-[color:var(--shop-ink-muted)]">Product</span>
           </div>
         )}
       </Link>
