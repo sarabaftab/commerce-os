@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { addToCartAction } from "@/modules/orders/actions/cart-actions";
+import { notifyCartChanged } from "@/ui/storefront/cart-events";
 
 type AddToCartButtonProps = {
   tenantSlug: string;
@@ -31,6 +32,7 @@ export function AddToCartButton({
             try {
               await addToCartAction(tenantSlug, productId, 1);
               setMessage("Added to cart");
+              notifyCartChanged();
               router.refresh();
             } catch {
               setMessage("Could not add to cart");

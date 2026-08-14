@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { CartSummary } from "@/modules/orders";
 import { clearCartAction } from "@/modules/orders/actions/cart-actions";
 import { formatMoney } from "@/shared/money/money";
+import { notifyCartChanged } from "@/ui/storefront/cart-events";
 
 type CartSummaryPanelProps = {
   tenantSlug: string;
@@ -34,6 +35,7 @@ export function CartSummaryPanel({ tenantSlug, summary }: CartSummaryPanelProps)
       {hasAvailableItems ? (
         <Link
           href={`/${tenantSlug}/checkout`}
+          prefetch={false}
           className="flex h-12 w-full items-center justify-center rounded-full bg-[color:var(--shop-primary)] text-sm font-semibold text-[color:var(--shop-on-primary)]"
         >
           Proceed to checkout
@@ -55,6 +57,7 @@ export function CartSummaryPanel({ tenantSlug, summary }: CartSummaryPanelProps)
           onClick={() => {
             startTransition(async () => {
               await clearCartAction(tenantSlug);
+              notifyCartChanged();
               router.refresh();
             });
           }}

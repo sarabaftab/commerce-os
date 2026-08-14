@@ -26,7 +26,7 @@ Required variables:
 |----------|---------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
-| `DATABASE_URL` | Session-mode pooler URL (port `5432`) — required for Prisma interactive transactions |
+| `DATABASE_URL` | Session-mode pooler URL (port `5432`) — required for Prisma interactive transactions. App sets `connection_limit=1` in production. |
 | `DIRECT_URL` | Session-mode pooler URL (port `5432`) for migrations when direct `db.*` host is unreachable |
 | `SEED_ADMIN_SUPABASE_USER_ID` | UUID of the Supabase Auth admin user |
 | `SEED_ADMIN_EMAIL` | Defaults to `admin@kina2.com` |

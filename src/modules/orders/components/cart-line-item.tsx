@@ -11,6 +11,7 @@ import {
   updateCartItemAction,
 } from "@/modules/orders/actions/cart-actions";
 import { formatMoney } from "@/shared/money/money";
+import { notifyCartChanged } from "@/ui/storefront/cart-events";
 import { ProductImage } from "@/ui/storefront/product-image";
 
 type CartLineItemProps = {
@@ -26,6 +27,7 @@ export function CartLineItem({ tenantSlug, basePath, line }: CartLineItemProps) 
   const updateQuantity = (quantity: number) => {
     startTransition(async () => {
       await updateCartItemAction(tenantSlug, line.id, quantity);
+      notifyCartChanged();
       router.refresh();
     });
   };
@@ -33,6 +35,7 @@ export function CartLineItem({ tenantSlug, basePath, line }: CartLineItemProps) 
   const remove = () => {
     startTransition(async () => {
       await removeCartItemAction(tenantSlug, line.id);
+      notifyCartChanged();
       router.refresh();
     });
   };

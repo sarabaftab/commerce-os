@@ -12,6 +12,7 @@ export function CartIconLink({ basePath, itemCount }: CartIconLinkProps) {
   return (
     <Link
       href={`${basePath}/cart`}
+      prefetch={false}
       className="relative inline-flex size-10 items-center justify-center rounded-full text-[color:var(--shop-ink)] transition hover:bg-[color:var(--shop-surface)]/70"
       aria-label={`Cart, ${itemCount} items`}
     >

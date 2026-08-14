@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 
+import { CART_CHANGED_EVENT } from "@/ui/storefront/cart-events";
 import { CartIconLink } from "@/ui/storefront/cart-icon-link";
 
 type Props = {
@@ -13,9 +13,11 @@ type Props = {
 /**
  * Customer-specific header chrome — fetched client-side so the storefront
  * layout/pages stay free of cookies() and remain ISR-eligible.
+ *
+ * Do not refetch on every pathname: Next already prefetches /cart and /account
+ * unless disabled; pathname refetch stacked extra pooler sessions.
  */
 export function StorefrontHeaderChrome({ tenantSlug }: Props) {
-  const pathname = usePathname();
   const [itemCount, setItemCount] = useState(0);
   const basePath = `/${tenantSlug}`;
 
@@ -39,15 +41,21 @@ export function StorefrontHeaderChrome({ tenantSlug }: Props) {
     }
 
     void loadCount();
+    const onCartChanged = () => {
+      void loadCount();
+    };
+    window.addEventListener(CART_CHANGED_EVENT, onCartChanged);
     return () => {
       cancelled = true;
+      window.removeEventListener(CART_CHANGED_EVENT, onCartChanged);
     };
-  }, [tenantSlug, pathname]);
+  }, [tenantSlug]);
 
   return (
     <>
       <Link
         href={`${basePath}/account`}
+        prefetch={false}
         className="rounded-full px-3 py-2 text-[color:var(--shop-ink)] transition hover:bg-[color:var(--shop-surface)]/70"
       >
         Account

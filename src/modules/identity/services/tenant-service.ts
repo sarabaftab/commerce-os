@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 
 import { AppError } from "@/shared/errors/app-error";
 
@@ -12,9 +13,17 @@ export async function getTenantById(tenantId: string) {
   return tenant;
 }
 
-/** Deduped per request — storefront layout/pages/actions often resolve the same slug. */
+function loadTenantBySlugCached(slug: string) {
+  return unstable_cache(
+    async () => findTenantBySlug(slug),
+    [`tenant-by-slug`, slug],
+    { revalidate: 300, tags: [`tenant:${slug}`] },
+  )();
+}
+
+/** Per-request React.cache + 5min data cache — shared by RSC, actions, and cart API. */
 export const getTenantBySlug = cache(async (slug: string) => {
-  const tenant = await findTenantBySlug(slug);
+  const tenant = await loadTenantBySlugCached(slug);
   if (!tenant) {
     throw new AppError("NOT_FOUND", "Tenant not found");
   }
