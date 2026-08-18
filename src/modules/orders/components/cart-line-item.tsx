@@ -49,12 +49,14 @@ export function CartLineItem({ tenantSlug, basePath, line }: CartLineItemProps) 
         className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-[color:var(--shop-surface)]"
       >
         {line.imageUrl ? (
-          <ProductImage
-            src={line.imageUrl}
-            alt={line.name}
-            sizes="80px"
-            className="h-full w-full"
-          />
+          <div className="absolute inset-1.5">
+            <ProductImage
+              src={line.imageUrl}
+              alt={line.name}
+              sizes="80px"
+              className="h-full w-full"
+            />
+          </div>
         ) : (
           <div className="flex h-full w-full items-end bg-[radial-gradient(circle_at_30%_20%,#fae588,transparent_55%),linear-gradient(160deg,#fffdf4,#fff1b9)] p-2">
             <span className="text-[10px] text-[color:var(--shop-ink-muted)]">Product</span>

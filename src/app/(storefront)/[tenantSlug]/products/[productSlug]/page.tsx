@@ -51,12 +51,14 @@ export default async function StorefrontProductDetailPage({
       <div className="overflow-hidden rounded-[1.75rem] bg-[color:var(--shop-surface-elevated)] ring-1 ring-[color:var(--shop-line)]">
         <div className="relative aspect-[5/4] bg-[color:var(--shop-surface)]">
           {imageUrl ? (
-            <ProductImage
-              src={imageUrl}
-              alt={imageAlt}
-              priority
-              sizes="(max-width: 512px) 100vw, 512px"
-            />
+            <div className="absolute inset-5">
+              <ProductImage
+                src={imageUrl}
+                alt={imageAlt}
+                priority
+                sizes="(max-width: 512px) 100vw, 512px"
+              />
+            </div>
           ) : (
             <div className="flex h-full w-full items-end bg-[radial-gradient(circle_at_30%_20%,#fae588,transparent_55%),linear-gradient(160deg,#fffdf4,#fff1b9)] p-6">
               <span className="text-sm text-[color:var(--shop-ink-muted)]">

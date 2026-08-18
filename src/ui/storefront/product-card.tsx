@@ -29,12 +29,13 @@ export function ProductCard({ product, href, className, priority = false }: Prod
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-[color:var(--shop-surface)]">
         {imageUrl ? (
-          <ProductImage
-            src={imageUrl}
-            alt={imageAlt}
-            priority={priority}
-            className="transition duration-300 group-hover:scale-[1.03]"
-          />
+          <div className="absolute inset-3">
+            <ProductImage
+              src={imageUrl}
+              alt={imageAlt}
+              priority={priority}
+            />
+          </div>
         ) : (
           <div className="flex h-full w-full items-end bg-[radial-gradient(circle_at_30%_20%,#fae588,transparent_55%),linear-gradient(160deg,#fffdf4,#fff1b9)] p-4">
             <span className="text-sm font-medium text-[color:var(--shop-ink-muted)]">

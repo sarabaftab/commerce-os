@@ -35,7 +35,7 @@ export function ProductImage({
   if (!isOptimizableSrc(src)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={src} alt={alt} className={cn("object-cover", className)} loading="lazy" />
+      <img src={src} alt={alt} className={cn("object-contain", className)} loading="lazy" />
     );
   }
 
@@ -47,7 +47,7 @@ export function ProductImage({
         fill
         sizes={sizes}
         priority={priority}
-        className={cn("object-cover", className)}
+        className={cn("object-contain", className)}
       />
     );
   }
@@ -60,7 +60,7 @@ export function ProductImage({
       height={height ?? 96}
       sizes={sizes}
       priority={priority}
-      className={cn("object-cover", className)}
+      className={cn("object-contain", className)}
     />
   );
 }
