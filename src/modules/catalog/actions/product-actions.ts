@@ -25,6 +25,8 @@ function formDataToObject(formData: FormData) {
     name: String(formData.get("name") ?? ""),
     slug: String(formData.get("slug") ?? ""),
     description: String(formData.get("description") ?? ""),
+    brand: String(formData.get("brand") ?? ""),
+    volume: String(formData.get("volume") ?? ""),
     priceMajor: String(formData.get("priceMajor") ?? ""),
     currency: String(formData.get("currency") ?? ""),
     categoryId: String(formData.get("categoryId") ?? ""),

@@ -9,6 +9,10 @@ export {
   updateProductForTenant,
 } from "./services/product-service";
 export {
+  importValidProductsForTenant,
+  previewProductImport,
+} from "./services/product-import-service";
+export {
   getFeaturedStorefrontProducts,
   getStorefrontCategories,
   getStorefrontCategoryBySlug,

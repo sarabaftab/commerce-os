@@ -126,6 +126,8 @@ model Product {
   name        String
   slug        String
   description String?
+  brand       String?
+  volume      String?
   priceMinor  Int       @map("price_minor")
   currency    String    @db.Char(3)
   isAvailable Boolean   @default(true) @map("is_available")

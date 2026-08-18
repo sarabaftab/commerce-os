@@ -41,15 +41,23 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
         title="Products"
         description={`${list.total} products in ${session.tenantName}`}
         actions={
-          <Link
-            href="/admin/products/new"
-            className={cn(
-              buttonVariants(),
-              "rounded-full bg-[color:var(--admin-primary)] text-[color:var(--admin-on-primary)] hover:bg-[color:var(--admin-accent)]",
-            )}
-          >
-            New product
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/admin/products/import"
+              className={cn(buttonVariants({ variant: "outline" }), "rounded-full")}
+            >
+              Import products
+            </Link>
+            <Link
+              href="/admin/products/new"
+              className={cn(
+                buttonVariants(),
+                "rounded-full bg-[color:var(--admin-primary)] text-[color:var(--admin-on-primary)] hover:bg-[color:var(--admin-accent)]",
+              )}
+            >
+              New product
+            </Link>
+          </div>
         }
       />
 

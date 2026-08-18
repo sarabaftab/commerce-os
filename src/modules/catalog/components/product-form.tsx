@@ -66,6 +66,22 @@ export function ProductForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
+          <Label htmlFor="brand">Brand (optional)</Label>
+          <Input id="brand" name="brand" defaultValue={product?.brand ?? ""} />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="volume">Volume (optional)</Label>
+          <Input
+            id="volume"
+            name="volume"
+            defaultValue={product?.volume ?? ""}
+            placeholder="e.g. 1L"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-2">
           <Label htmlFor="priceMajor">Price ({currency})</Label>
           <Input
             id="priceMajor"

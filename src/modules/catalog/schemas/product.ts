@@ -11,6 +11,8 @@ export const productFormSchema = z.object({
     .max(140)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase kebab-case"),
   description: z.union([z.literal(""), z.string().trim().max(2000)]).optional(),
+  brand: z.union([z.literal(""), z.string().trim().max(80)]).optional(),
+  volume: z.union([z.literal(""), z.string().trim().max(40)]).optional(),
   priceMajor: z.coerce.number().finite().nonnegative("Price must be zero or positive"),
   currency: z
     .string()
@@ -35,6 +37,8 @@ export function productFormToCreateInput(
     name: values.name,
     slug: values.slug,
     description: values.description || null,
+    brand: values.brand || null,
+    volume: values.volume || null,
     priceMinor: toMinor(values.priceMajor, values.currency),
     currency: values.currency,
     categoryId: values.categoryId || null,

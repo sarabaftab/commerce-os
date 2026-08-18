@@ -10,6 +10,8 @@ export type CreateProductInput = {
   name: string;
   slug: string;
   description?: string | null;
+  brand?: string | null;
+  volume?: string | null;
   priceMinor: number;
   currency: string;
   categoryId?: string | null;
@@ -25,6 +27,8 @@ export type UpdateProductInput = {
   name: string;
   slug: string;
   description?: string | null;
+  brand?: string | null;
+  volume?: string | null;
   priceMinor: number;
   currency: string;
   categoryId?: string | null;
