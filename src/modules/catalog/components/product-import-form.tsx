@@ -53,6 +53,7 @@ export function ProductImportForm({ currency }: { currency: string }) {
           </div>
           <a
             href="/admin/products/import/template"
+            download="products-template.csv"
             className="text-sm font-medium underline underline-offset-4"
           >
             Download template
