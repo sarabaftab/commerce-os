@@ -69,6 +69,12 @@ export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) 
           <p className="text-xs font-medium tracking-wide text-[color:var(--shop-ink)]">
             {STOREFRONT_BRAND.name}
           </p>
+          <Link
+            href={`${basePath}/faq`}
+            className="text-xs font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
+          >
+            FAQ
+          </Link>
           <StorefrontAsyncBoundary tenantSlug={tenantSlug} slot="footer" />
         </div>
       </footer>

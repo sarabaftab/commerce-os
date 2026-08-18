@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CircleHelp,
   FolderTree,
   LayoutDashboard,
   Package,
@@ -17,6 +18,7 @@ const links = [
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
+  { href: "/admin/faqs", label: "FAQs", icon: CircleHelp },
   { href: "/admin/settings", label: "Settings", icon: Settings2 },
 ] as const;
 

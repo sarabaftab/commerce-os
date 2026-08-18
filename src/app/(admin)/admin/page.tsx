@@ -238,6 +238,11 @@ export default async function AdminDashboardPage() {
             description="Create a new item for the storefront"
           />
           <QuickAction
+            href="/admin/faqs"
+            title="Manage FAQs"
+            description="Customer questions for the storefront and Telegram"
+          />
+          <QuickAction
             href="/admin/settings"
             title="Store settings"
             description="Delivery, pickup, and payment options"

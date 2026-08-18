@@ -81,6 +81,17 @@ export default async function AccountHomePage({ params }: PageProps) {
             </p>
           </Link>
         </li>
+        <li>
+          <Link
+            href={`/${tenantSlug}/faq`}
+            className="block rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]"
+          >
+            <p className="text-sm font-semibold">Help / FAQ</p>
+            <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
+              Common questions about ordering and delivery
+            </p>
+          </Link>
+        </li>
       </ul>
     </div>
   );
