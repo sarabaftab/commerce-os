@@ -174,10 +174,10 @@ describe("decodeTelegramInitDataField", () => {
 });
 
 describe("telegram session handoff", () => {
-  it("accepts a fresh signed session token and rejects a tampered one", () => {
+  it("accepts a fresh signed session token and rejects a tampered one", async () => {
     const token = "session-token-example";
-    const handoff = createTelegramSessionHandoff(token);
-    expect(readTelegramSessionHandoff(handoff)).toBe(token);
-    expect(readTelegramSessionHandoff(`${handoff}x`)).toBeNull();
+    const handoff = await createTelegramSessionHandoff(token);
+    await expect(readTelegramSessionHandoff(handoff)).resolves.toBe(token);
+    await expect(readTelegramSessionHandoff(`${handoff}x`)).resolves.toBeNull();
   });
 });

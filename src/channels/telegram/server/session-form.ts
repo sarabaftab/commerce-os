@@ -67,7 +67,10 @@ export async function handleTelegramSessionFormPost(request: Request, tenantSlug
     }
 
     const url = new URL(nextPath, request.url);
-    url.searchParams.set(TELEGRAM_SESSION_HANDOFF_QUERY, createTelegramSessionHandoff(token));
+    url.searchParams.set(
+      TELEGRAM_SESSION_HANDOFF_QUERY,
+      await createTelegramSessionHandoff(token),
+    );
     const response = htmlToAccount(`${url.pathname}${url.search}`);
     attachCustomerSessionCookie(response, token);
     if (startParam) {

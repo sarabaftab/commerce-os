@@ -9,7 +9,7 @@ import { updateSession } from "@/shared/auth/supabase/middleware";
 
 const CUSTOMER_SESSION_COOKIE = "commerceos_customer";
 
-function applyHandoffCookie(request: NextRequest): NextResponse | null {
+async function applyHandoffCookie(request: NextRequest): Promise<NextResponse | null> {
   const { pathname, searchParams } = request.nextUrl;
   if (!pathname.includes("/account")) {
     return null;
@@ -18,7 +18,7 @@ function applyHandoffCookie(request: NextRequest): NextResponse | null {
   if (!raw) {
     return null;
   }
-  const sessionToken = readTelegramSessionHandoff(raw);
+  const sessionToken = await readTelegramSessionHandoff(raw);
   const url = request.nextUrl.clone();
   url.searchParams.delete(TELEGRAM_SESSION_HANDOFF_QUERY);
   const response = NextResponse.redirect(url);
@@ -37,7 +37,7 @@ function applyHandoffCookie(request: NextRequest): NextResponse | null {
 }
 
 export async function middleware(request: NextRequest) {
-  const handoffResponse = applyHandoffCookie(request);
+  const handoffResponse = await applyHandoffCookie(request);
   if (handoffResponse) {
     return handoffResponse;
   }
