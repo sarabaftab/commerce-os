@@ -12,6 +12,8 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+import { waitForTelegramInitData } from "@/channels/telegram/client/wait-for-init-data";
+
 type TelegramThemeParams = {
   bg_color?: string;
   text_color?: string;
@@ -67,6 +69,7 @@ type TelegramContextValue = {
   displayName: string | null;
   colorScheme: "light" | "dark" | null;
   themeParams: TelegramThemeParams;
+  retryAuth: () => void;
 };
 
 const TelegramContext = createContext<TelegramContextValue>({
@@ -76,6 +79,7 @@ const TelegramContext = createContext<TelegramContextValue>({
   displayName: null,
   colorScheme: null,
   themeParams: {},
+  retryAuth: () => undefined,
 });
 
 function applyThemeCss(theme: TelegramThemeParams, colorScheme: "light" | "dark") {
@@ -226,51 +230,66 @@ export function TelegramProvider({
   routerRef.current = router;
   const initiallyAuthenticatedRef = useRef(initiallyAuthenticated);
   initiallyAuthenticatedRef.current = initiallyAuthenticated;
+  const cancelledRef = useRef(false);
+  const webAppRef = useRef<TelegramWebApp | undefined>(undefined);
+
+  const authenticate = useCallback(async (initData: string) => {
+    setAuthStatus("loading");
+    try {
+      const result = await postTelegramAuth(tenantSlug, initData);
+      if (cancelledRef.current) return;
+      if (!result.ok) {
+        setAuthStatus("error");
+        return;
+      }
+      setDisplayName(result.displayName);
+      setAuthStatus("authenticated");
+
+      const needsRefresh =
+        result.mergedGuestCart ||
+        result.isNewCustomer ||
+        (!result.sessionReused && !initiallyAuthenticatedRef.current);
+
+      if (needsRefresh) {
+        routerRef.current.refresh();
+      }
+    } catch {
+      if (!cancelledRef.current) {
+        setAuthStatus("error");
+      }
+    }
+  }, [tenantSlug]);
+
+  const retryAuth = useCallback(() => {
+    const app = webAppRef.current ?? window.Telegram?.WebApp;
+    if (!app) {
+      return;
+    }
+    void (async () => {
+      setAuthStatus("loading");
+      const initData = await waitForTelegramInitData(() => app.initData);
+      if (cancelledRef.current) return;
+      if (!initData) {
+        setAuthStatus("error");
+        return;
+      }
+      await authenticate(initData);
+    })();
+  }, [authenticate]);
 
   useEffect(() => {
-    let cancelled = false;
+    cancelledRef.current = false;
     let webApp: TelegramWebApp | undefined;
     let onThemeChanged: (() => void) | undefined;
     let onViewportChanged: (() => void) | undefined;
 
-    async function authenticate(app: TelegramWebApp) {
-      if (!app.initData) {
-        setAuthStatus("skipped");
-        return;
-      }
-      setAuthStatus("loading");
-      try {
-        const result = await postTelegramAuth(tenantSlug, app.initData);
-        if (cancelled) return;
-        if (!result.ok) {
-          setAuthStatus("error");
-          return;
-        }
-        setDisplayName(result.displayName);
-        setAuthStatus("authenticated");
-
-        // Skip full RSC refresh when session cookie already valid and nothing merged.
-        const needsRefresh =
-          result.mergedGuestCart ||
-          result.isNewCustomer ||
-          (!result.sessionReused && !initiallyAuthenticatedRef.current);
-
-        if (needsRefresh) {
-          routerRef.current.refresh();
-        }
-      } catch {
-        if (!cancelled) {
-          setAuthStatus("error");
-        }
-      }
-    }
-
     async function boot() {
       await loadTelegramScript();
-      if (cancelled) return;
+      if (cancelledRef.current) return;
 
       webApp = window.Telegram?.WebApp;
-      if (!webApp?.initData) {
+      webAppRef.current = webApp;
+      if (!webApp) {
         setReady(true);
         setAuthStatus("skipped");
         return;
@@ -309,15 +328,21 @@ export function TelegramProvider({
       webApp.onEvent("themeChanged", onThemeChanged);
       webApp.onEvent("viewportChanged", onViewportChanged);
 
-      // Mark shell ready before auth network completes (theme/viewport usable).
       setReady(true);
-      await authenticate(webApp);
+      setAuthStatus("loading");
+      const initData = await waitForTelegramInitData(() => webApp?.initData);
+      if (cancelledRef.current) return;
+      if (!initData) {
+        setAuthStatus("error");
+        return;
+      }
+      await authenticate(initData);
     }
 
     void boot();
 
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
       if (webApp && onThemeChanged) {
         webApp.offEvent("themeChanged", onThemeChanged);
       }
@@ -325,7 +350,7 @@ export function TelegramProvider({
         webApp.offEvent("viewportChanged", onViewportChanged);
       }
     };
-  }, [tenantSlug]);
+  }, [authenticate, tenantSlug]);
 
   useEffect(() => {
     const webApp = window.Telegram?.WebApp;
@@ -365,8 +390,9 @@ export function TelegramProvider({
       displayName,
       colorScheme,
       themeParams,
+      retryAuth,
     }),
-    [isTelegram, ready, authStatus, displayName, colorScheme, themeParams],
+    [isTelegram, ready, authStatus, displayName, colorScheme, themeParams, retryAuth],
   );
 
   return (

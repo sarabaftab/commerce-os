@@ -1,7 +1,7 @@
 import { CustomerOrderList } from "@/modules/customers/components/customer-order-list";
 import {
   listCustomerOrders,
-  requireCustomerSession,
+  loadAccountPageSession,
   type CustomerOrderListFilter,
 } from "@/modules/customers";
 import { resolveStorefrontTenant } from "@/modules/storefront";
@@ -27,7 +27,10 @@ export default async function AccountOrdersPage({ params, searchParams }: PagePr
   const page = Number(query.page ?? "1") || 1;
 
   const { tenant } = await resolveStorefrontTenant(tenantSlug);
-  const session = await requireCustomerSession(tenant.id);
+  const session = await loadAccountPageSession(tenant.id);
+  if (!session) {
+    return null;
+  }
   const result = await listCustomerOrders({
     tenantId: session.tenantId,
     customerId: session.customerId,

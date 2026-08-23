@@ -1,5 +1,5 @@
 import { AddressBook } from "@/modules/customers/components/address-book";
-import { listCustomerAddresses, requireCustomerSession } from "@/modules/customers";
+import { listCustomerAddresses, loadAccountPageSession } from "@/modules/customers";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,10 @@ type PageProps = {
 export default async function AccountAddressesPage({ params }: PageProps) {
   const { tenantSlug } = await params;
   const { tenant } = await resolveStorefrontTenant(tenantSlug);
-  const session = await requireCustomerSession(tenant.id);
+  const session = await loadAccountPageSession(tenant.id);
+  if (!session) {
+    return null;
+  }
   const addresses = await listCustomerAddresses(session.tenantId, session.customerId);
 
   return (

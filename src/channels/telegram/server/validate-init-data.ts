@@ -115,9 +115,11 @@ export function validateTelegramInitData(
     throw new AppError("UNAUTHORIZED", "Invalid Telegram user payload");
   }
 
-  if (!user || typeof user.id !== "number" || !Number.isFinite(user.id)) {
+  const userId = parseTelegramUserId(user.id);
+  if (userId === null) {
     throw new AppError("UNAUTHORIZED", "Invalid Telegram user id");
   }
+  user.id = userId;
 
   const raw: Record<string, string> = {};
   for (const [key, value] of params.entries()) {
@@ -131,6 +133,20 @@ export function validateTelegramInitData(
     queryId: params.get("query_id") || undefined,
     raw,
   };
+}
+
+/** Telegram user.id is usually a number; some clients send a numeric string. */
+export function parseTelegramUserId(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+  if (typeof value === "string" && /^\d+$/.test(value)) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+  return null;
 }
 
 export function telegramDisplayName(user: TelegramWebAppUser): string {

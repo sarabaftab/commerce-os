@@ -4,7 +4,7 @@ import {
   getCustomerProfile,
   listCustomerAddresses,
   listCustomerOrders,
-  requireCustomerSession,
+  loadAccountPageSession,
 } from "@/modules/customers";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 
@@ -17,7 +17,10 @@ type PageProps = {
 export default async function AccountHomePage({ params }: PageProps) {
   const { tenantSlug } = await params;
   const { tenant } = await resolveStorefrontTenant(tenantSlug);
-  const session = await requireCustomerSession(tenant.id);
+  const session = await loadAccountPageSession(tenant.id);
+  if (!session) {
+    return null;
+  }
   const [profile, addresses, orders] = await Promise.all([
     getCustomerProfile(session.tenantId, session.customerId),
     listCustomerAddresses(session.tenantId, session.customerId),

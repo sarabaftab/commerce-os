@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  composeDisplayName,
   customerAddressInputSchema,
   customerProfileUpdateSchema,
-} from "@/modules/customers/schemas/profile";
+} from "@/modules/customers";
 import {
   customerOrderStatusLabel,
   formatAddressShort,
@@ -79,6 +80,25 @@ describe("customerAddressInputSchema", () => {
       countryCode: "KH",
     });
     expect(parsed.success).toBe(false);
+  });
+});
+
+describe("first-time Telegram profile display", () => {
+  it("does not require phone, email, or a pre-filled name to show Account", () => {
+    expect(
+      composeDisplayName({
+        firstName: null,
+        lastName: null,
+        displayName: "Telegram 55",
+      }),
+    ).toBe("Telegram 55");
+    expect(
+      composeDisplayName({
+        firstName: null,
+        lastName: null,
+        displayName: null,
+      }),
+    ).toBeNull();
   });
 });
 

@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-
+import { AccountAuthGate } from "@/modules/customers/components/account-auth-gate";
 import { AccountNav } from "@/modules/customers/components/account-nav";
 import { getOptionalCustomerSession } from "@/modules/customers";
 import { resolveStorefrontTenant } from "@/modules/storefront";
@@ -13,11 +12,11 @@ type LayoutProps = {
 
 export default async function AccountLayout({ children, params }: LayoutProps) {
   const { tenantSlug } = await params;
-  const { tenant, basePath } = await resolveStorefrontTenant(tenantSlug);
+  const { tenant } = await resolveStorefrontTenant(tenantSlug);
   const session = await getOptionalCustomerSession(tenant.id);
 
   if (!session) {
-    redirect(basePath);
+    return <AccountAuthGate tenantSlug={tenantSlug} />;
   }
 
   return (

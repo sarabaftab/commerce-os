@@ -1,5 +1,5 @@
 import { ProfileForm } from "@/modules/customers/components/profile-form";
-import { getCustomerProfile, requireCustomerSession } from "@/modules/customers";
+import { getCustomerProfile, loadAccountPageSession } from "@/modules/customers";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,10 @@ type PageProps = {
 export default async function AccountProfilePage({ params }: PageProps) {
   const { tenantSlug } = await params;
   const { tenant } = await resolveStorefrontTenant(tenantSlug);
-  const session = await requireCustomerSession(tenant.id);
+  const session = await loadAccountPageSession(tenant.id);
+  if (!session) {
+    return null;
+  }
   const profile = await getCustomerProfile(session.tenantId, session.customerId);
 
   return (

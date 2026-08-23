@@ -20,6 +20,7 @@ export {
   requireCustomerSession,
   getOptionalCustomerSession,
 } from "./services/customer-auth";
+export { loadAccountPageSession } from "./account-page-session";
 
 export {
   getCustomerProfile,
