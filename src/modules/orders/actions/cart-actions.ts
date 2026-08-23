@@ -15,6 +15,7 @@ import {
 } from "@/modules/orders";
 import { resolveCartIdentityFromCookies } from "@/shared/cart/cart-request";
 import type { CartSummary } from "@/modules/orders";
+import { addCartItemSchema } from "@/modules/orders/schemas/cart";
 
 const EMPTY_CART = (currency: string): CartSummary => ({
   id: "",
@@ -63,7 +64,8 @@ export async function addToCartAction(
   quantity = 1,
 ) {
   const { tenant, identity } = await resolveTenantAndIdentity(tenantSlug);
-  const result = await addItemToCart(identity, tenant.currency, { productId, quantity });
+  const parsed = addCartItemSchema.parse({ productId, quantity });
+  const result = await addItemToCart(identity, tenant.currency, parsed);
   await setGuestCookieIfNeeded(result.guestToken);
   revalidatePath(`/${tenantSlug}/cart`);
   revalidatePath(`/${tenantSlug}`, "layout");

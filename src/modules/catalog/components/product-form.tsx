@@ -70,14 +70,31 @@ export function ProductForm({
           <Input id="brand" name="brand" defaultValue={product?.brand ?? ""} />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="volume">Volume (optional)</Label>
+          <Label htmlFor="volume">Pack size / volume (optional)</Label>
           <Input
             id="volume"
             name="volume"
             defaultValue={product?.volume ?? ""}
-            placeholder="e.g. 1L"
+            placeholder="e.g. 12 × 950ml"
           />
         </div>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="sellingUnit">Selling unit</Label>
+        <select
+          id="sellingUnit"
+          name="sellingUnit"
+          defaultValue={product?.sellingUnit ?? "item"}
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
+        >
+          <option value="item">Item</option>
+          <option value="pack">Pack</option>
+          <option value="case">Case</option>
+        </select>
+        <p className="text-xs text-muted-foreground">
+          Shown next to price (for example $30.00 / case). Does not change totals.
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

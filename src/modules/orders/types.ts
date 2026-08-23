@@ -9,6 +9,7 @@ import type {
   OrderStatus,
   OrderStatusHistory,
   PaymentMethod,
+  SellingUnit,
 } from "@prisma/client";
 
 export type {
@@ -45,6 +46,8 @@ export type CartLineView = {
   currency: string;
   imageUrl: string | null;
   isAvailable: boolean;
+  volume: string | null;
+  sellingUnit: SellingUnit;
 };
 
 export type CartSummary = {
@@ -65,6 +68,8 @@ export type CartWithItems = Cart & {
       currency: string;
       isAvailable: boolean;
       deletedAt: Date | null;
+      volume: string | null;
+      sellingUnit: SellingUnit;
       media: { url: string; alt: string | null }[];
     };
   })[];
@@ -79,6 +84,8 @@ export type OrderLineView = {
   quantity: number;
   unitPriceMinor: number;
   lineTotalMinor: number;
+  volume: string | null;
+  sellingUnit: SellingUnit;
 };
 
 export type OrderConfirmation = {

@@ -3,6 +3,7 @@ import type {
   IdentityChannel,
   PaymentMethod,
   Prisma,
+  SellingUnit,
 } from "@prisma/client";
 
 import { prisma } from "@/shared/db/prisma";
@@ -29,6 +30,8 @@ export function toOrderConfirmation(
     quantity: item.quantity,
     unitPriceMinor: item.unitPriceMinor,
     lineTotalMinor: item.lineTotalMinor,
+    volume: item.volumeSnapshot,
+    sellingUnit: item.sellingUnitSnapshot ?? "item",
   }));
 
   return {
@@ -158,6 +161,8 @@ export type CreateOrderRecordInput = {
   items: {
     productId: string;
     nameSnapshot: string;
+    volumeSnapshot?: string | null;
+    sellingUnitSnapshot?: SellingUnit | null;
     unitPriceMinor: number;
     quantity: number;
     lineTotalMinor: number;
@@ -213,6 +218,8 @@ export async function createOrderRecordInTransaction(
           tenantId: input.tenantId,
           productId: item.productId,
           nameSnapshot: item.nameSnapshot,
+          volumeSnapshot: item.volumeSnapshot ?? null,
+          sellingUnitSnapshot: item.sellingUnitSnapshot ?? null,
           unitPriceMinor: item.unitPriceMinor,
           quantity: item.quantity,
           lineTotalMinor: item.lineTotalMinor,

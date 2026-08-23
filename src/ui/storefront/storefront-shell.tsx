@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { CircleHelp } from "lucide-react";
 
 import { BrandImage } from "@/ui/storefront/brand-image";
 import { STOREFRONT_BRAND } from "@/ui/storefront/brand";
@@ -44,6 +45,14 @@ export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) 
               className="rounded-full px-3 py-2 text-[color:var(--shop-ink)] transition hover:bg-[color:var(--shop-surface)]/70"
             >
               Shop
+            </Link>
+            <Link
+              href={`${basePath}/faq`}
+              prefetch={false}
+              aria-label="Frequently Asked Questions"
+              className="inline-flex size-10 items-center justify-center rounded-full text-[color:var(--shop-ink)] transition hover:bg-[color:var(--shop-surface)]/70"
+            >
+              <CircleHelp className="size-5" strokeWidth={1.75} />
             </Link>
             <StorefrontAsyncBoundary tenantSlug={tenantSlug} slot="header" />
           </nav>

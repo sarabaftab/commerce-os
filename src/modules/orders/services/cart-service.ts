@@ -18,6 +18,7 @@ import {
   upsertCartItem,
   updateCartItemQuantity,
 } from "../repositories/cart-repository";
+import { addCartItemSchema } from "../schemas/cart";
 import type { CartSummary, CartWithItems } from "../types";
 import { MAX_CART_QUANTITY } from "../types";
 
@@ -68,6 +69,8 @@ function buildCartSummary(cart: CartWithItems, tenantCurrency: string): CartSumm
         currency: item.product.currency,
         imageUrl: item.product.media[0]?.url ?? null,
         isAvailable: available,
+        volume: item.product.volume,
+        sellingUnit: item.product.sellingUnit,
       };
     });
 
@@ -192,15 +195,16 @@ export async function addItemToCart(
   tenantCurrency: string,
   input: { productId: string; quantity: number },
 ): Promise<{ summary: CartSummary; guestToken?: string }> {
+  const parsed = addCartItemSchema.parse(input);
   const [, openCart] = await Promise.all([
-    assertProductCanBeAdded(identity.tenantId, input.productId),
+    assertProductCanBeAdded(identity.tenantId, parsed.productId),
     getOrCreateCart(identity, tenantCurrency),
   ]);
 
   const cart = openCart.cart;
-  const existing = cart.items.find((item) => item.productId === input.productId);
+  const existing = cart.items.find((item) => item.productId === parsed.productId);
   const nextQuantity = Math.min(
-    (existing?.quantity ?? 0) + input.quantity,
+    (existing?.quantity ?? 0) + parsed.quantity,
     MAX_CART_QUANTITY,
   );
 
@@ -208,7 +212,7 @@ export async function addItemToCart(
     upsertCartItem({
       tenantId: identity.tenantId,
       cartId: cart.id,
-      productId: input.productId,
+      productId: parsed.productId,
       quantity: nextQuantity,
       skipCartCheck: true,
     }),

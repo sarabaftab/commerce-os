@@ -151,6 +151,8 @@ export async function getOrderDetailForAdmin(
       quantity: item.quantity,
       unitPriceMinor: item.unitPriceMinor,
       lineTotalMinor: item.lineTotalMinor,
+      volume: item.volumeSnapshot,
+      sellingUnit: item.sellingUnitSnapshot ?? "item",
     })),
     statusHistory,
     allowedNextStatuses: getAllowedNextStatuses(order.status, order.fulfillmentMethod),

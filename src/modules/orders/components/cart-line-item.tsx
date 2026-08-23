@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Minus, Plus, Trash2 } from "lucide-react";
 
 import type { CartLineView } from "@/modules/orders";
+import { formatPackSizeLine, formatUnitPriceLabel } from "@/modules/catalog/selling-unit";
 import {
   removeCartItemAction,
   updateCartItemAction,
@@ -74,8 +75,16 @@ export function CartLineItem({ tenantSlug, basePath, line }: CartLineItemProps) 
               {line.name}
             </Link>
             <p className="mt-1 text-sm font-semibold">
-              {formatMoney(line.unitPriceMinor, line.currency)}
+              {formatUnitPriceLabel(
+                formatMoney(line.unitPriceMinor, line.currency),
+                line.sellingUnit,
+              )}
             </p>
+            {formatPackSizeLine(line.volume, line.sellingUnit) ? (
+              <p className="text-xs text-[color:var(--shop-ink-muted)]">
+                {formatPackSizeLine(line.volume, line.sellingUnit)}
+              </p>
+            ) : null}
             {!line.isAvailable ? (
               <p className="mt-1 text-xs text-destructive">No longer available</p>
             ) : null}

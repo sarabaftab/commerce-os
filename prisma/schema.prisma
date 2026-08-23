@@ -46,6 +46,12 @@ enum FulfillmentMethod {
   pickup
 }
 
+enum SellingUnit {
+  item
+  pack
+  case
+}
+
 model Tenant {
   id            String   @id @default(cuid())
   slug          String   @unique
@@ -129,6 +135,7 @@ model Product {
   description String?
   brand       String?
   volume      String?
+  sellingUnit SellingUnit @default(item) @map("selling_unit")
   priceMinor  Int       @map("price_minor")
   currency    String    @db.Char(3)
   isAvailable Boolean   @default(true) @map("is_available")
@@ -320,10 +327,12 @@ model OrderItem {
   tenantId       String  @map("tenant_id")
   orderId        String  @map("order_id")
   productId      String? @map("product_id")
-  nameSnapshot   String  @map("name_snapshot")
-  unitPriceMinor Int     @map("unit_price_minor")
-  quantity       Int
-  lineTotalMinor Int     @map("line_total_minor")
+  nameSnapshot         String       @map("name_snapshot")
+  volumeSnapshot       String?      @map("volume_snapshot")
+  sellingUnitSnapshot  SellingUnit? @map("selling_unit_snapshot")
+  unitPriceMinor       Int          @map("unit_price_minor")
+  quantity             Int
+  lineTotalMinor       Int          @map("line_total_minor")
 
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)

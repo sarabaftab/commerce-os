@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import type { ProductWithRelations } from "@/modules/catalog";
+import { formatPackSizeLine, formatUnitPriceLabel } from "@/modules/catalog/selling-unit";
 import { formatMoney } from "@/shared/money/money";
 import { cn } from "@/ui/lib/utils";
 import { ProductImage } from "@/ui/storefront/product-image";
@@ -65,8 +66,16 @@ export function ProductCard({ product, href, className, priority = false }: Prod
           </p>
         ) : null}
         <p className="mt-auto pt-2 text-sm font-semibold text-[color:var(--shop-ink)]">
-          {formatMoney(product.priceMinor, product.currency)}
+          {formatUnitPriceLabel(
+            formatMoney(product.priceMinor, product.currency),
+            product.sellingUnit,
+          )}
         </p>
+        {formatPackSizeLine(product.volume, product.sellingUnit) ? (
+          <p className="text-xs text-[color:var(--shop-ink-muted)]">
+            {formatPackSizeLine(product.volume, product.sellingUnit)}
+          </p>
+        ) : null}
       </div>
     </Link>
   );

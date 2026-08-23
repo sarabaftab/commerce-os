@@ -1,6 +1,6 @@
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, SellingUnit } from "@prisma/client";
 
 import type { CartWithItems } from "../types";
 
@@ -28,6 +28,8 @@ const checkoutCartInclude = {
           priceMinor: true,
           isAvailable: true,
           deletedAt: true,
+          volume: true,
+          sellingUnit: true,
         },
       },
     },
@@ -51,6 +53,8 @@ export type CheckoutCartWithItems = {
       priceMinor: number;
       isAvailable: boolean;
       deletedAt: Date | null;
+      volume: string | null;
+      sellingUnit: SellingUnit;
     };
   }[];
 };

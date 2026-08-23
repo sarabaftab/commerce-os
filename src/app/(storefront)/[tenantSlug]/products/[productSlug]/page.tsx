@@ -2,6 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getStorefrontProductBySlug } from "@/modules/catalog";
+import {
+  formatPackSizeLine,
+  formatUnitPriceLabel,
+} from "@/modules/catalog/selling-unit";
 import { AddToCartButton } from "@/modules/orders/components/add-to-cart-button";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { isAppError } from "@/shared/errors/app-error";
@@ -80,8 +84,16 @@ export default async function StorefrontProductDetailPage({
               {product.name}
             </h1>
             <p className="text-xl font-semibold">
-              {formatMoney(product.priceMinor, product.currency)}
+              {formatUnitPriceLabel(
+                formatMoney(product.priceMinor, product.currency),
+                product.sellingUnit,
+              )}
             </p>
+            {formatPackSizeLine(product.volume, product.sellingUnit) ? (
+              <p className="text-sm text-[color:var(--shop-ink-muted)]">
+                {formatPackSizeLine(product.volume, product.sellingUnit)}
+              </p>
+            ) : null}
           </div>
 
           {product.description ? (
@@ -102,7 +114,7 @@ export default async function StorefrontProductDetailPage({
         className="sticky bottom-0 -mx-4 border-t border-[color:var(--shop-line)] bg-[color:var(--shop-bg)]/95 px-4 pt-3 backdrop-blur-md"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
-        <AddToCartButton tenantSlug={tenantSlug} productId={product.id} />
+        <AddToCartButton tenantSlug={tenantSlug} productId={product.id} showQuantity />
       </div>
     </div>
   );

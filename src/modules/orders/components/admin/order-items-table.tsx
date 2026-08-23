@@ -1,4 +1,5 @@
 import type { AdminOrderDetail } from "@/modules/orders";
+import { formatPackSizeLine, formatUnitPriceLabel } from "@/modules/catalog/selling-unit";
 import { formatMoney } from "@/shared/money/money";
 import {
   Table,
@@ -30,6 +31,11 @@ export function OrderItemsTable({ order }: OrderItemsTableProps) {
             <TableRow key={item.id}>
               <TableCell>
                 <div className="font-medium">{item.name}</div>
+                {formatPackSizeLine(item.volume, item.sellingUnit) ? (
+                  <div className="text-xs text-muted-foreground">
+                    {formatPackSizeLine(item.volume, item.sellingUnit)}
+                  </div>
+                ) : null}
                 {item.productId ? (
                   <div className="text-xs text-muted-foreground">Snapshot · {item.productId}</div>
                 ) : (
@@ -38,7 +44,10 @@ export function OrderItemsTable({ order }: OrderItemsTableProps) {
               </TableCell>
               <TableCell className="text-right">{item.quantity}</TableCell>
               <TableCell className="text-right">
-                {formatMoney(item.unitPriceMinor, order.currency)}
+                {formatUnitPriceLabel(
+                  formatMoney(item.unitPriceMinor, order.currency),
+                  item.sellingUnit,
+                )}
               </TableCell>
               <TableCell className="text-right font-medium">
                 {formatMoney(item.lineTotalMinor, order.currency)}

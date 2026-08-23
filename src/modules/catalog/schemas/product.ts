@@ -13,6 +13,7 @@ export const productFormSchema = z.object({
   description: z.union([z.literal(""), z.string().trim().max(2000)]).optional(),
   brand: z.union([z.literal(""), z.string().trim().max(80)]).optional(),
   volume: z.union([z.literal(""), z.string().trim().max(40)]).optional(),
+  sellingUnit: z.enum(["item", "pack", "case"]).default("item"),
   priceMajor: z.coerce.number().finite().nonnegative("Price must be zero or positive"),
   currency: z
     .string()
@@ -39,6 +40,7 @@ export function productFormToCreateInput(
     description: values.description || null,
     brand: values.brand || null,
     volume: values.volume || null,
+    sellingUnit: values.sellingUnit,
     priceMinor: toMinor(values.priceMajor, values.currency),
     currency: values.currency,
     categoryId: values.categoryId || null,

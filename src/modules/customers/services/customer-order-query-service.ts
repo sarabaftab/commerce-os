@@ -192,6 +192,8 @@ export async function getCustomerOrderByNumber(input: {
       unitPriceMinor: item.unitPriceMinor,
       lineTotalMinor: item.lineTotalMinor,
       imageUrl: item.product?.media[0]?.url ?? null,
+      volume: item.volumeSnapshot,
+      sellingUnit: item.sellingUnitSnapshot ?? "item",
     })),
     timeline: order.statusHistory.map((entry) => ({
       status: entry.toStatus,

@@ -1,4 +1,5 @@
 import type { CartSummary } from "@/modules/orders";
+import { formatPackSizeLine, formatPriceTimesQuantity } from "@/modules/catalog/selling-unit";
 import { formatMoney } from "@/shared/money/money";
 
 type CheckoutOrderReviewProps = {
@@ -29,8 +30,17 @@ export function CheckoutOrderReview({
               <div>
                 <p className="font-medium">{item.name}</p>
                 <p className="text-[color:var(--shop-ink-muted)]">
-                  {formatMoney(item.unitPriceMinor, item.currency)} × {item.quantity}
+                  {formatPriceTimesQuantity(
+                    formatMoney(item.unitPriceMinor, item.currency),
+                    item.quantity,
+                    item.sellingUnit,
+                  )}
                 </p>
+                {formatPackSizeLine(item.volume, item.sellingUnit) ? (
+                  <p className="text-xs text-[color:var(--shop-ink-muted)]">
+                    {formatPackSizeLine(item.volume, item.sellingUnit)}
+                  </p>
+                ) : null}
               </div>
               <span className="font-medium">
                 {formatMoney(item.lineTotalMinor, item.currency)}

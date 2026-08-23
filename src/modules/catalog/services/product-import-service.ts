@@ -23,6 +23,7 @@ export type ProductImportPreviewRow = {
   categoryId: string | null;
   brand: string | null;
   volume: string | null;
+  sellingUnit: "item" | "pack" | "case";
   priceMajor: number;
   priceMinor: number;
   active: boolean;
@@ -87,6 +88,7 @@ export async function previewProductImport(input: {
         categoryId: null,
         brand: null,
         volume: null,
+        sellingUnit: "item" as const,
         priceMajor: 0,
         priceMinor: 0,
         active: false,
@@ -143,6 +145,7 @@ function decorateParsedRow(
     categoryId,
     brand: row.brand,
     volume: row.volume,
+    sellingUnit: row.sellingUnit,
     priceMajor: row.priceMajor,
     priceMinor,
     active: row.active,
@@ -189,6 +192,7 @@ export async function importValidProductsForTenant(input: {
       description: item.description,
       brand: item.brand,
       volume: item.volume,
+      sellingUnit: item.sellingUnit,
       priceMinor: item.priceMinor,
       currency: input.currency,
       categoryId: item.categoryId,
@@ -207,6 +211,7 @@ export async function importValidProductsForTenant(input: {
           description: product.description,
           brand: product.brand,
           volume: product.volume,
+          sellingUnit: product.sellingUnit ?? "item",
           priceMinor: product.priceMinor,
           currency: product.currency,
           categoryId: product.categoryId,

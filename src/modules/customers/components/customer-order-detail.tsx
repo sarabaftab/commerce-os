@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { formatMoney } from "@/shared/money/money";
+import { formatPackSizeLine, formatPriceTimesQuantity } from "@/modules/catalog/selling-unit";
 import { ProductImage } from "@/ui/storefront/product-image";
 
 import type { CustomerOrderDetailDto } from "../types";
@@ -60,8 +61,17 @@ export function CustomerOrderDetail({ tenantSlug, order }: Props) {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">{item.name}</p>
                 <p className="text-xs text-[color:var(--shop-ink-muted)]">
-                  {item.quantity} × {formatMoney(item.unitPriceMinor, order.currency)}
+                  {formatPriceTimesQuantity(
+                    formatMoney(item.unitPriceMinor, order.currency),
+                    item.quantity,
+                    item.sellingUnit,
+                  )}
                 </p>
+                {formatPackSizeLine(item.volume, item.sellingUnit) ? (
+                  <p className="text-xs text-[color:var(--shop-ink-muted)]">
+                    {formatPackSizeLine(item.volume, item.sellingUnit)}
+                  </p>
+                ) : null}
               </div>
               <p className="text-sm font-medium">
                 {formatMoney(item.lineTotalMinor, order.currency)}

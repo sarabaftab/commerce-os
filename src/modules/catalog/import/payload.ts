@@ -14,6 +14,7 @@ export const productImportPayloadItemSchema = z.object({
   categoryId: z.string().min(1),
   brand: z.string().max(80).nullable(),
   volume: z.string().max(40).nullable(),
+  sellingUnit: z.enum(["item", "pack", "case"]).default("item"),
   priceMinor: z.number().int().nonnegative(),
   isAvailable: z.boolean(),
 });

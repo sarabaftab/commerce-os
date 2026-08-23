@@ -61,6 +61,8 @@ export type CreateOrderCommand = {
   items: {
     productId: string;
     nameSnapshot: string;
+    volumeSnapshot?: string | null;
+    sellingUnitSnapshot?: import("@prisma/client").SellingUnit | null;
     unitPriceMinor: number;
     quantity: number;
     lineTotalMinor: number;

@@ -1,4 +1,4 @@
-import type { Category, Product, ProductMedia } from "@prisma/client";
+import type { Category, Product, ProductMedia, SellingUnit } from "@prisma/client";
 
 export type ProductWithRelations = Product & {
   category: Category | null;
@@ -12,6 +12,7 @@ export type CreateProductInput = {
   description?: string | null;
   brand?: string | null;
   volume?: string | null;
+  sellingUnit?: SellingUnit;
   priceMinor: number;
   currency: string;
   categoryId?: string | null;
@@ -29,6 +30,7 @@ export type UpdateProductInput = {
   description?: string | null;
   brand?: string | null;
   volume?: string | null;
+  sellingUnit?: SellingUnit;
   priceMinor: number;
   currency: string;
   categoryId?: string | null;

@@ -37,6 +37,7 @@ export function ProductImportForm({ currency }: { currency: string }) {
         categoryId: row.categoryId,
         brand: row.brand,
         volume: row.volume,
+        sellingUnit: row.sellingUnit,
         priceMinor: row.priceMinor,
         isAvailable: row.active,
       })) ?? [];

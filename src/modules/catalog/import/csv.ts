@@ -137,6 +137,12 @@ export function csvRowsToRecords(text: string): CsvRecord[] {
         const index = headers.indexOf(column);
         record[column] = (row[index] ?? "").trim();
       }
+      const sellingUnitIndex = headers.findIndex(
+        (header) => header === "sellingunit" || header === "selling_unit",
+      );
+      if (sellingUnitIndex >= 0) {
+        record.sellingunit = (row[sellingUnitIndex] ?? "").trim();
+      }
       return record;
     });
 }
@@ -149,6 +155,7 @@ export type ParsedImportRow = {
   category: string;
   brand: string | null;
   volume: string | null;
+  sellingUnit: "item" | "pack" | "case";
   priceMajor: number;
   active: boolean;
 };
@@ -199,6 +206,16 @@ export function parseImportRecords(records: CsvRecord[]): ImportRowParseResult[]
       errors.push("Volume must be 40 characters or fewer");
     }
 
+    const sellingUnitRaw = (record.sellingunit ?? "").trim().toLowerCase();
+    let sellingUnit: "item" | "pack" | "case" = "item";
+    if (sellingUnitRaw) {
+      if (sellingUnitRaw === "item" || sellingUnitRaw === "pack" || sellingUnitRaw === "case") {
+        sellingUnit = sellingUnitRaw;
+      } else {
+        errors.push("Selling unit must be item, pack, or case");
+      }
+    }
+
     let priceMajor = 0;
     try {
       priceMajor = parseCsvPrice(record.price ?? "");
@@ -228,6 +245,7 @@ export function parseImportRecords(records: CsvRecord[]): ImportRowParseResult[]
         category,
         brand: brandRaw || null,
         volume: volumeRaw || null,
+        sellingUnit,
         priceMajor,
         active,
       },

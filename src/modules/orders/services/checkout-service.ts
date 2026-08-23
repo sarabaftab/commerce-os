@@ -76,6 +76,8 @@ function computeLineItems(cart: CheckoutCartWithItems) {
         unitPriceMinor,
         lineTotalMinor,
         isAvailable: available,
+        volumeSnapshot: item.product.volume,
+        sellingUnitSnapshot: item.product.sellingUnit,
       };
     });
 
@@ -348,6 +350,8 @@ export async function placeGuestOrder(
           items: availableLines.map((line) => ({
             productId: line.productId,
             nameSnapshot: line.name,
+            volumeSnapshot: line.volumeSnapshot,
+            sellingUnitSnapshot: line.sellingUnitSnapshot,
             unitPriceMinor: line.unitPriceMinor,
             quantity: line.quantity,
             lineTotalMinor: line.lineTotalMinor,

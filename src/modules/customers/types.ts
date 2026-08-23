@@ -92,6 +92,8 @@ export type CustomerOrderDetailDto = {
     unitPriceMinor: number;
     lineTotalMinor: number;
     imageUrl: string | null;
+    volume: string | null;
+    sellingUnit: import("@prisma/client").SellingUnit;
   }[];
   timeline: CustomerOrderTimelineEntryDto[];
   supportPhone: string | null;
