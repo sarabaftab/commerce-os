@@ -110,6 +110,8 @@ export type OrderConfirmation = {
   pickupLocationAddress: string | null;
   paymentMethod: PaymentMethod;
   paymentReference: string | null;
+  paymentProofStatus: import("@prisma/client").PaymentProofStatus;
+  paymentProofRejectionReason: string | null;
   placedAt: Date;
   /** Present on create/replay for cookie handoff — never required from clients. */
   confirmationToken?: string;
@@ -217,6 +219,8 @@ export type AdminOrderDetail = {
   pickupLocationAddress: string | null;
   paymentMethod: PaymentMethod;
   paymentReference: string | null;
+  paymentProofStatus: import("@prisma/client").PaymentProofStatus;
+  paymentProofRejectionReason: string | null;
   placedAt: Date;
   customer: {
     id: string;

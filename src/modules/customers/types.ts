@@ -65,6 +65,8 @@ export type CustomerOrderDetailDto = {
   fulfillmentMethod: string;
   paymentMethod: string;
   paymentReference: string | null;
+  paymentProofStatus: import("@prisma/client").PaymentProofStatus;
+  paymentProofRejectionReason: string | null;
   currency: string;
   subtotalMinor: number;
   deliveryFeeMinor: number;

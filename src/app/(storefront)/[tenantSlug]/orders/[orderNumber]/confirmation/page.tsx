@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getOptionalCustomerSession } from "@/modules/customers";
@@ -38,16 +37,13 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
 
   return (
     <div className="space-y-6 pt-4">
-      <div>
-        <Link
-          href={`${basePath}/products`}
-          className="inline-flex text-sm font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
-        >
-          Continue shopping
-        </Link>
-      </div>
-
-      <OrderConfirmationView order={order} />
+      <OrderConfirmationView
+        order={order}
+        tenantSlug={tenantSlug}
+        accountOrderHref={
+          session ? `${basePath}/account/orders/${order.orderNumber}` : null
+        }
+      />
     </div>
   );
 }

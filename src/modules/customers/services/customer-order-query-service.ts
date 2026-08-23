@@ -159,6 +159,8 @@ export async function getCustomerOrderByNumber(input: {
     fulfillmentMethod: order.fulfillmentMethod,
     paymentMethod: order.paymentMethod,
     paymentReference: order.paymentReference,
+    paymentProofStatus: order.paymentProofStatus,
+    paymentProofRejectionReason: order.paymentProofRejectionReason,
     currency: order.currency,
     subtotalMinor: order.subtotalMinor,
     deliveryFeeMinor: order.deliveryFeeMinor,

@@ -138,6 +138,9 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
         abaAvailable={preview.abaAvailable}
         abaInstructions={abaCopy}
         abaQrImageUrl={preview.abaQrImageUrl}
+        abaAccountName={preview.abaAccountName}
+        abaAccountNumber={preview.abaAccountNumber}
+        amountLabel={formatMoney(totalMinor, preview.cart.currency)}
       />
 
       <CheckoutOrderReview

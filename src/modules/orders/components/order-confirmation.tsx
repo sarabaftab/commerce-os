@@ -1,9 +1,12 @@
 import type { OrderConfirmation } from "@/modules/orders";
+import { AbaProofUpload } from "@/modules/orders/components/aba-proof-upload";
 import { formatPackSizeLine, formatPriceTimesQuantity } from "@/modules/catalog/selling-unit";
 import { formatMoney } from "@/shared/money/money";
 
 type OrderConfirmationViewProps = {
   order: OrderConfirmation;
+  tenantSlug: string;
+  accountOrderHref: string | null;
 };
 
 function formatPaymentMethod(method: OrderConfirmation["paymentMethod"]) {
@@ -12,19 +15,23 @@ function formatPaymentMethod(method: OrderConfirmation["paymentMethod"]) {
 
 function formatFulfillment(order: OrderConfirmation) {
   if (order.fulfillmentMethod === "pickup") {
-    return [order.pickupLocationName, order.pickupLocationAddress]
-      .filter(Boolean)
-      .join(" — ") || "Pickup";
+    return (
+      [order.pickupLocationName, order.pickupLocationAddress].filter(Boolean).join(" — ") ||
+      "Pickup"
+    );
   }
-  const parts = [order.addressLine, order.cityOrArea].filter(Boolean);
-  return parts.join(", ");
+  return [order.addressLine, order.cityOrArea].filter(Boolean).join(", ");
 }
 
 function formatStatus(status: OrderConfirmation["status"]) {
   return status.replaceAll("_", " ");
 }
 
-export function OrderConfirmationView({ order }: OrderConfirmationViewProps) {
+export function OrderConfirmationView({
+  order,
+  tenantSlug,
+  accountOrderHref,
+}: OrderConfirmationViewProps) {
   return (
     <div className="space-y-4">
       <div className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
@@ -34,8 +41,14 @@ export function OrderConfirmationView({ order }: OrderConfirmationViewProps) {
         <h1 className="mt-2 font-[family-name:var(--font-shop-display)] text-3xl tracking-tight">
           {order.orderNumber}
         </h1>
+        <p className="mt-2 text-sm text-[color:var(--shop-ink-muted)]">
+          Thank you. Your order has been received and is being processed.
+        </p>
         <p className="mt-2 text-sm capitalize text-[color:var(--shop-ink-muted)]">
           Status: {formatStatus(order.status)}
+        </p>
+        <p className="text-sm text-[color:var(--shop-ink-muted)]">
+          {order.placedAt.toLocaleString()}
         </p>
       </div>
 
@@ -70,6 +83,15 @@ export function OrderConfirmationView({ order }: OrderConfirmationViewProps) {
               Reference: {order.paymentReference}
             </p>
           ) : null}
+          <div className="mt-3">
+            <AbaProofUpload
+              tenantSlug={tenantSlug}
+              orderNumber={order.orderNumber}
+              paymentMethod={order.paymentMethod}
+              paymentProofStatus={order.paymentProofStatus}
+              paymentProofRejectionReason={order.paymentProofRejectionReason}
+            />
+          </div>
         </section>
       </div>
 
@@ -105,17 +127,32 @@ export function OrderConfirmationView({ order }: OrderConfirmationViewProps) {
             <span className="text-[color:var(--shop-ink-muted)]">Subtotal</span>
             <span>{formatMoney(order.subtotalMinor, order.currency)}</span>
           </div>
-          {order.deliveryFeeMinor > 0 ? (
-            <div className="flex justify-between">
-              <span className="text-[color:var(--shop-ink-muted)]">Delivery</span>
-              <span>{formatMoney(order.deliveryFeeMinor, order.currency)}</span>
-            </div>
-          ) : null}
+          <div className="flex justify-between">
+            <span className="text-[color:var(--shop-ink-muted)]">Delivery</span>
+            <span>{formatMoney(order.deliveryFeeMinor, order.currency)}</span>
+          </div>
           <div className="flex justify-between font-semibold">
             <span>Total</span>
             <span>{formatMoney(order.totalMinor, order.currency)}</span>
           </div>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {accountOrderHref ? (
+          <a
+            href={accountOrderHref}
+            className="flex h-11 items-center justify-center rounded-full bg-[color:var(--shop-primary)] text-sm font-semibold text-[color:var(--shop-on-primary)]"
+          >
+            View order
+          </a>
+        ) : null}
+        <a
+          href={`/${tenantSlug}`}
+          className="flex h-11 items-center justify-center rounded-full ring-1 ring-[color:var(--shop-line)] text-sm font-semibold"
+        >
+          Continue shopping
+        </a>
       </div>
     </div>
   );

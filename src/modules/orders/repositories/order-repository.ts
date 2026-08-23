@@ -11,6 +11,7 @@ import { AppError } from "@/shared/errors/app-error";
 import { createOrderConfirmationToken } from "@/shared/orders/confirmation-cookie";
 
 import type { OrderConfirmation, OrderLineView } from "../types";
+import { initialPaymentProofStatus } from "../payment-proof";
 
 export const orderInclude = {
   customer: true,
@@ -56,6 +57,8 @@ export function toOrderConfirmation(
     pickupLocationAddress: order.pickupLocationAddress,
     paymentMethod: order.paymentMethod,
     paymentReference: order.paymentReference,
+    paymentProofStatus: order.paymentProofStatus,
+    paymentProofRejectionReason: order.paymentProofRejectionReason,
     placedAt: order.placedAt,
     ...(options?.includeConfirmationToken
       ? { confirmationToken: order.confirmationToken }
@@ -202,6 +205,7 @@ export async function createOrderRecordInTransaction(
       pickupLocationAddress: input.pickupLocationAddress ?? null,
       paymentMethod: input.paymentMethod,
       paymentReference: input.paymentReference ?? null,
+      paymentProofStatus: initialPaymentProofStatus(input.paymentMethod),
       currency: input.currency,
       subtotalMinor: input.subtotalMinor,
       deliveryFeeMinor: input.deliveryFeeMinor,

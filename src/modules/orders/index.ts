@@ -62,4 +62,8 @@ export {
   getAllowedNextStatuses,
   transitionOrderStatus,
 } from "./services/order-status-service";
-export type { TransitionOrderStatusInput } from "./services/order-status-service";
+export {
+  customerCanUploadPaymentProof,
+  initialPaymentProofStatus,
+  paymentProofStatusLabel,
+} from "./payment-proof";

@@ -137,6 +137,8 @@ export async function getOrderDetailForAdmin(
     pickupLocationAddress: order.pickupLocationAddress,
     paymentMethod: order.paymentMethod,
     paymentReference: order.paymentReference,
+    paymentProofStatus: order.paymentProofStatus,
+    paymentProofRejectionReason: order.paymentProofRejectionReason,
     placedAt: order.placedAt,
     customer: {
       id: order.customer.id,

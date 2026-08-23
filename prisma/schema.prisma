@@ -35,6 +35,14 @@ enum PaymentMethod {
   aba_transfer
 }
 
+enum PaymentProofStatus {
+  not_required
+  awaiting_proof
+  submitted
+  verified
+  rejected
+}
+
 enum CartStatus {
   open
   converted
@@ -286,8 +294,14 @@ model Order {
   pickupLocationKey         String?           @map("pickup_location_key")
   pickupLocationName        String?           @map("pickup_location_name")
   pickupLocationAddress     String?           @map("pickup_location_address")
-  paymentMethod             PaymentMethod     @map("payment_method")
-  paymentReference          String?           @map("payment_reference")
+  paymentMethod                PaymentMethod       @map("payment_method")
+  paymentReference             String?             @map("payment_reference")
+  paymentProofStatus           PaymentProofStatus  @default(not_required) @map("payment_proof_status")
+  paymentProofPath             String?             @map("payment_proof_path")
+  paymentProofContentType      String?             @map("payment_proof_content_type")
+  paymentProofSubmittedAt      DateTime?           @map("payment_proof_submitted_at")
+  paymentProofReviewedAt       DateTime?           @map("payment_proof_reviewed_at")
+  paymentProofRejectionReason  String?             @map("payment_proof_rejection_reason")
   currency                  String            @db.Char(3)
   subtotalMinor             Int               @map("subtotal_minor")
   deliveryFeeMinor          Int               @default(0) @map("delivery_fee_minor")

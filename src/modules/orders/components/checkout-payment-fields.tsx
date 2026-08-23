@@ -9,6 +9,9 @@ type CheckoutPaymentFieldsProps = {
   abaAvailable: boolean;
   abaInstructions: string;
   abaQrImageUrl?: string | null;
+  abaAccountName?: string | null;
+  abaAccountNumber?: string | null;
+  amountLabel?: string | null;
 };
 
 const fieldClass =
@@ -21,6 +24,9 @@ export function CheckoutPaymentFields({
   abaAvailable,
   abaInstructions,
   abaQrImageUrl,
+  abaAccountName,
+  abaAccountNumber,
+  amountLabel,
 }: CheckoutPaymentFieldsProps) {
   const methods = [
     ...(codEnabled ? (["cod"] as const) : []),
@@ -85,6 +91,18 @@ export function CheckoutPaymentFields({
 
       {paymentMethod === "aba_transfer" && abaAvailable ? (
         <div className="space-y-3">
+          <p className="text-sm">
+            Please transfer your order total, then upload a screenshot on the confirmation page.
+          </p>
+          {amountLabel ? (
+            <p className="text-sm font-semibold">Amount: {amountLabel}</p>
+          ) : null}
+          {abaAccountName ? (
+            <p className="text-sm">Account name: {abaAccountName}</p>
+          ) : null}
+          {abaAccountNumber ? (
+            <p className="text-sm">Account number: {abaAccountNumber}</p>
+          ) : null}
           {abaInstructions ? (
             <div className="whitespace-pre-line rounded-xl bg-[color:var(--shop-surface)] p-3 text-sm leading-relaxed text-[color:var(--shop-ink-muted)]">
               {abaInstructions}

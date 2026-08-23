@@ -146,6 +146,13 @@ export function CustomerOrderDetail({ tenantSlug, order }: Props) {
             Reference: {order.paymentReference}
           </p>
         ) : null}
+        {order.paymentMethod === "aba_transfer" ? (
+          <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
+            Proof: {order.paymentProofStatus.replaceAll("_", " ")}
+            {order.paymentProofStatus === "submitted" ? " · Verification pending" : ""}
+            {order.paymentProofRejectionReason ? ` · ${order.paymentProofRejectionReason}` : ""}
+          </p>
+        ) : null}
       </section>
 
       {(order.supportPhone || order.supportEmail) && (
