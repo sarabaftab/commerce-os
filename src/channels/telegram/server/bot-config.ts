@@ -20,7 +20,15 @@ export function getTelegramBotTokenForTenantSlug(tenantSlug: string): string {
     );
   }
 
-  return TELEGRAM_BOT_TOKEN;
+  return normalizeTelegramBotToken(TELEGRAM_BOT_TOKEN);
+}
+
+function normalizeTelegramBotToken(raw: string): string {
+  let token = raw.trim().replace(/^["']|["']$/g, "");
+  if (/^bot/i.test(token)) {
+    token = token.slice(3);
+  }
+  return token;
 }
 
 /** Returns null instead of throwing when this tenant has no bot mapping. */
@@ -29,7 +37,7 @@ export function getTelegramBotTokenForTenantSlugOrNull(tenantSlug: string): stri
   if (!TELEGRAM_BOT_TOKEN || tenantSlug !== TELEGRAM_TENANT_SLUG) {
     return null;
   }
-  return TELEGRAM_BOT_TOKEN;
+  return normalizeTelegramBotToken(TELEGRAM_BOT_TOKEN);
 }
 
 export function getTelegramInitDataMaxAgeSeconds(): number {

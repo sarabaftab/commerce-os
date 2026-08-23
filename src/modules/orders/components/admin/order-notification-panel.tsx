@@ -31,6 +31,22 @@ function formatDelivery(status: NotificationDeliveryStatus) {
   return "Failed";
 }
 
+function formatNotificationError(code: string) {
+  if (code === "401") {
+    return "Telegram rejected the bot token. On Vercel, set TELEGRAM_BOT_TOKEN (the BotFather token) for Production, redeploy, then Retry.";
+  }
+  if (code === "403") {
+    return "Telegram blocked the message. The customer must open this shop from this bot once, or they blocked the bot.";
+  }
+  if (code === "NO_BOT_TOKEN") {
+    return "No bot token is configured for this tenant slug.";
+  }
+  if (code === "NO_IDENTITY") {
+    return "This customer has no linked Telegram account.";
+  }
+  return `Could not send (${code})`;
+}
+
 export function OrderNotificationPanel({
   orderId,
   telegramLinked,
@@ -58,7 +74,7 @@ export function OrderNotificationPanel({
           <p className="text-muted-foreground">Telegram — No status messages yet</p>
         ) : null}
         {latest?.status === "failed" && latest.errorCode ? (
-          <p className="text-destructive">Could not send ({latest.errorCode})</p>
+          <p className="text-destructive">{formatNotificationError(latest.errorCode)}</p>
         ) : null}
         {canRetry && latest ? (
           <form action={action}>

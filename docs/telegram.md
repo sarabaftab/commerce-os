@@ -58,7 +58,7 @@ When an admin changes order status (after `pending`), CommerceOS sends a Telegra
 Requirements:
 
 - The customer must have opened this shop from **this** bot (menu button / Mini App). Telegram will 403 if they never started the bot.
-- `TELEGRAM_BOT_TOKEN` must be set. Token stays server-only.
+- `TELEGRAM_BOT_TOKEN` must be set on **Vercel Production** (same BotFather token as Mini App HMAC). A Telegram **401** means that token was rejected. Mini App login can still work locally while Production send fails if the Vercel var is missing or different. After changing it, redeploy, then Retry on the order.
 - Storage bucket for payment proofs is unrelated.
 
 View Order opens `/{tenantSlug}/account/orders/{orderNumber}` inside the Mini App. That route still requires a customer session. The existing Account cookie issue is unchanged; we do not use a public order URL.
