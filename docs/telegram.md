@@ -18,7 +18,7 @@ Telegram requires HTTPS for Mini Apps.
 
 - Use a tunnel (Cloudflare Tunnel, ngrok, etc.) pointed at `http://127.0.0.1:3000`.
 - Set `NEXT_PUBLIC_APP_URL` to the HTTPS tunnel URL.
-- For cookie auth inside Telegram’s WebView, set `TELEGRAM_FORCE_SECURE_COOKIES=1` so customer session cookies use `SameSite=None; Secure`.
+- For cookie auth inside Telegram’s WebView, production uses `SameSite=Lax; Secure` (same as the cart cookie). Set `TELEGRAM_FORCE_SECURE_COOKIES=1` only for HTTPS tunnels where the Mini App origin is not the shop origin (`SameSite=None; Secure`).
 
 ## Env vars
 
@@ -28,7 +28,7 @@ Telegram requires HTTPS for Mini Apps.
 | `TELEGRAM_TENANT_SLUG` | Only this slug may use the bot token (Phase 1) |
 | `TELEGRAM_INIT_DATA_MAX_AGE_SECONDS` | Max age of `auth_date` (default `300`) |
 | `CUSTOMER_SESSION_TTL_SECONDS` | Customer session lifetime (default 30 days) |
-| `TELEGRAM_FORCE_SECURE_COOKIES` | `1` = `SameSite=None; Secure` in non-production |
+| `TELEGRAM_FORCE_SECURE_COOKIES` | `1` = `SameSite=None; Secure` (HTTPS tunnels only; production Mini App uses Lax) |
 
 ## Auth flow
 

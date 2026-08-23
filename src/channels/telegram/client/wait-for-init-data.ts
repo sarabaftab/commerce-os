@@ -1,4 +1,4 @@
-export const TELEGRAM_INIT_DATA_WAIT_MS = 1500;
+export const TELEGRAM_INIT_DATA_WAIT_MS = 3000;
 export const TELEGRAM_INIT_DATA_POLL_MS = 100;
 
 /**

@@ -20,17 +20,32 @@ function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-function sessionCookieOptions() {
+/**
+ * Mini App pages are first-party on the shop origin (same as the cart cookie).
+ * SameSite=None is only for HTTPS tunnels where the WebView origin differs.
+ * Production used None before; some Telegram clients drop those cookies while
+ * still keeping SameSite=Lax cart cookies — Account then fails for new users.
+ */
+export function customerSessionCookiePolicy(): {
+  sameSite: "none" | "lax";
+  secure: boolean;
+} {
+  const crossSite = process.env.TELEGRAM_FORCE_SECURE_COOKIES === "1";
   const isProd = process.env.NODE_ENV === "production";
-  const forceSecure =
-    process.env.TELEGRAM_FORCE_SECURE_COOKIES === "1" || isProd;
+  return {
+    sameSite: crossSite ? "none" : "lax",
+    secure: crossSite || isProd,
+  };
+}
 
+function sessionCookieOptions() {
+  const policy = customerSessionCookiePolicy();
   return {
     httpOnly: true,
     path: "/",
     maxAge: env().CUSTOMER_SESSION_TTL_SECONDS,
-    sameSite: (forceSecure ? "none" : "lax") as "none" | "lax",
-    secure: forceSecure,
+    sameSite: policy.sameSite,
+    secure: policy.secure,
   };
 }
 
@@ -50,17 +65,15 @@ export function buildCustomerSessionCookieHeader(token: string): string {
 }
 
 export function buildAttributionCookieHeader(referralCode: string): string {
-  const isProd = process.env.NODE_ENV === "production";
-  const forceSecure =
-    process.env.TELEGRAM_FORCE_SECURE_COOKIES === "1" || isProd;
+  const policy = customerSessionCookiePolicy();
   const parts = [
     `${ATTRIBUTION_COOKIE}=${encodeURIComponent(referralCode.slice(0, 128))}`,
     "Path=/",
     "HttpOnly",
-    `SameSite=${forceSecure ? "None" : "Lax"}`,
+    `SameSite=${policy.sameSite === "none" ? "None" : "Lax"}`,
     `Max-Age=${60 * 60 * 24 * 30}`,
   ];
-  if (forceSecure) {
+  if (policy.secure) {
     parts.push("Secure");
   }
   return parts.join("; ");

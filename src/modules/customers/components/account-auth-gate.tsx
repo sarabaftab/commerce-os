@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useTelegram } from "@/channels/telegram/client/telegram-provider";
-import { resolveAccountAuthGate } from "@/modules/customers/account-auth-gate";
+import {
+  ACCOUNT_SESSION_SYNC_KEY,
+  accountSyncWasRecent,
+  resolveAccountAuthGate,
+} from "@/modules/customers/account-auth-gate";
 import { shop } from "@/ui/storefront/shop-classes";
 
 type AccountAuthGateProps = {
@@ -14,25 +18,26 @@ type AccountAuthGateProps = {
 export function AccountAuthGate({ tenantSlug }: AccountAuthGateProps) {
   const router = useRouter();
   const { authStatus, retryAuth } = useTelegram();
-  const [refreshAttempted, setRefreshAttempted] = useState(false);
+  const [storageReady, setStorageReady] = useState(false);
+  const [hardReloadAttempted, setHardReloadAttempted] = useState(false);
   const view = resolveAccountAuthGate({
     authStatus,
-    refreshAttempted,
+    storageReady,
+    hardReloadAttempted,
   });
 
   useEffect(() => {
-    if (authStatus === "idle" || authStatus === "loading") {
-      setRefreshAttempted(false);
-    }
-  }, [authStatus]);
+    setHardReloadAttempted(accountSyncWasRecent());
+    setStorageReady(true);
+  }, []);
 
   useEffect(() => {
-    if (authStatus !== "authenticated" || refreshAttempted) {
+    if (authStatus !== "authenticated" || !storageReady || hardReloadAttempted) {
       return;
     }
-    setRefreshAttempted(true);
-    router.refresh();
-  }, [authStatus, refreshAttempted, router]);
+    sessionStorage.setItem(ACCOUNT_SESSION_SYNC_KEY, String(Date.now()));
+    window.location.reload();
+  }, [authStatus, storageReady, hardReloadAttempted]);
 
   useEffect(() => {
     if (view !== "redirect-home") {
@@ -54,9 +59,18 @@ export function AccountAuthGate({ tenantSlug }: AccountAuthGateProps) {
           Couldn’t open Account
         </h1>
         <p className="text-sm text-[color:var(--shop-ink-muted)]">
-          We couldn’t connect your Telegram session. You can try again without leaving the Mini App.
+          We couldn’t save your Telegram session in this Mini App. Try again — if it still fails,
+          close the Mini App and reopen it from the bot.
         </p>
-        <button type="button" className={shop.btnPrimary} onClick={() => retryAuth()}>
+        <button
+          type="button"
+          className={shop.btnPrimary}
+          onClick={() => {
+            sessionStorage.removeItem(ACCOUNT_SESSION_SYNC_KEY);
+            setHardReloadAttempted(false);
+            retryAuth();
+          }}
+        >
           Try again
         </button>
       </div>

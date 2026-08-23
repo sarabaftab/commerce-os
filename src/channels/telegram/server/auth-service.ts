@@ -9,6 +9,7 @@ import {
   attachAttributionCookie,
   attachCustomerSessionCookie,
   createCustomerSession,
+  setCustomerSessionCookie,
   type CustomerSessionPayload,
 } from "./customer-session";
 import {
@@ -165,11 +166,12 @@ export async function authenticateTelegramInitData(input: {
   };
 }
 
-export function applyTelegramAuthCookies(
+export async function applyTelegramAuthCookies(
   response: import("next/server").NextResponse,
   sessionToken: string,
   startParam?: string,
 ) {
+  await setCustomerSessionCookie(sessionToken);
   attachCustomerSessionCookie(response, sessionToken);
   if (startParam) {
     attachAttributionCookie(response, startParam);

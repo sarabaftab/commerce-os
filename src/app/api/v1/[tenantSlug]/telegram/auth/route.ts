@@ -66,7 +66,7 @@ export async function POST(request: Request, context: RouteContext) {
     });
 
     if (sessionToken) {
-      applyTelegramAuthCookies(response, sessionToken, startParam);
+      await applyTelegramAuthCookies(response, sessionToken, startParam);
     } else if (startParam) {
       attachAttributionCookie(response, startParam);
     }

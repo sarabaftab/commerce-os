@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { customerSessionCookiePolicy } from "@/channels/telegram/server/customer-session";
 import { waitForTelegramInitData } from "@/channels/telegram/client/wait-for-init-data";
 import {
   parseTelegramUserId,
@@ -94,35 +95,75 @@ describe("validateTelegramInitData missing optional Telegram fields", () => {
 
 describe("resolveAccountAuthGate", () => {
   it("keeps first-time Telegram customers on a connecting state while auth loads", () => {
-    expect(resolveAccountAuthGate({ authStatus: "idle", refreshAttempted: false })).toBe(
-      "connecting",
-    );
-    expect(resolveAccountAuthGate({ authStatus: "loading", refreshAttempted: false })).toBe(
-      "connecting",
-    );
+    expect(
+      resolveAccountAuthGate({
+        authStatus: "idle",
+        storageReady: true,
+        hardReloadAttempted: false,
+      }),
+    ).toBe("connecting");
+    expect(
+      resolveAccountAuthGate({
+        authStatus: "loading",
+        storageReady: true,
+        hardReloadAttempted: false,
+      }),
+    ).toBe("connecting");
   });
 
-  it("refreshes once after Telegram auth so Account can read the session cookie", () => {
+  it("waits to reload until sessionStorage can be read", () => {
     expect(
-      resolveAccountAuthGate({ authStatus: "authenticated", refreshAttempted: false }),
+      resolveAccountAuthGate({
+        authStatus: "authenticated",
+        storageReady: false,
+        hardReloadAttempted: false,
+      }),
+    ).toBe("connecting");
+  });
+
+  it("reloads once after Telegram auth so Account can read the session cookie", () => {
+    expect(
+      resolveAccountAuthGate({
+        authStatus: "authenticated",
+        storageReady: true,
+        hardReloadAttempted: false,
+      }),
     ).toBe("refresh");
   });
 
-  it("does not loop refresh if the session cookie still did not land", () => {
+  it("does not loop reload if the session cookie still did not land", () => {
     expect(
-      resolveAccountAuthGate({ authStatus: "authenticated", refreshAttempted: true }),
+      resolveAccountAuthGate({
+        authStatus: "authenticated",
+        storageReady: true,
+        hardReloadAttempted: true,
+      }),
     ).toBe("retry");
   });
 
   it("sends browser visitors without a session back to the shop", () => {
-    expect(resolveAccountAuthGate({ authStatus: "skipped", refreshAttempted: false })).toBe(
-      "redirect-home",
-    );
+    expect(
+      resolveAccountAuthGate({
+        authStatus: "skipped",
+        storageReady: true,
+        hardReloadAttempted: false,
+      }),
+    ).toBe("redirect-home");
   });
 
   it("offers a single retry on auth failure", () => {
-    expect(resolveAccountAuthGate({ authStatus: "error", refreshAttempted: false })).toBe(
-      "retry",
-    );
+    expect(
+      resolveAccountAuthGate({
+        authStatus: "error",
+        storageReady: true,
+        hardReloadAttempted: false,
+      }),
+    ).toBe("retry");
+  });
+});
+
+describe("customerSessionCookiePolicy", () => {
+  it("uses Lax cookies by default so Telegram Mini App matches the cart cookie", () => {
+    expect(customerSessionCookiePolicy().sameSite).toBe("lax");
   });
 });
