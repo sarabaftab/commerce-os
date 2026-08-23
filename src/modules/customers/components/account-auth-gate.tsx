@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { submitTelegramSessionForm } from "@/channels/telegram/client/submit-session-form";
+import { waitForTelegramInitData } from "@/channels/telegram/client/wait-for-init-data";
 import { useTelegram } from "@/channels/telegram/client/telegram-provider";
 import {
-  ACCOUNT_SESSION_SYNC_KEY,
-  accountSyncWasRecent,
+  TELEGRAM_ACCOUNT_NAV_KEY,
   resolveAccountAuthGate,
 } from "@/modules/customers/account-auth-gate";
 import { shop } from "@/ui/storefront/shop-classes";
@@ -17,27 +18,42 @@ type AccountAuthGateProps = {
 
 export function AccountAuthGate({ tenantSlug }: AccountAuthGateProps) {
   const router = useRouter();
-  const { authStatus, retryAuth } = useTelegram();
-  const [storageReady, setStorageReady] = useState(false);
-  const [hardReloadAttempted, setHardReloadAttempted] = useState(false);
+  const { authStatus, isTelegram, retryAuth } = useTelegram();
+  const [navigationAttempted, setNavigationAttempted] = useState(false);
+  const startedRef = useRef(false);
   const view = resolveAccountAuthGate({
     authStatus,
-    storageReady,
-    hardReloadAttempted,
+    navigationAttempted,
   });
 
   useEffect(() => {
-    setHardReloadAttempted(accountSyncWasRecent());
-    setStorageReady(true);
+    setNavigationAttempted(sessionStorage.getItem(TELEGRAM_ACCOUNT_NAV_KEY) === "1");
   }, []);
 
   useEffect(() => {
-    if (authStatus !== "authenticated" || !storageReady || hardReloadAttempted) {
+    if (!isTelegram || authStatus === "skipped" || navigationAttempted || startedRef.current) {
       return;
     }
-    sessionStorage.setItem(ACCOUNT_SESSION_SYNC_KEY, String(Date.now()));
-    window.location.reload();
-  }, [authStatus, storageReady, hardReloadAttempted]);
+    const webApp = window.Telegram?.WebApp;
+    if (!webApp) {
+      return;
+    }
+    startedRef.current = true;
+    void (async () => {
+      const initData = await waitForTelegramInitData(() => webApp.initData);
+      if (!initData) {
+        startedRef.current = false;
+        setNavigationAttempted(true);
+        return;
+      }
+      sessionStorage.setItem(TELEGRAM_ACCOUNT_NAV_KEY, "1");
+      submitTelegramSessionForm({
+        tenantSlug,
+        initData,
+        nextPath: window.location.pathname,
+      });
+    })();
+  }, [authStatus, isTelegram, navigationAttempted, tenantSlug]);
 
   useEffect(() => {
     if (view !== "redirect-home") {
@@ -59,15 +75,16 @@ export function AccountAuthGate({ tenantSlug }: AccountAuthGateProps) {
           Couldn’t open Account
         </h1>
         <p className="text-sm text-[color:var(--shop-ink-muted)]">
-          We couldn’t save your Telegram session in this Mini App. Try again — if it still fails,
-          close the Mini App and reopen it from the bot.
+          Telegram did not keep your login in this Mini App. Try again — if it still fails, ask
+          the shop owner to confirm the Mini App URL in BotFather matches this shop.
         </p>
         <button
           type="button"
           className={shop.btnPrimary}
           onClick={() => {
-            sessionStorage.removeItem(ACCOUNT_SESSION_SYNC_KEY);
-            setHardReloadAttempted(false);
+            sessionStorage.removeItem(TELEGRAM_ACCOUNT_NAV_KEY);
+            startedRef.current = false;
+            setNavigationAttempted(false);
             retryAuth();
           }}
         >

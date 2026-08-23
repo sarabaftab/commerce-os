@@ -5,11 +5,13 @@ CommerceOS exposes the existing tenant storefront (e.g. `/kin-a2`) as a Telegram
 ## BotFather setup (KIN A2)
 
 1. Open [@BotFather](https://t.me/BotFather) → `/newbot` (or use an existing bot).
-2. Copy the **bot token** into `.env.local` as `TELEGRAM_BOT_TOKEN`.
+2. Copy the **bot token** into Vercel and `.env.local` as `TELEGRAM_BOT_TOKEN` (must be this bot, not another).
 3. Set `TELEGRAM_TENANT_SLUG=kin-a2` (must match the storefront URL slug).
 4. Configure the Mini App:
-   - `/newapp` or Bot settings → **Menu Button** / **Web App**
-   - Web App URL: `https://<your-public-host>/kin-a2`
+   - BotFather → your bot → **Bot Settings** → **Menu Button** / **Configure Mini App**
+   - Web App URL must be the **production** shop, including the slug, for example `https://<your-vercel-host>/kin-a2`
+   - The host must be the same URL customers open in Telegram (not a Vercel preview URL, not localhost)
+   - Testers do not need any extra Telegram app setting. If Account fails only for them, it is a session cookie issue in the Mini App WebView, not a Telegram privacy toggle.
 5. Optional deep link: `https://t.me/<bot>?startapp=<opaque_param>` — `start_param` is stored as order `referralCode` (no referral logic yet).
 
 ## Local HTTPS

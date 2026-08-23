@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { customerSessionCookiePolicy } from "@/channels/telegram/server/customer-session";
+import { safeTelegramAccountPath } from "@/channels/telegram/server/account-session-path";
 import { waitForTelegramInitData } from "@/channels/telegram/client/wait-for-init-data";
 import {
   parseTelegramUserId,
@@ -94,49 +95,38 @@ describe("validateTelegramInitData missing optional Telegram fields", () => {
 });
 
 describe("resolveAccountAuthGate", () => {
-  it("keeps first-time Telegram customers on a connecting state while auth loads", () => {
+  it("keeps first-time Telegram customers on a connecting state while the session POST runs", () => {
     expect(
       resolveAccountAuthGate({
         authStatus: "idle",
-        storageReady: true,
-        hardReloadAttempted: false,
+        navigationAttempted: false,
       }),
     ).toBe("connecting");
     expect(
       resolveAccountAuthGate({
         authStatus: "loading",
-        storageReady: true,
-        hardReloadAttempted: false,
+        navigationAttempted: false,
+      }),
+    ).toBe("connecting");
+    expect(
+      resolveAccountAuthGate({
+        authStatus: "authenticated",
+        navigationAttempted: false,
+      }),
+    ).toBe("connecting");
+    expect(
+      resolveAccountAuthGate({
+        authStatus: "error",
+        navigationAttempted: false,
       }),
     ).toBe("connecting");
   });
 
-  it("waits to reload until sessionStorage can be read", () => {
+  it("shows retry after the Telegram session navigation came back without a cookie", () => {
     expect(
       resolveAccountAuthGate({
         authStatus: "authenticated",
-        storageReady: false,
-        hardReloadAttempted: false,
-      }),
-    ).toBe("connecting");
-  });
-
-  it("reloads once after Telegram auth so Account can read the session cookie", () => {
-    expect(
-      resolveAccountAuthGate({
-        authStatus: "authenticated",
-        storageReady: true,
-        hardReloadAttempted: false,
-      }),
-    ).toBe("refresh");
-  });
-
-  it("does not loop reload if the session cookie still did not land", () => {
-    expect(
-      resolveAccountAuthGate({
-        authStatus: "authenticated",
-        storageReady: true,
-        hardReloadAttempted: true,
+        navigationAttempted: true,
       }),
     ).toBe("retry");
   });
@@ -145,20 +135,21 @@ describe("resolveAccountAuthGate", () => {
     expect(
       resolveAccountAuthGate({
         authStatus: "skipped",
-        storageReady: true,
-        hardReloadAttempted: false,
+        navigationAttempted: false,
       }),
     ).toBe("redirect-home");
   });
+});
 
-  it("offers a single retry on auth failure", () => {
-    expect(
-      resolveAccountAuthGate({
-        authStatus: "error",
-        storageReady: true,
-        hardReloadAttempted: false,
-      }),
-    ).toBe("retry");
+describe("safeTelegramAccountPath", () => {
+  it("only allows Account paths for the same tenant", () => {
+    expect(safeTelegramAccountPath("kin-a2", "/kin-a2/account/orders")).toBe(
+      "/kin-a2/account/orders",
+    );
+    expect(safeTelegramAccountPath("kin-a2", "https://evil.example/account")).toBe(
+      "/kin-a2/account",
+    );
+    expect(safeTelegramAccountPath("kin-a2", "/other/account")).toBe("/kin-a2/account");
   });
 });
 
