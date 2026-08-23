@@ -5,6 +5,7 @@ import { OrderCustomerPanel } from "@/modules/orders/components/admin/order-cust
 import { OrderDetailHeader } from "@/modules/orders/components/admin/order-detail-header";
 import { OrderFulfillmentPanel } from "@/modules/orders/components/admin/order-fulfillment-panel";
 import { OrderItemsTable } from "@/modules/orders/components/admin/order-items-table";
+import { OrderNotificationPanel } from "@/modules/orders/components/admin/order-notification-panel";
 import { OrderPaymentPanel } from "@/modules/orders/components/admin/order-payment-panel";
 import { OrderPricingSummary } from "@/modules/orders/components/admin/order-pricing-summary";
 import { OrderStatusForm } from "@/modules/orders/components/admin/order-status-form";
@@ -72,6 +73,11 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
 
         <div className="space-y-4">
           <OrderPricingSummary order={order} />
+          <OrderNotificationPanel
+            orderId={order.id}
+            telegramLinked={order.telegramLinked}
+            notifications={order.notifications}
+          />
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Update status</CardTitle>

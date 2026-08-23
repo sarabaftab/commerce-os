@@ -23,6 +23,15 @@ export function getTelegramBotTokenForTenantSlug(tenantSlug: string): string {
   return TELEGRAM_BOT_TOKEN;
 }
 
+/** Returns null instead of throwing when this tenant has no bot mapping. */
+export function getTelegramBotTokenForTenantSlugOrNull(tenantSlug: string): string | null {
+  const { TELEGRAM_BOT_TOKEN, TELEGRAM_TENANT_SLUG } = env();
+  if (!TELEGRAM_BOT_TOKEN || tenantSlug !== TELEGRAM_TENANT_SLUG) {
+    return null;
+  }
+  return TELEGRAM_BOT_TOKEN;
+}
+
 export function getTelegramInitDataMaxAgeSeconds(): number {
   return env().TELEGRAM_INIT_DATA_MAX_AGE_SECONDS;
 }

@@ -1,4 +1,6 @@
+import { findTelegramIdentityForCustomer } from "@/modules/customers/repositories/customer-repository";
 import { findUsersByIds } from "@/modules/identity/repositories/user-repository";
+import { listOrderNotifications } from "@/modules/notifications/services/notification-service";
 import { AppError } from "@/shared/errors/app-error";
 import { normalizePhone } from "@/shared/phone/normalize-phone";
 
@@ -117,6 +119,14 @@ export async function getOrderDetailForAdmin(
     };
   });
 
+  const [telegramIdentity, notifications] = await Promise.all([
+    findTelegramIdentityForCustomer({
+      tenantId,
+      customerId: order.customer.id,
+    }),
+    listOrderNotifications(tenantId, orderId),
+  ]);
+
   return {
     id: order.id,
     orderNumber: order.orderNumber,
@@ -158,6 +168,13 @@ export async function getOrderDetailForAdmin(
     })),
     statusHistory,
     allowedNextStatuses: getAllowedNextStatuses(order.status, order.fulfillmentMethod),
+    telegramLinked: Boolean(telegramIdentity),
+    notifications: notifications.map((row) => ({
+      id: row.id,
+      toStatus: row.toStatus,
+      status: row.status,
+      errorCode: row.errorCode,
+    })),
   };
 }
 

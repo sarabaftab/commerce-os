@@ -1,5 +1,9 @@
 import type { OrderStatus, Prisma } from "@prisma/client";
 
+import {
+  deliverOrderStatusNotification,
+  enqueueOrderStatusNotification,
+} from "@/modules/notifications/services/notification-service";
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
 
@@ -46,8 +50,23 @@ async function afterOrderStatusTransition(args: {
   fromStatus: OrderStatus;
   toStatus: OrderStatus;
 }): Promise<void> {
-  void args;
-  // Intentionally empty — no loyalty / notification implementations yet.
+  try {
+    await deliverOrderStatusNotification({
+      tenantId: args.tenantId,
+      orderId: args.orderId,
+      toStatus: args.toStatus,
+    });
+  } catch (error) {
+    console.info("[notifications]", {
+      tenantId: args.tenantId,
+      orderId: args.orderId,
+      type: "order_status",
+      channel: "telegram",
+      outcome: "failed",
+      reason: "unhandled",
+    });
+    void error;
+  }
 }
 
 export function getAllowedNextStatuses(
@@ -102,6 +121,12 @@ export async function transitionOrderStatus(
 
   const fromStatus = order.status;
   if (fromStatus === input.toStatus) {
+    await afterOrderStatusTransition({
+      tenantId: input.tenantId,
+      orderId: input.orderId,
+      fromStatus,
+      toStatus: input.toStatus,
+    });
     return toOrderConfirmation(order);
   }
 
@@ -132,6 +157,13 @@ export async function transitionOrderStatus(
         note: input.note ?? null,
         createdBy: input.createdBy ?? null,
       },
+    });
+
+    await enqueueOrderStatusNotification(tx, {
+      tenantId: input.tenantId,
+      customerId: order.customerId,
+      orderId: input.orderId,
+      toStatus: input.toStatus,
     });
 
     return tx.order.findFirstOrThrow({

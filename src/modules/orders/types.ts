@@ -231,4 +231,11 @@ export type AdminOrderDetail = {
   items: OrderLineView[];
   statusHistory: OrderStatusHistoryEntry[];
   allowedNextStatuses: OrderStatus[];
+  telegramLinked: boolean;
+  notifications: {
+    id: string;
+    toStatus: OrderStatus;
+    status: import("@prisma/client").NotificationDeliveryStatus;
+    errorCode: string | null;
+  }[];
 };

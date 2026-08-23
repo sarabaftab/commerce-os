@@ -43,6 +43,20 @@ enum PaymentProofStatus {
   rejected
 }
 
+enum NotificationChannel {
+  telegram
+}
+
+enum NotificationType {
+  order_status
+}
+
+enum NotificationDeliveryStatus {
+  pending
+  sent
+  failed
+}
+
 enum CartStatus {
   open
   converted
@@ -83,6 +97,7 @@ model Tenant {
   customerSessions   CustomerSession[]
   customerAddresses  CustomerAddress[]
   faqs               Faq[]
+  notifications      CustomerNotification[]
 
   @@map("tenants")
 }
@@ -200,7 +215,8 @@ model Customer {
   orders     Order[]
   carts      Cart[]
   sessions   CustomerSession[]
-  addresses  CustomerAddress[]
+  addresses     CustomerAddress[]
+  notifications CustomerNotification[]
 
   @@index([tenantId])
   @@index([tenantId, phone])
@@ -324,6 +340,7 @@ model Order {
   customer      Customer             @relation(fields: [customerId], references: [id])
   items         OrderItem[]
   statusHistory OrderStatusHistory[]
+  notifications CustomerNotification[]
 
   @@unique([tenantId, orderNumber])
   @@unique([tenantId, idempotencyKey])
@@ -370,6 +387,33 @@ model OrderStatusHistory {
 
   @@index([orderId, createdAt])
   @@map("order_status_history")
+}
+
+model CustomerNotification {
+  id                  String                     @id @default(cuid())
+  tenantId            String                     @map("tenant_id")
+  customerId          String                     @map("customer_id")
+  orderId             String                     @map("order_id")
+  channel             NotificationChannel
+  type                NotificationType
+  toStatus            OrderStatus                @map("to_status")
+  recipientExternalId String?                    @map("recipient_external_id")
+  status              NotificationDeliveryStatus @default(pending)
+  attemptCount        Int                        @default(0) @map("attempt_count")
+  lastAttemptAt       DateTime?                  @map("last_attempt_at")
+  sentAt              DateTime?                  @map("sent_at")
+  errorCode           String?                    @map("error_code") @db.VarChar(64)
+  createdAt           DateTime                   @default(now()) @map("created_at")
+  updatedAt           DateTime                   @updatedAt @map("updated_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, channel, type, toStatus])
+  @@index([tenantId, orderId])
+  @@index([tenantId, status])
+  @@map("customer_notifications")
 }
 
 model Cart {
@@ -431,7 +475,8 @@ model TenantSettings {
   abaInstructions            String?  @map("aba_instructions")
   abaQrImageUrl              String?  @map("aba_qr_image_url")
   abaCustomerNote            String?  @map("aba_customer_note")
-  primaryColor               String?  @map("primary_color")
+  primaryColor                         String?  @map("primary_color")
+  telegramOrderNotificationsEnabled    Boolean  @default(true) @map("telegram_order_notifications_enabled")
   createdAt                  DateTime @default(now()) @map("created_at")
   updatedAt                  DateTime @updatedAt @map("updated_at")
 

@@ -10,6 +10,19 @@ export async function findCustomerById(tenantId: string, customerId: string) {
   });
 }
 
+export async function findTelegramIdentityForCustomer(input: {
+  tenantId: string;
+  customerId: string;
+}) {
+  return prisma.customerIdentity.findFirst({
+    where: {
+      tenantId: input.tenantId,
+      customerId: input.customerId,
+      channel: "telegram",
+    },
+  });
+}
+
 export async function findCustomerByIdentity(input: {
   tenantId: string;
   channel: IdentityChannel;

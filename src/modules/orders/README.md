@@ -27,7 +27,8 @@ Routes:
 - `/admin/orders/[orderId]` — detail, timeline, status update
 
 Status updates always call `transitionOrderStatus` with `createdBy = session.userId`.  
-UI next-status options come from `getAllowedNextStatuses` (narrows pickup vs delivery after `processing`).
+UI next-status options come from `getAllowedNextStatuses` (narrows pickup vs delivery after `processing`).  
+After a successful status commit, CommerceOS records a `CustomerNotification` and attempts one Telegram send. Telegram failure does not roll back the order. Admins can Retry from the order detail page.
 
 ## Order creation (required pattern)
 

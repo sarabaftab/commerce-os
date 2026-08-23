@@ -51,6 +51,20 @@ Telegram requires HTTPS for Mini Apps.
 - [ ] BackButton shows on nested routes, hidden on store root
 - [ ] Web storefront still works without Telegram (auth skipped)
 
+## Order status notifications
+
+When an admin changes order status (after `pending`), CommerceOS sends a Telegram message to the customer’s linked Telegram user id (`CustomerIdentity.externalId`).
+
+Requirements:
+
+- The customer must have opened this shop from **this** bot (menu button / Mini App). Telegram will 403 if they never started the bot.
+- `TELEGRAM_BOT_TOKEN` must be set. Token stays server-only.
+- Storage bucket for payment proofs is unrelated.
+
+View Order opens `/{tenantSlug}/account/orders/{orderNumber}` inside the Mini App. That route still requires a customer session. The existing Account cookie issue is unchanged; we do not use a public order URL.
+
+Admin order detail shows Telegram Sent / Failed / Not linked, with Retry for failed/pending rows. Duplicate transitions for the same status do not send a second message.
+
 ## Out of scope (Phase 1)
 
-Loyalty, referrals engine, Telegram order notifications, Stars payments, WhatsApp/LINE, multi-bot multi-tenant mapping.
+Loyalty, referrals engine, Stars payments, WhatsApp/LINE, multi-bot multi-tenant mapping.
