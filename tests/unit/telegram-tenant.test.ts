@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { normalizeTelegramBotToken } from "@/channels/telegram/server/bot-config";
 import { AppError } from "@/shared/errors/app-error";
 
 /**
@@ -38,5 +39,21 @@ describe("Telegram tenant isolation (Phase 1)", () => {
     expect(() =>
       assertTelegramTenantAllowed("kin-a2", "kin-a2", undefined),
     ).toThrow(/not configured/i);
+  });
+});
+
+describe("normalizeTelegramBotToken", () => {
+  it("keeps a normal BotFather token", () => {
+    expect(normalizeTelegramBotToken("123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw")).toBe(
+      "123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw",
+    );
+  });
+
+  it("strips only an API bot prefix before the numeric id", () => {
+    expect(normalizeTelegramBotToken("bot123456789:AAHsecret")).toBe("123456789:AAHsecret");
+  });
+
+  it("does not slice a token that merely starts with the letters bot", () => {
+    expect(normalizeTelegramBotToken("botsecret:not-a-real-id")).toBe("botsecret:not-a-real-id");
   });
 });

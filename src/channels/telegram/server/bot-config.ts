@@ -23,12 +23,15 @@ export function getTelegramBotTokenForTenantSlug(tenantSlug: string): string {
   return normalizeTelegramBotToken(TELEGRAM_BOT_TOKEN);
 }
 
-function normalizeTelegramBotToken(raw: string): string {
-  let token = raw.trim().replace(/^["']|["']$/g, "");
-  if (/^bot/i.test(token)) {
-    token = token.slice(3);
-  }
-  return token;
+/**
+ * BotFather tokens look like `123456789:AAH…`.
+ * Only strip a `bot` prefix when it is the API URL prefix (`bot<id>:<secret>`),
+ * not when the secret itself happens to contain those letters.
+ */
+export function normalizeTelegramBotToken(raw: string): string {
+  const token = raw.trim().replace(/^["']|["']$/g, "");
+  const prefixed = /^bot(\d+:\S+)/i.exec(token);
+  return prefixed?.[1] ?? token;
 }
 
 /** Returns null instead of throwing when this tenant has no bot mapping. */

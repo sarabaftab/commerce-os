@@ -32,11 +32,14 @@ function formatDelivery(status: NotificationDeliveryStatus) {
 }
 
 function formatNotificationError(code: string) {
-  if (code === "401") {
+  if (code.startsWith("401")) {
     return "Telegram rejected the bot token. On Vercel, set TELEGRAM_BOT_TOKEN (the BotFather token) for Production, redeploy, then Retry.";
   }
-  if (code === "403") {
+  if (code.startsWith("403")) {
     return "Telegram blocked the message. The customer must open this shop from this bot once, or they blocked the bot.";
+  }
+  if (code.startsWith("404")) {
+    return "Telegram returned 404 (bot or chat not found). Confirm TELEGRAM_BOT_TOKEN matches this Mini App bot, and that the customer opened the shop from that bot.";
   }
   if (code === "NO_BOT_TOKEN") {
     return "No bot token is configured for this tenant slug.";

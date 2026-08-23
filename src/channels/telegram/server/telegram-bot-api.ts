@@ -10,26 +10,26 @@ type SendTelegramMessageInput = {
   buttonText: string;
 };
 
-/**
- * Bot API sendMessage. Token is only used as a request path segment — never logged.
- */
-export async function sendTelegramBotMessage(
-  input: SendTelegramMessageInput,
+function telegramChatId(chatId: string): string | number {
+  return /^\d+$/.test(chatId) ? Number(chatId) : chatId;
+}
+
+function telegramErrorCode(payload: { error_code?: number; description?: string } | null, httpStatus: number) {
+  const code = payload?.error_code != null ? String(payload.error_code) : `http_${httpStatus}`;
+  const description = payload?.description?.replace(/bot\d+:\S+/gi, "[token]").slice(0, 80);
+  return (description ? `${code}:${description}` : code).slice(0, 64);
+}
+
+async function postSendMessage(
+  botToken: string,
+  body: Record<string, unknown>,
 ): Promise<TelegramSendMessageResult> {
-  const url = `https://api.telegram.org/bot${input.botToken}/sendMessage`;
+  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
   try {
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: input.chatId,
-        text: input.text,
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: input.buttonText, web_app: { url: input.webAppUrl } }],
-          ],
-        },
-      }),
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(8000),
     });
 
@@ -43,12 +43,34 @@ export async function sendTelegramBotMessage(
       return { ok: true };
     }
 
-    const code =
-      payload?.error_code != null
-        ? String(payload.error_code)
-        : `http_${response.status}`;
-    return { ok: false, errorCode: code.slice(0, 64) };
+    return { ok: false, errorCode: telegramErrorCode(payload, response.status) };
   } catch {
     return { ok: false, errorCode: "network" };
   }
+}
+
+/**
+ * Bot API sendMessage. Token is only used as a request path segment — never logged.
+ * If the Mini App button is rejected, retry the same text without a button so the update still arrives.
+ */
+export async function sendTelegramBotMessage(
+  input: SendTelegramMessageInput,
+): Promise<TelegramSendMessageResult> {
+  const chatId = telegramChatId(input.chatId);
+  const withButton = await postSendMessage(input.botToken, {
+    chat_id: chatId,
+    text: input.text,
+    reply_markup: {
+      inline_keyboard: [[{ text: input.buttonText, web_app: { url: input.webAppUrl } }]],
+    },
+  });
+  if (withButton.ok) {
+    return withButton;
+  }
+
+  const withoutButton = await postSendMessage(input.botToken, {
+    chat_id: chatId,
+    text: input.text,
+  });
+  return withoutButton.ok ? withoutButton : withButton;
 }
