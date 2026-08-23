@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { customerSessionCookiePolicy } from "@/channels/telegram/server/customer-session";
+import { decodeTelegramInitDataField } from "@/channels/telegram/server/session-form";
+import {
+  createTelegramSessionHandoff,
+  readTelegramSessionHandoff,
+} from "@/channels/telegram/server/session-handoff";
 import { safeTelegramAccountPath } from "@/channels/telegram/server/account-session-path";
 import { waitForTelegramInitData } from "@/channels/telegram/client/wait-for-init-data";
 import {
@@ -156,5 +161,23 @@ describe("safeTelegramAccountPath", () => {
 describe("customerSessionCookiePolicy", () => {
   it("uses Lax cookies by default so Telegram Mini App matches the cart cookie", () => {
     expect(customerSessionCookiePolicy().sameSite).toBe("lax");
+  });
+});
+
+describe("decodeTelegramInitDataField", () => {
+  it("round-trips Telegram initData that contains & and =", () => {
+    const raw = "user=%7B%22id%22%3A1%7D&auth_date=1&hash=abc";
+    const form = new FormData();
+    form.set("initDataB64", Buffer.from(raw, "utf8").toString("base64"));
+    expect(decodeTelegramInitDataField(form)).toBe(raw);
+  });
+});
+
+describe("telegram session handoff", () => {
+  it("accepts a fresh signed session token and rejects a tampered one", () => {
+    const token = "session-token-example";
+    const handoff = createTelegramSessionHandoff(token);
+    expect(readTelegramSessionHandoff(handoff)).toBe(token);
+    expect(readTelegramSessionHandoff(`${handoff}x`)).toBeNull();
   });
 });

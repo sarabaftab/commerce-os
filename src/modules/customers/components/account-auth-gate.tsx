@@ -27,6 +27,10 @@ export function AccountAuthGate({ tenantSlug }: AccountAuthGateProps) {
   });
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("tg_s")) {
+      setNavigationAttempted(false);
+      return;
+    }
     setNavigationAttempted(sessionStorage.getItem(TELEGRAM_ACCOUNT_NAV_KEY) === "1");
   }, []);
 
