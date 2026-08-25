@@ -19,6 +19,7 @@ export function SectionHeader({
       {href ? (
         <Link
           href={href}
+          prefetch={false}
           className="pb-1 text-sm font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
         >
           {actionLabel}

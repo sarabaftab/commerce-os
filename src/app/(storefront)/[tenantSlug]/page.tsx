@@ -54,7 +54,7 @@ export default async function StorefrontHomePage({ params }: HomePageProps) {
             Browse {tenant.name} and checkout in a few taps — built for mobile
             and Telegram.
           </p>
-          <Link href={`${basePath}/products`} className={shop.btnPrimary}>
+          <Link href={`${basePath}/products`} prefetch={false} className={shop.btnPrimary}>
             Shop products
           </Link>
         </div>

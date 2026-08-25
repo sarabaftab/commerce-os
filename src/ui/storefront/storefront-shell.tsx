@@ -42,6 +42,7 @@ export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) 
           <nav className="flex items-center gap-1 text-sm">
             <Link
               href={`${basePath}/products`}
+              prefetch={false}
               className="rounded-full px-3 py-2 text-[color:var(--shop-ink)] transition hover:bg-[color:var(--shop-surface)]/70"
             >
               Shop

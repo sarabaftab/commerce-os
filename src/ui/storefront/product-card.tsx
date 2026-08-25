@@ -21,6 +21,7 @@ export function ProductCard({ product, href, className, priority = false }: Prod
   return (
     <Link
       href={href}
+      prefetch={false}
       className={cn(
         "group flex flex-col overflow-hidden transition duration-200",
         shop.card,

@@ -95,3 +95,15 @@ Admin pages show a yellow badge with:
 Server terminal also logs `[timing]` lines for `auth.getUser`, `admin.session`, and each page.
 
 Compare Pakistan vs Cambodia on the same routes (`/admin`, `/admin/products`, `/admin/categories`).
+
+## Vercel + Supabase connection pool
+
+Runtime uses Supabase **session mode** (pooler port `5432`) so Prisma interactive transactions (checkout) work. Session pool size defaults to **15 connections for the whole project** — shared by every Vercel deploy, preview, and local `npm run dev`.
+
+If you see `max clients reached in session mode`:
+
+1. **Remove `NODE_ENV=development` from Vercel** — the app forces `connection_limit=1` on Vercel, but other tools may not.
+2. **Pause or delete old Vercel projects** that still point at the same `DATABASE_URL`.
+3. **Avoid running local dev against production** while testing the live Mini App.
+4. In Supabase → **Database → Connection pooling**, increase session pool size if your plan allows it.
+5. Redeploy after env changes; close and reopen the Telegram Mini App to drop stale JS.
