@@ -84,6 +84,9 @@ export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) 
           >
             FAQ
           </Link>
+          <p className="text-[10px] font-medium tracking-wide text-[color:var(--shop-primary)]">
+            Deploy check · Aug 26
+          </p>
           <StorefrontAsyncBoundary tenantSlug={tenantSlug} slot="footer" />
         </div>
       </footer>
