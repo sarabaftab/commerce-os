@@ -1,6 +1,6 @@
 "use client";
 
-import { ProductImage } from "@/ui/storefront/product-image";
+import { AbaPaymentDetails } from "./aba-payment-details";
 import { FieldLabel } from "@/ui/components/field-label";
 
 type CheckoutPaymentFieldsProps = {
@@ -8,10 +8,11 @@ type CheckoutPaymentFieldsProps = {
   onPaymentMethodChange: (method: "cod" | "aba_transfer") => void;
   codEnabled: boolean;
   abaAvailable: boolean;
-  abaInstructions: string;
+  abaInstructions?: string | null;
   abaQrImageUrl?: string | null;
   abaAccountName?: string | null;
   abaAccountNumber?: string | null;
+  abaCustomerNote?: string | null;
   amountLabel?: string | null;
 };
 
@@ -27,6 +28,7 @@ export function CheckoutPaymentFields({
   abaQrImageUrl,
   abaAccountName,
   abaAccountNumber,
+  abaCustomerNote,
   amountLabel,
 }: CheckoutPaymentFieldsProps) {
   const methods = [
@@ -92,33 +94,15 @@ export function CheckoutPaymentFields({
 
       {paymentMethod === "aba_transfer" && abaAvailable ? (
         <div className="space-y-3">
-          <p className="text-sm">
-            Please transfer your order total, then upload a screenshot on the confirmation page.
-          </p>
-          {amountLabel ? (
-            <p className="text-sm font-semibold">Amount: {amountLabel}</p>
-          ) : null}
-          {abaAccountName ? (
-            <p className="text-sm">Account name: {abaAccountName}</p>
-          ) : null}
-          {abaAccountNumber ? (
-            <p className="text-sm">Account number: {abaAccountNumber}</p>
-          ) : null}
-          {abaInstructions ? (
-            <div className="whitespace-pre-line rounded-xl bg-[color:var(--shop-surface)] p-3 text-sm leading-relaxed text-[color:var(--shop-ink-muted)]">
-              {abaInstructions}
-            </div>
-          ) : null}
-          {abaQrImageUrl ? (
-            <div className="relative mx-auto h-48 w-48 overflow-hidden rounded-xl">
-              <ProductImage
-                src={abaQrImageUrl}
-                alt="ABA payment QR"
-                sizes="192px"
-                className="object-contain"
-              />
-            </div>
-          ) : null}
+          <AbaPaymentDetails
+            qrImageUrl={abaQrImageUrl}
+            accountName={abaAccountName}
+            accountNumber={abaAccountNumber}
+            amountLabel={amountLabel}
+            instructions={abaInstructions}
+            customerNote={abaCustomerNote}
+            showProofNote
+          />
           <div>
             <FieldLabel htmlFor="paymentReference">
               Payment reference{" "}

@@ -1,4 +1,5 @@
 import type { OrderConfirmation } from "@/modules/orders";
+import { AbaPaymentDetails } from "@/modules/orders/components/aba-payment-details";
 import { AbaProofUpload } from "@/modules/orders/components/aba-proof-upload";
 import { formatPackSizeLine, formatPriceTimesQuantity } from "@/modules/catalog/selling-unit";
 import { formatMoney } from "@/shared/money/money";
@@ -7,6 +8,13 @@ type OrderConfirmationViewProps = {
   order: OrderConfirmation;
   tenantSlug: string;
   accountOrderHref: string | null;
+  abaPayment: {
+    qrImageUrl: string | null;
+    accountName: string | null;
+    accountNumber: string | null;
+    instructions: string | null;
+    customerNote: string | null;
+  };
 };
 
 function formatPaymentMethod(method: OrderConfirmation["paymentMethod"]) {
@@ -31,6 +39,7 @@ export function OrderConfirmationView({
   order,
   tenantSlug,
   accountOrderHref,
+  abaPayment,
 }: OrderConfirmationViewProps) {
   return (
     <div className="space-y-4">
@@ -78,6 +87,18 @@ export function OrderConfirmationView({
         <section>
           <h2 className="text-sm font-semibold">Payment</h2>
           <p className="mt-2 text-sm">{formatPaymentMethod(order.paymentMethod)}</p>
+          {order.paymentMethod === "aba_transfer" ? (
+            <div className="mt-3">
+              <AbaPaymentDetails
+                qrImageUrl={abaPayment.qrImageUrl}
+                accountName={abaPayment.accountName}
+                accountNumber={abaPayment.accountNumber}
+                amountLabel={formatMoney(order.totalMinor, order.currency)}
+                instructions={abaPayment.instructions}
+                customerNote={abaPayment.customerNote}
+              />
+            </div>
+          ) : null}
           {order.paymentReference ? (
             <p className="text-sm text-[color:var(--shop-ink-muted)]">
               Reference: {order.paymentReference}

@@ -21,13 +21,13 @@ export function paymentProofStatusLabel(status: PaymentProofStatus): string {
     case "not_required":
       return "Not required";
     case "awaiting_proof":
-      return "Awaiting screenshot";
+      return "Not submitted";
     case "submitted":
       return "Submitted";
     case "verified":
       return "Verified";
     case "rejected":
-      return "Needs a new screenshot";
+      return "Rejected";
     default:
       return status;
   }

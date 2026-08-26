@@ -20,7 +20,7 @@ type OrderPaymentPanelProps = {
 };
 
 function formatPayment(method: AdminOrderDetail["paymentMethod"]) {
-  return method === "cod" ? "Cash on Delivery" : "ABA Transfer";
+  return method === "cod" ? "Cash on Delivery" : "ABA Bank Transfer";
 }
 
 const initial: PaymentProofActionState = {};
@@ -37,12 +37,17 @@ export function OrderPaymentPanel({ order }: OrderPaymentPanelProps) {
   const [viewError, setViewError] = useState<string | null>(null);
   const pending = verifyPending || rejectPending;
   const isAba = order.paymentMethod === "aba_transfer";
-  const canReview = isAba && order.paymentProofStatus === "submitted";
+  const effectiveStatus = verifyState.success
+    ? "verified"
+    : rejectState.success
+      ? "rejected"
+      : order.paymentProofStatus;
+  const canReview = isAba && effectiveStatus === "submitted";
   const hasProof =
     isAba &&
-    (order.paymentProofStatus === "submitted" ||
-      order.paymentProofStatus === "verified" ||
-      order.paymentProofStatus === "rejected");
+    (effectiveStatus === "submitted" ||
+      effectiveStatus === "verified" ||
+      effectiveStatus === "rejected");
 
   return (
     <Card>
@@ -57,7 +62,7 @@ export function OrderPaymentPanel({ order }: OrderPaymentPanelProps) {
           <p className="text-muted-foreground">No payment reference</p>
         )}
         {isAba ? (
-          <p>Proof: {paymentProofStatusLabel(order.paymentProofStatus)}</p>
+          <p>Payment proof: {paymentProofStatusLabel(effectiveStatus)}</p>
         ) : null}
         {order.paymentProofRejectionReason ? (
           <p className="text-destructive">{order.paymentProofRejectionReason}</p>
@@ -96,7 +101,7 @@ export function OrderPaymentPanel({ order }: OrderPaymentPanelProps) {
             </form>
             <form action={rejectAction} className="space-y-2">
               <input type="hidden" name="orderId" value={order.id} />
-              <Label htmlFor="reason">Reject reason (optional)</Label>
+              <Label htmlFor="reason">Customer-facing rejection reason (optional)</Label>
               <Input id="reason" name="reason" maxLength={240} />
               <Button type="submit" variant="outline" size="sm" disabled={pending}>
                 {rejectPending ? "Rejecting…" : "Reject proof"}

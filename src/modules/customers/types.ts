@@ -67,6 +67,11 @@ export type CustomerOrderDetailDto = {
   paymentReference: string | null;
   paymentProofStatus: import("@prisma/client").PaymentProofStatus;
   paymentProofRejectionReason: string | null;
+  abaQrImageUrl: string | null;
+  abaAccountName: string | null;
+  abaAccountNumber: string | null;
+  abaInstructions: string | null;
+  abaCustomerNote: string | null;
   currency: string;
   subtotalMinor: number;
   deliveryFeeMinor: number;

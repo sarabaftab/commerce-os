@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import {
+  getSettingsForAdmin,
   removePickupLocationForTenant,
   updateBrandingSettings,
   updateDeliverySettings,
@@ -12,6 +13,10 @@ import {
 } from "@/modules/settings";
 import { requireAdminSession } from "@/shared/auth/admin-session";
 import { isAppError } from "@/shared/errors/app-error";
+import {
+  removeAbaQrObjectByUrl,
+  uploadAbaQrObject,
+} from "@/shared/storage/aba-qr-storage";
 
 export type SettingsActionState = {
   error?: string;
@@ -81,20 +86,49 @@ export async function savePaymentSettingsAction(
   formData: FormData,
 ): Promise<SettingsActionState> {
   const session = await requireAdminSession();
+  let uploadedQrUrl: string | undefined;
   try {
+    const current = await getSettingsForAdmin(session.tenantId);
+    const currentQrUrl = current.settings.abaQrImageUrl;
+    const qrFile = formData.get("abaQrImage");
+    const removeQr = boolFromForm(formData, "removeAbaQrImage");
+    let abaQrImageUrl = String(formData.get("abaQrImageUrl") ?? "").trim();
+
+    if (qrFile instanceof File && qrFile.size > 0) {
+      const uploaded = await uploadAbaQrObject({
+        tenantId: session.tenantId,
+        bytes: new Uint8Array(await qrFile.arrayBuffer()),
+      });
+      uploadedQrUrl = uploaded.url;
+      abaQrImageUrl = uploaded.url;
+    } else if (removeQr) {
+      abaQrImageUrl = "";
+    } else if (!abaQrImageUrl) {
+      // Preserve a configured image when the admin only changes text settings.
+      abaQrImageUrl = currentQrUrl ?? "";
+    }
+
     await updatePaymentSettings(session.tenantId, {
       codEnabled: boolFromForm(formData, "codEnabled"),
       abaEnabled: boolFromForm(formData, "abaEnabled"),
       abaAccountName: String(formData.get("abaAccountName") ?? ""),
       abaAccountNumber: String(formData.get("abaAccountNumber") ?? ""),
       abaInstructions: String(formData.get("abaInstructions") ?? ""),
-      abaQrImageUrl: String(formData.get("abaQrImageUrl") ?? ""),
+      abaQrImageUrl,
       abaCustomerNote: String(formData.get("abaCustomerNote") ?? ""),
     });
+
+    if (currentQrUrl && currentQrUrl !== abaQrImageUrl) {
+      await removeAbaQrObjectByUrl(currentQrUrl);
+    }
   } catch (error) {
+    if (uploadedQrUrl) {
+      await removeAbaQrObjectByUrl(uploadedQrUrl);
+    }
     return { error: error instanceof Error ? error.message : "Failed to save" };
   }
   revalidatePath("/admin/settings");
+  revalidatePath(`/${session.tenantSlug}`, "layout");
   return { success: true };
 }
 

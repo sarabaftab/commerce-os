@@ -9,6 +9,10 @@ import {
   detectPaymentProofMime,
   validatePaymentProofBytes,
 } from "@/shared/storage/payment-proof-storage";
+import {
+  detectAbaQrMime,
+  validateAbaQrBytes,
+} from "@/shared/storage/aba-qr-storage";
 import { AppError } from "@/shared/errors/app-error";
 
 const pngHeader = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
@@ -65,5 +69,20 @@ describe("payment proof file validation", () => {
     expect(() => validatePaymentProofBytes(Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]))).toThrow(
       AppError,
     );
+  });
+});
+
+describe("ABA QR file validation", () => {
+  it("accepts the supported image formats", () => {
+    expect(detectAbaQrMime(pngHeader)).toBe("image/png");
+    expect(detectAbaQrMime(jpegHeader)).toBe("image/jpeg");
+    expect(validateAbaQrBytes(pngHeader)).toEqual({ mime: "image/png", ext: "png" });
+  });
+
+  it("rejects unsupported QR image bytes", () => {
+    expect(() => validateAbaQrBytes(new Uint8Array())).toThrow(AppError);
+    expect(() =>
+      validateAbaQrBytes(Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])),
+    ).toThrow(AppError);
   });
 });

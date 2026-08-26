@@ -115,6 +115,11 @@ const getStorefrontSettingsCached = cache(
       email: s.email,
       address: s.address,
       businessHours: s.businessHours,
+      abaAccountName: s.abaAccountName,
+      abaAccountNumber: s.abaAccountNumber,
+      abaInstructions: s.abaInstructions,
+      abaQrImageUrl: s.abaQrImageUrl,
+      abaCustomerNote: s.abaCustomerNote,
     };
   },
 );

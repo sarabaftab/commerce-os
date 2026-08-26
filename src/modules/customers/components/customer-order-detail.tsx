@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { AbaPaymentDetails } from "@/modules/orders/components/aba-payment-details";
+import { AbaProofUpload } from "@/modules/orders/components/aba-proof-upload";
 import { formatMoney } from "@/shared/money/money";
 import { formatPackSizeLine, formatPriceTimesQuantity } from "@/modules/catalog/selling-unit";
 import { ProductImage } from "@/ui/storefront/product-image";
@@ -140,17 +142,35 @@ export function CustomerOrderDetail({ tenantSlug, order }: Props) {
 
       <section className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
         <h2 className="text-sm font-semibold">Payment</h2>
-        <p className="mt-2 text-sm capitalize">{order.paymentMethod.replaceAll("_", " ")}</p>
+        <p className="mt-2 text-sm">
+          {order.paymentMethod === "aba_transfer" ? "ABA Bank Transfer" : "Cash on Delivery"}
+        </p>
+        {order.paymentMethod === "aba_transfer" ? (
+          <>
+            <div className="mt-3">
+              <AbaPaymentDetails
+                qrImageUrl={order.abaQrImageUrl}
+                accountName={order.abaAccountName}
+                accountNumber={order.abaAccountNumber}
+                amountLabel={formatMoney(order.totalMinor, order.currency)}
+                instructions={order.abaInstructions}
+                customerNote={order.abaCustomerNote}
+              />
+            </div>
+            <div className="mt-3">
+              <AbaProofUpload
+                tenantSlug={tenantSlug}
+                orderNumber={order.orderNumber}
+                paymentMethod={order.paymentMethod}
+                paymentProofStatus={order.paymentProofStatus}
+                paymentProofRejectionReason={order.paymentProofRejectionReason}
+              />
+            </div>
+          </>
+        ) : null}
         {order.paymentReference ? (
           <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
             Reference: {order.paymentReference}
-          </p>
-        ) : null}
-        {order.paymentMethod === "aba_transfer" ? (
-          <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
-            Proof: {order.paymentProofStatus.replaceAll("_", " ")}
-            {order.paymentProofStatus === "submitted" ? " · Verification pending" : ""}
-            {order.paymentProofRejectionReason ? ` · ${order.paymentProofRejectionReason}` : ""}
           </p>
         ) : null}
       </section>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useState } from "react";
 
 import { FieldLabel } from "@/ui/components/field-label";
 import type { CheckoutPreview } from "@/modules/orders";
@@ -52,16 +52,6 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
     preview.prefillDisplayName ||
     [preview.prefillFirstName, preview.prefillLastName].filter(Boolean).join(" ") ||
     "";
-
-  const abaCopy = useMemo(() => {
-    const parts = [
-      preview.abaAccountName ? `Account: ${preview.abaAccountName}` : null,
-      preview.abaAccountNumber ? `Number: ${preview.abaAccountNumber}` : null,
-      preview.abaInstructions,
-      preview.abaCustomerNote,
-    ].filter(Boolean);
-    return parts.join("\n");
-  }, [preview]);
 
   return (
     <form action={formAction} className="space-y-4 pb-28">
@@ -139,10 +129,11 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
         onPaymentMethodChange={setPaymentMethod}
         codEnabled={preview.codEnabled}
         abaAvailable={preview.abaAvailable}
-        abaInstructions={abaCopy}
+        abaInstructions={preview.abaInstructions}
         abaQrImageUrl={preview.abaQrImageUrl}
         abaAccountName={preview.abaAccountName}
         abaAccountNumber={preview.abaAccountNumber}
+        abaCustomerNote={preview.abaCustomerNote}
         amountLabel={formatMoney(totalMinor, preview.cart.currency)}
       />
 

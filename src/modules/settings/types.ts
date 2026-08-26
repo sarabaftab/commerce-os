@@ -21,6 +21,11 @@ export type StorefrontSettings = {
   email: string | null;
   address: string | null;
   businessHours: string | null;
+  abaAccountName: string | null;
+  abaAccountNumber: string | null;
+  abaInstructions: string | null;
+  abaQrImageUrl: string | null;
+  abaCustomerNote: string | null;
 };
 
 export type CheckoutPickupLocation = {

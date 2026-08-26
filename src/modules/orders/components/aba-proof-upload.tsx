@@ -36,22 +36,23 @@ export function AbaProofUpload({
     return null;
   }
 
+  const effectiveStatus = state.success ? "submitted" : paymentProofStatus;
   const canUpload = customerCanUploadPaymentProof({
     paymentMethod,
-    paymentProofStatus,
+    paymentProofStatus: effectiveStatus,
   });
 
   return (
     <div className="space-y-2 rounded-xl bg-[color:var(--shop-surface)] p-3">
       <p className="text-sm">
-        Proof: {paymentProofStatusLabel(paymentProofStatus)}
-        {paymentProofStatus === "submitted" ? " · Verification: Pending" : null}
-        {paymentProofStatus === "verified" ? " · Verification: Verified" : null}
+        Payment proof: {paymentProofStatusLabel(effectiveStatus)}
+        {effectiveStatus === "submitted" ? " · Verification: Pending" : null}
+        {effectiveStatus === "verified" ? " · Verification: Verified" : null}
       </p>
-      {paymentProofStatus === "rejected" && paymentProofRejectionReason ? (
+      {effectiveStatus === "rejected" && paymentProofRejectionReason ? (
         <p className="text-sm text-destructive">{paymentProofRejectionReason}</p>
       ) : null}
-      {paymentProofStatus === "rejected" ? (
+      {effectiveStatus === "rejected" ? (
         <p className="text-sm text-[color:var(--shop-ink-muted)]">Proof requires attention.</p>
       ) : null}
       {canUpload ? (
@@ -78,7 +79,7 @@ export function AbaProofUpload({
             disabled={pending}
             className="flex h-11 w-full items-center justify-center rounded-full bg-[color:var(--shop-primary)] text-sm font-semibold text-[color:var(--shop-on-primary)] disabled:opacity-60"
           >
-            {pending ? "Uploading…" : paymentProofStatus === "rejected" ? "Upload new proof" : "Upload proof"}
+            {pending ? "Uploading…" : effectiveStatus === "rejected" ? "Upload new proof" : "Upload proof"}
           </button>
         </form>
       ) : null}

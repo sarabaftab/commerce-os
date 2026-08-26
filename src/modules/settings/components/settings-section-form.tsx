@@ -17,6 +17,7 @@ import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
 import { Textarea } from "@/ui/components/ui/textarea";
+import { ProductImage } from "@/ui/storefront/product-image";
 
 const initial: SettingsActionState = {};
 
@@ -120,10 +121,47 @@ function PaymentsSection({ bundle }: { bundle: TenantSettingsBundle }) {
         />
       </div>
       <Field
-        label="ABA QR / payment image URL"
+        label="ABA QR / payment image URL (optional)"
         name="abaQrImageUrl"
         defaultValue={s.abaQrImageUrl ?? ""}
       />
+      {s.abaQrImageUrl ? (
+        <div className="space-y-2 rounded-lg border p-3">
+          <p className="text-sm font-medium">Current ABA QR</p>
+          <div className="relative h-48 w-48 overflow-hidden rounded-lg bg-white">
+            <ProductImage
+              src={s.abaQrImageUrl}
+              alt="Current ABA payment QR"
+              sizes="192px"
+              className="object-contain"
+            />
+          </div>
+          <a
+            href={s.abaQrImageUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs text-muted-foreground underline"
+          >
+            Open current QR
+          </a>
+        </div>
+      ) : null}
+      <div className="space-y-1.5">
+        <Label htmlFor="abaQrImage">Upload ABA QR image</Label>
+        <Input
+          id="abaQrImage"
+          name="abaQrImage"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+        />
+        <p className="text-xs text-muted-foreground">PNG, JPG, or WEBP · max 5 MB</p>
+        {s.abaQrImageUrl ? (
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="removeAbaQrImage" value="true" />
+            Remove current QR
+          </label>
+        ) : null}
+      </div>
       <div className="space-y-1.5">
         <Label htmlFor="abaCustomerNote">Customer-facing payment note</Label>
         <Textarea
