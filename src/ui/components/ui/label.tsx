@@ -4,7 +4,12 @@ import * as React from "react"
 
 import { cn } from "@/ui/lib/utils"
 
-function Label({ className, ...props }: React.ComponentProps<"label">) {
+type LabelProps = React.ComponentProps<"label"> & {
+  /** Visual required marker (red *). Pair with input `required` / `aria-required`. */
+  required?: boolean;
+};
+
+function Label({ className, children, required, ...props }: LabelProps) {
   return (
     <label
       data-slot="label"
@@ -13,8 +18,20 @@ function Label({ className, ...props }: React.ComponentProps<"label">) {
         className
       )}
       {...props}
-    />
+    >
+      <span>
+        {children}
+        {required ? (
+          <span className="text-destructive" aria-hidden="true">
+            {" "}
+            *
+          </span>
+        ) : null}
+      </span>
+      {required ? <span className="sr-only">(required)</span> : null}
+    </label>
   )
 }
 
 export { Label }
+export type { LabelProps }

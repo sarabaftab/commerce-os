@@ -1,6 +1,7 @@
 "use client";
 
 import { ProductImage } from "@/ui/storefront/product-image";
+import { FieldLabel } from "@/ui/components/field-label";
 
 type CheckoutPaymentFieldsProps = {
   paymentMethod: "cod" | "aba_transfer";
@@ -119,10 +120,10 @@ export function CheckoutPaymentFields({
             </div>
           ) : null}
           <div>
-            <label htmlFor="paymentReference" className="mb-1 block text-xs font-medium">
+            <FieldLabel htmlFor="paymentReference">
               Payment reference{" "}
               <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-            </label>
+            </FieldLabel>
             <input
               id="paymentReference"
               name="paymentReference"

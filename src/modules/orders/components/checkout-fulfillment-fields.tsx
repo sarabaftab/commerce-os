@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { FieldLabel } from "@/ui/components/field-label";
+
 type SavedAddress = {
   id: string;
   label: string;
@@ -118,13 +120,14 @@ export function CheckoutFulfillmentFields({
 
           {hasSaved && addressMode === "saved" ? (
             <div className="space-y-2">
-              <label htmlFor="savedAddressId" className="mb-1 block text-xs font-medium">
+              <FieldLabel htmlFor="savedAddressId" required>
                 Choose address
-              </label>
+              </FieldLabel>
               <select
                 id="savedAddressId"
                 name="savedAddressId"
                 required
+                aria-required="true"
                 value={selectedAddressId}
                 onChange={(e) => setSelectedAddressId(e.target.value)}
                 className={fieldClass}
@@ -140,48 +143,50 @@ export function CheckoutFulfillmentFields({
           ) : (
             <>
               <div>
-                <label htmlFor="addressLine" className="mb-1 block text-xs font-medium">
+                <FieldLabel htmlFor="addressLine" required>
                   Address
-                </label>
+                </FieldLabel>
                 <input
                   id="addressLine"
                   name="addressLine"
                   required={addressMode === "new" || !hasSaved}
+                  aria-required={addressMode === "new" || !hasSaved}
                   className={fieldClass}
                   placeholder="Street, house number, landmark"
                 />
               </div>
               <div>
-                <label htmlFor="addressLine2" className="mb-1 block text-xs font-medium">
+                <FieldLabel htmlFor="addressLine2">
                   Address line 2{" "}
                   <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-                </label>
+                </FieldLabel>
                 <input id="addressLine2" name="addressLine2" className={fieldClass} />
               </div>
               <div>
-                <label htmlFor="cityOrArea" className="mb-1 block text-xs font-medium">
+                <FieldLabel htmlFor="cityOrArea" required>
                   City or area
-                </label>
+                </FieldLabel>
                 <input
                   id="cityOrArea"
                   name="cityOrArea"
                   required={addressMode === "new" || !hasSaved}
+                  aria-required={addressMode === "new" || !hasSaved}
                   className={fieldClass}
                   placeholder="Phnom Penh, Toul Kork, etc."
                 />
               </div>
               <div>
-                <label htmlFor="provinceOrState" className="mb-1 block text-xs font-medium">
+                <FieldLabel htmlFor="provinceOrState">
                   Province / state{" "}
                   <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-                </label>
+                </FieldLabel>
                 <input id="provinceOrState" name="provinceOrState" className={fieldClass} />
               </div>
               <div>
-                <label htmlFor="deliveryInstructions" className="mb-1 block text-xs font-medium">
+                <FieldLabel htmlFor="deliveryInstructions">
                   Delivery instructions{" "}
                   <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-                </label>
+                </FieldLabel>
                 <textarea
                   id="deliveryInstructions"
                   name="deliveryInstructions"
@@ -211,13 +216,14 @@ export function CheckoutFulfillmentFields({
 
       {fulfillmentMethod === "pickup" && pickupEnabled ? (
         <div>
-          <label htmlFor="pickupLocationKey" className="mb-1 block text-xs font-medium">
+          <FieldLabel htmlFor="pickupLocationKey" required>
             Pickup location
-          </label>
+          </FieldLabel>
           <select
             id="pickupLocationKey"
             name="pickupLocationKey"
             required
+            aria-required="true"
             defaultValue={defaultPickupLocationKey ?? pickupLocations[0]?.id ?? ""}
             className={fieldClass}
           >

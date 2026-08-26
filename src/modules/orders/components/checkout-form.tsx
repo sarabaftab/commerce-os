@@ -2,6 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 
+import { FieldLabel } from "@/ui/components/field-label";
 import type { CheckoutPreview } from "@/modules/orders";
 import {
   placeOrderAction,
@@ -72,13 +73,14 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
         <h2 className="text-sm font-semibold">Contact</h2>
         <div className="space-y-3">
           <div>
-            <label htmlFor="displayName" className="mb-1 block text-xs font-medium">
+            <FieldLabel htmlFor="displayName" required>
               Full name
-            </label>
+            </FieldLabel>
             <input
               id="displayName"
               name="displayName"
               required
+              aria-required="true"
               autoComplete="name"
               className={fieldClass}
               placeholder="Your name"
@@ -86,13 +88,14 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
             />
           </div>
           <div>
-            <label htmlFor="phone" className="mb-1 block text-xs font-medium">
+            <FieldLabel htmlFor="phone" required>
               Phone
-            </label>
+            </FieldLabel>
             <input
               id="phone"
               name="phone"
               required
+              aria-required="true"
               type="tel"
               autoComplete="tel"
               className={fieldClass}
@@ -101,10 +104,10 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
             />
           </div>
           <div>
-            <label htmlFor="email" className="mb-1 block text-xs font-medium">
+            <FieldLabel htmlFor="email">
               Email{" "}
               <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-            </label>
+            </FieldLabel>
             <input
               id="email"
               name="email"

@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { FieldLabel } from "@/ui/components/field-label";
 import { ProductImage } from "@/ui/storefront/product-image";
 
 import {
@@ -52,13 +53,14 @@ export function ProfileForm({ tenantSlug, profile }: ProfileFormProps) {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor="firstName" className="mb-1 block text-xs font-medium">
+          <FieldLabel htmlFor="firstName" required>
             First name
-          </label>
+          </FieldLabel>
           <input
             id="firstName"
             name="firstName"
             required
+            aria-required="true"
             defaultValue={profile.firstName ?? ""}
             className={fieldClass}
             aria-invalid={Boolean(state.fieldErrors?.firstName)}
@@ -71,13 +73,14 @@ export function ProfileForm({ tenantSlug, profile }: ProfileFormProps) {
           ) : null}
         </div>
         <div>
-          <label htmlFor="lastName" className="mb-1 block text-xs font-medium">
+          <FieldLabel htmlFor="lastName" required>
             Last name
-          </label>
+          </FieldLabel>
           <input
             id="lastName"
             name="lastName"
             required
+            aria-required="true"
             defaultValue={profile.lastName ?? ""}
             className={fieldClass}
             aria-invalid={Boolean(state.fieldErrors?.lastName)}
@@ -89,10 +92,10 @@ export function ProfileForm({ tenantSlug, profile }: ProfileFormProps) {
       </div>
 
       <div>
-        <label htmlFor="displayName" className="mb-1 block text-xs font-medium">
+        <FieldLabel htmlFor="displayName">
           Display name{" "}
           <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-        </label>
+        </FieldLabel>
         <input
           id="displayName"
           name="displayName"
@@ -102,14 +105,15 @@ export function ProfileForm({ tenantSlug, profile }: ProfileFormProps) {
       </div>
 
       <div>
-        <label htmlFor="phone" className="mb-1 block text-xs font-medium">
+        <FieldLabel htmlFor="phone" required>
           Phone
-        </label>
+        </FieldLabel>
         <input
           id="phone"
           name="phone"
           type="tel"
           required
+          aria-required="true"
           defaultValue={profile.phone ?? ""}
           className={fieldClass}
           aria-invalid={Boolean(state.fieldErrors?.phone)}
@@ -120,10 +124,10 @@ export function ProfileForm({ tenantSlug, profile }: ProfileFormProps) {
       </div>
 
       <div>
-        <label htmlFor="email" className="mb-1 block text-xs font-medium">
+        <FieldLabel htmlFor="email">
           Email{" "}
           <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-        </label>
+        </FieldLabel>
         <input
           id="email"
           name="email"

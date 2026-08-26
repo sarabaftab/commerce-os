@@ -2,6 +2,8 @@
 
 import { useActionState, useState } from "react";
 
+import { FieldLabel } from "@/ui/components/field-label";
+
 import {
   createAddressAction,
   deleteAddressAction,
@@ -27,14 +29,15 @@ function AddressFields({
   return (
     <div className="space-y-3">
       <div>
-        <label htmlFor="label" className="mb-1 block text-xs font-medium">
+        <FieldLabel htmlFor="label" required>
           Label
-        </label>
+        </FieldLabel>
         <input
           id="label"
           name="label"
           list="address-labels"
           required
+          aria-required="true"
           defaultValue={address?.label ?? "Home"}
           className={fieldClass}
         />
@@ -49,39 +52,42 @@ function AddressFields({
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor="recipientFirstName" className="mb-1 block text-xs font-medium">
+          <FieldLabel htmlFor="recipientFirstName" required>
             Recipient first name
-          </label>
+          </FieldLabel>
           <input
             id="recipientFirstName"
             name="recipientFirstName"
             required
+            aria-required="true"
             defaultValue={address?.recipientFirstName ?? ""}
             className={fieldClass}
           />
         </div>
         <div>
-          <label htmlFor="recipientLastName" className="mb-1 block text-xs font-medium">
+          <FieldLabel htmlFor="recipientLastName" required>
             Recipient last name
-          </label>
+          </FieldLabel>
           <input
             id="recipientLastName"
             name="recipientLastName"
             required
+            aria-required="true"
             defaultValue={address?.recipientLastName ?? ""}
             className={fieldClass}
           />
         </div>
       </div>
       <div>
-        <label htmlFor="phone" className="mb-1 block text-xs font-medium">
+        <FieldLabel htmlFor="phone" required>
           Phone
-        </label>
+        </FieldLabel>
         <input
           id="phone"
           name="phone"
           type="tel"
           required
+          aria-required="true"
           defaultValue={address?.phone ?? ""}
           className={fieldClass}
         />
@@ -90,22 +96,23 @@ function AddressFields({
         ) : null}
       </div>
       <div>
-        <label htmlFor="addressLine1" className="mb-1 block text-xs font-medium">
+        <FieldLabel htmlFor="addressLine1" required>
           Address line 1
-        </label>
+        </FieldLabel>
         <input
           id="addressLine1"
           name="addressLine1"
           required
+          aria-required="true"
           defaultValue={address?.addressLine1 ?? ""}
           className={fieldClass}
         />
       </div>
       <div>
-        <label htmlFor="addressLine2" className="mb-1 block text-xs font-medium">
+        <FieldLabel htmlFor="addressLine2">
           Address line 2{" "}
           <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-        </label>
+        </FieldLabel>
         <input
           id="addressLine2"
           name="addressLine2"
@@ -115,25 +122,27 @@ function AddressFields({
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor="cityOrDistrict" className="mb-1 block text-xs font-medium">
+          <FieldLabel htmlFor="cityOrDistrict" required>
             City / district
-          </label>
+          </FieldLabel>
           <input
             id="cityOrDistrict"
             name="cityOrDistrict"
             required
+            aria-required="true"
             defaultValue={address?.cityOrDistrict ?? ""}
             className={fieldClass}
           />
         </div>
         <div>
-          <label htmlFor="provinceOrState" className="mb-1 block text-xs font-medium">
+          <FieldLabel htmlFor="provinceOrState" required>
             Province / state
-          </label>
+          </FieldLabel>
           <input
             id="provinceOrState"
             name="provinceOrState"
             required
+            aria-required="true"
             defaultValue={address?.provinceOrState ?? ""}
             className={fieldClass}
           />
@@ -141,10 +150,10 @@ function AddressFields({
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor="postalCode" className="mb-1 block text-xs font-medium">
+          <FieldLabel htmlFor="postalCode">
             Postal code{" "}
             <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-          </label>
+          </FieldLabel>
           <input
             id="postalCode"
             name="postalCode"
@@ -153,13 +162,14 @@ function AddressFields({
           />
         </div>
         <div>
-          <label htmlFor="countryCode" className="mb-1 block text-xs font-medium">
+          <FieldLabel htmlFor="countryCode" required>
             Country
-          </label>
+          </FieldLabel>
           <input
             id="countryCode"
             name="countryCode"
             required
+            aria-required="true"
             defaultValue={address?.countryCode ?? "KH"}
             className={fieldClass}
             maxLength={2}
@@ -167,10 +177,10 @@ function AddressFields({
         </div>
       </div>
       <div>
-        <label htmlFor="deliveryInstructions" className="mb-1 block text-xs font-medium">
+        <FieldLabel htmlFor="deliveryInstructions">
           Delivery instructions{" "}
           <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-        </label>
+        </FieldLabel>
         <textarea
           id="deliveryInstructions"
           name="deliveryInstructions"

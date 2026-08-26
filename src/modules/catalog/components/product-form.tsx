@@ -39,7 +39,9 @@ export function ProductForm({
       ) : null}
 
       <div className="grid gap-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name" required>
+          Name
+        </Label>
         <Input id="name" name="name" required defaultValue={product?.name ?? ""} />
         {state.fieldErrors?.name ? (
           <p className="text-xs text-destructive">{state.fieldErrors.name[0]}</p>
@@ -47,7 +49,9 @@ export function ProductForm({
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="slug">Slug</Label>
+        <Label htmlFor="slug" required>
+          Slug
+        </Label>
         <Input id="slug" name="slug" required defaultValue={product?.slug ?? ""} />
         {state.fieldErrors?.slug ? (
           <p className="text-xs text-destructive">{state.fieldErrors.slug[0]}</p>
@@ -81,7 +85,9 @@ export function ProductForm({
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="sellingUnit">Selling unit</Label>
+        <Label htmlFor="sellingUnit" required>
+          Selling unit
+        </Label>
         <select
           id="sellingUnit"
           name="sellingUnit"
@@ -99,7 +105,9 @@ export function ProductForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
-          <Label htmlFor="priceMajor">Price ({currency})</Label>
+          <Label htmlFor="priceMajor" required>
+            Price ({currency})
+          </Label>
           <Input
             id="priceMajor"
             name="priceMajor"
@@ -116,7 +124,9 @@ export function ProductForm({
           ) : null}
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="currency">Currency</Label>
+          <Label htmlFor="currency" required>
+            Currency
+          </Label>
           <Input
             id="currency"
             name="currency"

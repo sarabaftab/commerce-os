@@ -28,7 +28,9 @@ export function FaqForm({ faq, action, submitLabel }: FaqFormProps) {
       ) : null}
 
       <div className="grid gap-2">
-        <Label htmlFor="question">Question</Label>
+        <Label htmlFor="question" required>
+          Question
+        </Label>
         <Input
           id="question"
           name="question"
@@ -42,7 +44,9 @@ export function FaqForm({ faq, action, submitLabel }: FaqFormProps) {
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="answer">Answer</Label>
+        <Label htmlFor="answer" required>
+          Answer
+        </Label>
         <Textarea
           id="answer"
           name="answer"

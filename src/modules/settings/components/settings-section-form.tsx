@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, useTransition } from "react";
 
 import {
   saveBrandingSettingsAction,
@@ -17,7 +17,6 @@ import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
 import { Textarea } from "@/ui/components/ui/textarea";
-import { useTransition } from "react";
 
 const initial: SettingsActionState = {};
 
@@ -55,11 +54,11 @@ function GeneralSection({ bundle }: { bundle: TenantSettingsBundle }) {
   return (
     <form action={action} className="max-w-xl space-y-4">
       <Field label="Display name" name="displayName" defaultValue={s.displayName ?? ""} />
-      <Field label="Currency" name="currency" defaultValue={bundle.currency} />
+      <Field label="Currency" name="currency" defaultValue={bundle.currency} required />
       <Field label="Phone" name="phone" defaultValue={s.phone ?? ""} />
       <Field label="Email" name="email" defaultValue={s.email ?? ""} type="email" />
       <Field label="Address" name="address" defaultValue={s.address ?? ""} />
-      <Field label="Timezone" name="timezone" defaultValue={s.timezone} />
+      <Field label="Timezone" name="timezone" defaultValue={s.timezone} required />
       <div className="space-y-1.5">
         <Label htmlFor="businessHours">Business hours</Label>
         <Textarea
@@ -80,23 +79,44 @@ function GeneralSection({ bundle }: { bundle: TenantSettingsBundle }) {
 function PaymentsSection({ bundle }: { bundle: TenantSettingsBundle }) {
   const s = bundle.settings;
   const [state, action, pending] = useActionState(savePaymentSettingsAction, initial);
+  const [abaEnabled, setAbaEnabled] = useState(s.abaEnabled);
   return (
     <form action={action} className="max-w-xl space-y-4">
       <Checkbox name="codEnabled" label="Enable Cash on Delivery" defaultChecked={s.codEnabled} />
-      <Checkbox name="abaEnabled" label="Enable ABA Transfer" defaultChecked={s.abaEnabled} />
-      <Field label="ABA account name" name="abaAccountName" defaultValue={s.abaAccountName ?? ""} />
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="abaEnabled"
+          value="true"
+          checked={abaEnabled}
+          onChange={(event) => setAbaEnabled(event.target.checked)}
+          className="size-4 rounded border"
+        />
+        Enable ABA Transfer
+      </label>
+      <Field
+        label="ABA account name"
+        name="abaAccountName"
+        defaultValue={s.abaAccountName ?? ""}
+        required={abaEnabled}
+      />
       <Field
         label="ABA account number"
         name="abaAccountNumber"
         defaultValue={s.abaAccountNumber ?? ""}
+        required={abaEnabled}
       />
       <div className="space-y-1.5">
-        <Label htmlFor="abaInstructions">ABA instructions</Label>
+        <Label htmlFor="abaInstructions" required={abaEnabled}>
+          ABA instructions
+        </Label>
         <Textarea
           id="abaInstructions"
           name="abaInstructions"
           rows={4}
           defaultValue={s.abaInstructions ?? ""}
+          required={abaEnabled}
+          aria-required={abaEnabled || undefined}
         />
       </div>
       <Field
@@ -257,8 +277,8 @@ function PickupLocationsEditor({ bundle }: { bundle: TenantSettingsBundle }) {
 
       <form action={action} className="max-w-xl space-y-3 rounded-lg border p-4">
         <h4 className="text-sm font-medium">Add pickup location</h4>
-        <Field label="Name" name="name" defaultValue="" />
-        <Field label="Address" name="address" defaultValue="" />
+        <Field label="Name" name="name" defaultValue="" required />
+        <Field label="Address" name="address" defaultValue="" required />
         <Field label="Instructions" name="instructions" defaultValue="" />
         <Field label="Sort order" name="sortOrder" defaultValue="0" type="number" />
         <Checkbox name="isActive" label="Active" defaultChecked />
@@ -276,16 +296,27 @@ function Field({
   name,
   defaultValue,
   type = "text",
+  required = false,
 }: {
   label: string;
   name: string;
   defaultValue: string;
   type?: string;
+  required?: boolean;
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} type={type} defaultValue={defaultValue} />
+      <Label htmlFor={name} required={required}>
+        {label}
+      </Label>
+      <Input
+        id={name}
+        name={name}
+        type={type}
+        defaultValue={defaultValue}
+        required={required}
+        aria-required={required || undefined}
+      />
     </div>
   );
 }
