@@ -107,3 +107,16 @@ If you see `max clients reached in session mode`:
 3. **Avoid running local dev against production** while testing the live Mini App.
 4. In Supabase → **Database → Connection pooling**, increase session pool size if your plan allows it.
 5. Redeploy after env changes; close and reopen the Telegram Mini App to drop stale JS.
+
+## Address autocomplete
+
+Delivery checkout uses the CommerceOS endpoint `/api/location/search`, which calls the public Photon
+service backed by OpenStreetMap data. It requires no API key and is limited to short, debounced
+searches with up to eight normalized results. The default bias is Cambodia (`KH`) and Phnom Penh
+for the current market; override `PHOTON_BASE_URL`, `PHOTON_COUNTRY_CODE`, or `PHOTON_BIAS_CITY`
+per deployment when needed.
+
+Photon/OpenStreetMap is free and open source, but the public endpoint does not guarantee
+availability or high-volume commercial capacity. If usage grows, keep the checkout endpoint and
+normalized DTO unchanged while pointing `PHOTON_BASE_URL` at a self-hosted Photon instance.
+Manual address fields always remain available when there are no results or Photon is unavailable.

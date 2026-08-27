@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { LocationAutocomplete } from "@/modules/locations/components/location-autocomplete";
+import type { LocationSearchResult } from "@/modules/locations/types";
 import { FieldLabel } from "@/ui/components/field-label";
 
 type SavedAddress = {
@@ -51,6 +53,27 @@ export function CheckoutFulfillmentFields({
   const [selectedAddressId, setSelectedAddressId] = useState(
     defaultAddressId ?? savedAddresses[0]?.id ?? "",
   );
+  const [newAddress, setNewAddress] = useState({
+    addressLine: "",
+    addressLine2: "",
+    cityOrArea: "",
+    provinceOrState: "",
+    postalCode: "",
+    countryCode: "KH",
+  });
+
+  function applyLocation(location: LocationSearchResult) {
+    const addressLine = [location.houseNumber, location.street].filter(Boolean).join(" ");
+    const cityOrArea = [location.district, location.city].filter(Boolean).join(" / ");
+    setNewAddress((current) => ({
+      ...current,
+      addressLine: addressLine || location.formattedAddress,
+      cityOrArea: cityOrArea || current.cityOrArea,
+      provinceOrState: location.province || current.provinceOrState,
+      postalCode: location.postalCode || current.postalCode,
+      countryCode: location.countryCode || current.countryCode,
+    }));
+  }
 
   return (
     <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
@@ -144,15 +167,23 @@ export function CheckoutFulfillmentFields({
             <>
               <div>
                 <FieldLabel htmlFor="addressLine" required>
-                  Address
+                  Delivery address
                 </FieldLabel>
-                <input
+                <LocationAutocomplete
                   id="addressLine"
                   name="addressLine"
+                  value={newAddress.addressLine}
+                  onChange={(event) =>
+                    setNewAddress((current) => ({
+                      ...current,
+                      addressLine: event.target.value,
+                    }))
+                  }
+                  onLocationSelect={applyLocation}
                   required={addressMode === "new" || !hasSaved}
                   aria-required={addressMode === "new" || !hasSaved}
                   className={fieldClass}
-                  placeholder="Street, house number, landmark"
+                  placeholder="Start typing your address…"
                 />
               </div>
               <div>
@@ -160,7 +191,18 @@ export function CheckoutFulfillmentFields({
                   Address line 2{" "}
                   <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
                 </FieldLabel>
-                <input id="addressLine2" name="addressLine2" className={fieldClass} />
+                <input
+                  id="addressLine2"
+                  name="addressLine2"
+                  value={newAddress.addressLine2}
+                  onChange={(event) =>
+                    setNewAddress((current) => ({
+                      ...current,
+                      addressLine2: event.target.value,
+                    }))
+                  }
+                  className={fieldClass}
+                />
               </div>
               <div>
                 <FieldLabel htmlFor="cityOrArea" required>
@@ -171,6 +213,13 @@ export function CheckoutFulfillmentFields({
                   name="cityOrArea"
                   required={addressMode === "new" || !hasSaved}
                   aria-required={addressMode === "new" || !hasSaved}
+                  value={newAddress.cityOrArea}
+                  onChange={(event) =>
+                    setNewAddress((current) => ({
+                      ...current,
+                      cityOrArea: event.target.value,
+                    }))
+                  }
                   className={fieldClass}
                   placeholder="Phnom Penh, Toul Kork, etc."
                 />
@@ -180,7 +229,18 @@ export function CheckoutFulfillmentFields({
                   Province / state{" "}
                   <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
                 </FieldLabel>
-                <input id="provinceOrState" name="provinceOrState" className={fieldClass} />
+                <input
+                  id="provinceOrState"
+                  name="provinceOrState"
+                  value={newAddress.provinceOrState}
+                  onChange={(event) =>
+                    setNewAddress((current) => ({
+                      ...current,
+                      provinceOrState: event.target.value,
+                    }))
+                  }
+                  className={fieldClass}
+                />
               </div>
               <div>
                 <FieldLabel htmlFor="deliveryInstructions">
@@ -206,9 +266,10 @@ export function CheckoutFulfillmentFields({
                     Set as default
                   </label>
                   <input type="hidden" name="addressLabel" value="Home" />
-                  <input type="hidden" name="countryCode" value="KH" />
                 </div>
               ) : null}
+              <input type="hidden" name="countryCode" value={newAddress.countryCode} />
+              <input type="hidden" name="postalCode" value={newAddress.postalCode} />
             </>
           )}
         </div>

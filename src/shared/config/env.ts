@@ -15,6 +15,14 @@ const serverSchema = z.object({
     .int()
     .positive()
     .default(60 * 60 * 24 * 30),
+  PHOTON_BASE_URL: z.string().url().default("https://photon.komoot.io/api"),
+  PHOTON_COUNTRY_CODE: z
+    .string()
+    .trim()
+    .length(2)
+    .regex(/^[A-Za-z]{2}$/)
+    .default("KH"),
+  PHOTON_BIAS_CITY: z.string().trim().max(120).default("Phnom Penh"),
 });
 
 const publicSchema = z.object({
@@ -40,6 +48,9 @@ function getServerEnv(): ServerEnv {
     TELEGRAM_TENANT_SLUG: process.env.TELEGRAM_TENANT_SLUG,
     TELEGRAM_INIT_DATA_MAX_AGE_SECONDS: process.env.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS,
     CUSTOMER_SESSION_TTL_SECONDS: process.env.CUSTOMER_SESSION_TTL_SECONDS,
+    PHOTON_BASE_URL: process.env.PHOTON_BASE_URL,
+    PHOTON_COUNTRY_CODE: process.env.PHOTON_COUNTRY_CODE,
+    PHOTON_BIAS_CITY: process.env.PHOTON_BIAS_CITY,
   });
 
   if (!parsed.success) {

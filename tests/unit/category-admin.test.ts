@@ -1,4 +1,4 @@
-import { createElement } from "react";
+import { createElement, type ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -98,7 +98,11 @@ describe("categoryRevalidationTargets", () => {
 describe("required field labels", () => {
   it("renders a red asterisk and sr-only required text when required", () => {
     const html = renderToStaticMarkup(
-      createElement(FieldLabel, { htmlFor: "phone", required: true, children: "Phone" }),
+      createElement(
+        FieldLabel,
+        { htmlFor: "phone", required: true } as ComponentProps<typeof FieldLabel>,
+        "Phone",
+      ),
     );
     expect(html).toContain("Phone");
     expect(html).toContain("*");
@@ -108,7 +112,11 @@ describe("required field labels", () => {
 
   it("omits asterisk for optional FieldLabel", () => {
     const html = renderToStaticMarkup(
-      createElement(FieldLabel, { htmlFor: "email", children: "Email" }),
+      createElement(
+        FieldLabel,
+        { htmlFor: "email" } as ComponentProps<typeof FieldLabel>,
+        "Email",
+      ),
     );
     expect(html).toContain("Email");
     expect(html).not.toContain("*");
@@ -117,7 +125,11 @@ describe("required field labels", () => {
 
   it("admin Label required prop marks required fields", () => {
     const html = renderToStaticMarkup(
-      createElement(Label, { htmlFor: "name", required: true, children: "Name" }),
+      createElement(
+        Label,
+        { htmlFor: "name", required: true } as ComponentProps<typeof Label>,
+        "Name",
+      ),
     );
     expect(html).toContain("*");
     expect(html).toContain("text-destructive");

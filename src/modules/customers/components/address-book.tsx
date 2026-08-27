@@ -2,6 +2,8 @@
 
 import { useActionState, useState } from "react";
 
+import { LocationAutocomplete } from "@/modules/locations/components/location-autocomplete";
+import type { LocationSearchResult } from "@/modules/locations/types";
 import { FieldLabel } from "@/ui/components/field-label";
 
 import {
@@ -26,6 +28,27 @@ function AddressFields({
   address?: CustomerAddressDto;
   fieldErrors?: Record<string, string>;
 }) {
+  const [values, setValues] = useState({
+    addressLine1: address?.addressLine1 ?? "",
+    cityOrDistrict: address?.cityOrDistrict ?? "",
+    provinceOrState: address?.provinceOrState ?? "",
+    postalCode: address?.postalCode ?? "",
+    countryCode: address?.countryCode ?? "KH",
+  });
+
+  function applyLocation(location: LocationSearchResult) {
+    const addressLine1 = [location.houseNumber, location.street].filter(Boolean).join(" ");
+    const cityOrDistrict = [location.district, location.city].filter(Boolean).join(" / ");
+    setValues((current) => ({
+      ...current,
+      addressLine1: addressLine1 || location.formattedAddress,
+      cityOrDistrict: cityOrDistrict || current.cityOrDistrict,
+      provinceOrState: location.province || current.provinceOrState,
+      postalCode: location.postalCode || current.postalCode,
+      countryCode: location.countryCode || current.countryCode,
+    }));
+  }
+
   return (
     <div className="space-y-3">
       <div>
@@ -99,13 +122,21 @@ function AddressFields({
         <FieldLabel htmlFor="addressLine1" required>
           Address line 1
         </FieldLabel>
-        <input
+        <LocationAutocomplete
           id="addressLine1"
           name="addressLine1"
+          value={values.addressLine1}
+          onChange={(event) =>
+            setValues((current) => ({
+              ...current,
+              addressLine1: event.target.value,
+            }))
+          }
+          onLocationSelect={applyLocation}
           required
           aria-required="true"
-          defaultValue={address?.addressLine1 ?? ""}
           className={fieldClass}
+          placeholder="Start typing your address…"
         />
       </div>
       <div>
@@ -130,7 +161,13 @@ function AddressFields({
             name="cityOrDistrict"
             required
             aria-required="true"
-            defaultValue={address?.cityOrDistrict ?? ""}
+            value={values.cityOrDistrict}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                cityOrDistrict: event.target.value,
+              }))
+            }
             className={fieldClass}
           />
         </div>
@@ -143,7 +180,13 @@ function AddressFields({
             name="provinceOrState"
             required
             aria-required="true"
-            defaultValue={address?.provinceOrState ?? ""}
+            value={values.provinceOrState}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                provinceOrState: event.target.value,
+              }))
+            }
             className={fieldClass}
           />
         </div>
@@ -157,7 +200,13 @@ function AddressFields({
           <input
             id="postalCode"
             name="postalCode"
-            defaultValue={address?.postalCode ?? ""}
+            value={values.postalCode}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                postalCode: event.target.value,
+              }))
+            }
             className={fieldClass}
           />
         </div>
@@ -170,7 +219,13 @@ function AddressFields({
             name="countryCode"
             required
             aria-required="true"
-            defaultValue={address?.countryCode ?? "KH"}
+            value={values.countryCode}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                countryCode: event.target.value,
+              }))
+            }
             className={fieldClass}
             maxLength={2}
           />
