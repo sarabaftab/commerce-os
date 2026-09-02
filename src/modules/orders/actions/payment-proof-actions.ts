@@ -10,7 +10,6 @@ import { readOrderConfirmationCookie } from "@/shared/orders/confirmation-cookie
 import { PAYMENT_PROOF_MAX_BYTES } from "@/shared/storage/payment-proof-storage";
 
 import {
-  getAdminPaymentProofSignedUrl,
   rejectOrderPaymentProof,
   submitCustomerPaymentProof,
   verifyOrderPaymentProof,
@@ -19,11 +18,6 @@ import {
 export type PaymentProofActionState = {
   error?: string;
   success?: boolean;
-};
-
-export type AdminPaymentProofViewState = {
-  error?: string;
-  url?: string;
 };
 
 async function fileToBytes(file: File): Promise<Uint8Array> {
@@ -72,21 +66,6 @@ export async function uploadPaymentProofAction(
   revalidatePath(`/${tenantSlug}/orders/${orderNumber}/confirmation`);
   revalidatePath(`/${tenantSlug}/account/orders/${orderNumber}`);
   return { success: true };
-}
-
-export async function viewAdminPaymentProofAction(
-  orderId: string,
-): Promise<AdminPaymentProofViewState> {
-  const session = await requireAdminSession();
-  try {
-    const url = await getAdminPaymentProofSignedUrl({
-      tenantId: session.tenantId,
-      orderId,
-    });
-    return { url };
-  } catch (error) {
-    return { error: isAppError(error) ? error.message : "Could not open the screenshot" };
-  }
 }
 
 export async function verifyPaymentProofAction(

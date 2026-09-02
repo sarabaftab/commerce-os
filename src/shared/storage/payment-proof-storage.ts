@@ -7,7 +7,6 @@ import { AppError } from "@/shared/errors/app-error";
 
 export const PAYMENT_PROOF_BUCKET = "payment-proofs";
 export const PAYMENT_PROOF_MAX_BYTES = 5 * 1024 * 1024;
-export const PAYMENT_PROOF_SIGNED_URL_SECONDS = 120;
 
 const MIME_TO_EXT = {
   "image/png": "png",
@@ -89,13 +88,32 @@ export async function uploadPaymentProofObject(input: {
   return { path, contentType: mime };
 }
 
-export async function createPaymentProofSignedUrl(path: string): Promise<string> {
+export function isTrustedPaymentProofPath(
+  tenantId: string,
+  orderId: string,
+  path: string,
+): boolean {
+  const prefix = `${tenantId}/${orderId}/`;
+  return path.startsWith(prefix) && !path.includes("..");
+}
+
+export function paymentProofFilename(orderNumber: string, path: string): string {
+  const ext = path.split(".").pop()?.toLowerCase() || "jpg";
+  const safeOrderNumber = orderNumber.replace(/[^a-zA-Z0-9_-]+/g, "-");
+  return `payment-proof-${safeOrderNumber}.${ext}`;
+}
+
+export async function downloadPaymentProofObject(path: string): Promise<{
+  bytes: Uint8Array;
+  contentType: string | null;
+}> {
   const supabase = serviceClient();
-  const { data, error } = await supabase.storage
-    .from(PAYMENT_PROOF_BUCKET)
-    .createSignedUrl(path, PAYMENT_PROOF_SIGNED_URL_SECONDS);
-  if (error || !data?.signedUrl) {
-    throw new AppError("INTERNAL", "Could not open the transfer screenshot");
+  const { data, error } = await supabase.storage.from(PAYMENT_PROOF_BUCKET).download(path);
+  if (error || !data) {
+    throw new AppError("INTERNAL", "Could not retrieve the transfer screenshot");
   }
-  return data.signedUrl;
+  return {
+    bytes: new Uint8Array(await data.arrayBuffer()),
+    contentType: data.type || null,
+  };
 }

@@ -1,19 +1,19 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 
 import type { AdminOrderDetail } from "@/modules/orders";
 import {
   rejectPaymentProofAction,
   verifyPaymentProofAction,
-  viewAdminPaymentProofAction,
   type PaymentProofActionState,
 } from "@/modules/orders/actions/payment-proof-actions";
 import { paymentProofStatusLabel } from "@/modules/orders/payment-proof";
-import { Button } from "@/ui/components/ui/button";
+import { Button, buttonVariants } from "@/ui/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/components/ui/card";
 import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
+import { cn } from "@/ui/lib/utils";
 
 type OrderPaymentPanelProps = {
   order: AdminOrderDetail;
@@ -34,7 +34,6 @@ export function OrderPaymentPanel({ order }: OrderPaymentPanelProps) {
     rejectPaymentProofAction,
     initial,
   );
-  const [viewError, setViewError] = useState<string | null>(null);
   const pending = verifyPending || rejectPending;
   const isAba = order.paymentMethod === "aba_transfer";
   const effectiveStatus = verifyState.success
@@ -69,24 +68,15 @@ export function OrderPaymentPanel({ order }: OrderPaymentPanelProps) {
         ) : null}
 
         {hasProof ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={async () => {
-              setViewError(null);
-              const result = await viewAdminPaymentProofAction(order.id);
-              if (result.url) {
-                window.open(result.url, "_blank", "noopener,noreferrer");
-                return;
-              }
-              setViewError(result.error ?? "Could not open the screenshot");
-            }}
+          <a
+            href={`/admin/orders/${order.id}/payment-proof`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           >
             View proof
-          </Button>
+          </a>
         ) : null}
-        {viewError ? <p className="text-destructive">{viewError}</p> : null}
 
         {canReview ? (
           <div className="space-y-3 border-t pt-3">

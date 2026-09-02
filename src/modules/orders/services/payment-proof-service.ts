@@ -3,7 +3,9 @@ import type { PaymentProofStatus } from "@prisma/client";
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
 import {
-  createPaymentProofSignedUrl,
+  downloadPaymentProofObject,
+  isTrustedPaymentProofPath,
+  paymentProofFilename,
   uploadPaymentProofObject,
 } from "@/shared/storage/payment-proof-storage";
 
@@ -94,22 +96,30 @@ export async function submitCustomerPaymentProof(input: {
   return { paymentProofStatus: "submitted" };
 }
 
-export async function getAdminPaymentProofSignedUrl(input: {
+export async function getAdminPaymentProofFile(input: {
   tenantId: string;
   orderId: string;
-}): Promise<string> {
+}): Promise<{ bytes: Uint8Array; contentType: string; filename: string }> {
   const order = await findOrderById(input.tenantId, input.orderId);
   if (!order) {
     throw new AppError("NOT_FOUND", "Order not found");
   }
-  if (!order.paymentProofPath) {
-    throw new AppError("NOT_FOUND", "No transfer screenshot on file");
+  if (order.paymentMethod !== "aba_transfer") {
+    throw new AppError("NOT_FOUND", "Payment proof not found");
   }
-  const prefix = `${order.tenantId}/${order.id}/`;
-  if (!order.paymentProofPath.startsWith(prefix)) {
+  if (!order.paymentProofPath) {
+    throw new AppError("NOT_FOUND", "Payment proof not found");
+  }
+  if (!isTrustedPaymentProofPath(order.tenantId, order.id, order.paymentProofPath)) {
     throw new AppError("FORBIDDEN", "Invalid payment proof path");
   }
-  return createPaymentProofSignedUrl(order.paymentProofPath);
+
+  const downloaded = await downloadPaymentProofObject(order.paymentProofPath);
+  return {
+    bytes: downloaded.bytes,
+    contentType: order.paymentProofContentType ?? downloaded.contentType ?? "image/jpeg",
+    filename: paymentProofFilename(order.orderNumber, order.paymentProofPath),
+  };
 }
 
 export async function verifyOrderPaymentProof(input: {

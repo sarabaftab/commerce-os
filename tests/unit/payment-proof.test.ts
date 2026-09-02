@@ -7,6 +7,8 @@ import {
 } from "@/modules/orders/payment-proof";
 import {
   detectPaymentProofMime,
+  isTrustedPaymentProofPath,
+  paymentProofFilename,
   validatePaymentProofBytes,
 } from "@/shared/storage/payment-proof-storage";
 import {
@@ -54,6 +56,26 @@ describe("payment proof rules", () => {
   it("labels statuses for customers", () => {
     expect(paymentProofStatusLabel("submitted")).toBe("Submitted");
     expect(paymentProofStatusLabel("verified")).toBe("Verified");
+  });
+});
+
+describe("payment proof path helpers", () => {
+  it("accepts only tenant-scoped paths", () => {
+    expect(isTrustedPaymentProofPath("tenant-a", "order-1", "tenant-a/order-1/proof.png")).toBe(
+      true,
+    );
+    expect(isTrustedPaymentProofPath("tenant-a", "order-1", "tenant-b/order-1/proof.png")).toBe(
+      false,
+    );
+    expect(isTrustedPaymentProofPath("tenant-a", "order-1", "tenant-a/order-1/../secret.png")).toBe(
+      false,
+    );
+  });
+
+  it("builds a safe inline filename", () => {
+    expect(paymentProofFilename("ORD 100/A", "tenant/order/file.webp")).toBe(
+      "payment-proof-ORD-100-A.webp",
+    );
   });
 });
 
