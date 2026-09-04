@@ -28,6 +28,16 @@ export {
 } from "./services/customer-profile-service";
 
 export {
+  getCustomerProfileForAdmin,
+  listCustomersForAdminTenant,
+} from "./services/customer-admin-service";
+export type {
+  AdminCustomerListItem,
+  AdminCustomerListResult,
+  AdminCustomerProfile,
+} from "./services/customer-admin-service";
+
+export {
   listCustomerAddresses,
   getOwnedActiveAddressOrThrow,
   createCustomerAddress,

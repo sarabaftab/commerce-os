@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import type { AdminOrderListItem } from "@/modules/orders";
+import { CustomerTypeBadge } from "@/modules/customers/components/admin/customer-type-badge";
 import { formatMoney } from "@/shared/money/money";
 import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
 import { Badge } from "@/ui/components/ui/badge";
@@ -37,6 +38,7 @@ export function OrderListTable({ orders }: OrderListTableProps) {
           <TableRow>
             <TableHead>Order</TableHead>
             <TableHead>Customer</TableHead>
+            <TableHead>Type</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Payment</TableHead>
             <TableHead>Fulfillment</TableHead>
@@ -56,10 +58,18 @@ export function OrderListTable({ orders }: OrderListTableProps) {
                 </Link>
               </TableCell>
               <TableCell>
-                <div className="text-sm">{order.customer.displayName ?? "—"}</div>
-                <div className="text-xs text-muted-foreground">
-                  {order.customer.phone ? formatPhoneForDisplay(order.customer.phone) : ""}
-                </div>
+                <Link
+                  href={`/admin/customers/${order.customer.id}`}
+                  className="block hover:underline"
+                >
+                  <div className="text-sm">{order.customer.displayName ?? "—"}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {order.customer.phone ? formatPhoneForDisplay(order.customer.phone) : ""}
+                  </div>
+                </Link>
+              </TableCell>
+              <TableCell>
+                <CustomerTypeBadge type={order.customerType} />
               </TableCell>
               <TableCell>
                 <Badge variant="secondary" className="capitalize">

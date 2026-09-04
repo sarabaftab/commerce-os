@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { getProductCountsForTenant } from "@/modules/catalog";
+import { CustomerTypeBadge } from "@/modules/customers/components/admin/customer-type-badge";
 import { listOrdersForAdminTenant } from "@/modules/orders/services/order-admin-service";
 import { formatMoney } from "@/shared/money/money";
 import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
@@ -198,6 +199,7 @@ export default async function AdminDashboardPage() {
                         >
                           {order.status.replaceAll("_", " ")}
                         </Badge>
+                        <CustomerTypeBadge type={order.customerType} />
                       </div>
                       <p className="mt-1 truncate text-xs text-[color:var(--admin-ink-muted)]">
                         {order.customer.displayName ?? "Customer"}

@@ -4,7 +4,9 @@ import { listOrderNotifications } from "@/modules/notifications/services/notific
 import { AppError } from "@/shared/errors/app-error";
 import { normalizePhone } from "@/shared/phone/normalize-phone";
 
+import { resolveOrderCustomerType } from "../customer-type";
 import {
+  findFirstOrdersByCustomerIds,
   findOrderDetailForAdmin,
   listOrdersForAdmin,
 } from "../repositories/order-repository";
@@ -59,6 +61,11 @@ export async function listOrdersForAdminTenant(
     take: pageSize,
   });
 
+  const firstByCustomer = await findFirstOrdersByCustomerIds(
+    tenantId,
+    rows.map((row) => row.customer.id),
+  );
+
   const items: AdminOrderListItem[] = rows.map((row) => ({
     id: row.id,
     orderNumber: row.orderNumber,
@@ -68,7 +75,12 @@ export async function listOrdersForAdminTenant(
     totalMinor: row.totalMinor,
     currency: row.currency,
     placedAt: row.placedAt,
+    customerType: resolveOrderCustomerType(
+      { id: row.id, placedAt: row.placedAt },
+      firstByCustomer.get(row.customer.id),
+    ),
     customer: {
+      id: row.customer.id,
       displayName: row.customer.displayName,
       phone: row.customer.phone,
     },
@@ -119,12 +131,13 @@ export async function getOrderDetailForAdmin(
     };
   });
 
-  const [telegramIdentity, notifications] = await Promise.all([
+  const [telegramIdentity, notifications, firstByCustomer] = await Promise.all([
     findTelegramIdentityForCustomer({
       tenantId,
       customerId: order.customer.id,
     }),
     listOrderNotifications(tenantId, orderId),
+    findFirstOrdersByCustomerIds(tenantId, [order.customer.id]),
   ]);
 
   return {
@@ -150,6 +163,10 @@ export async function getOrderDetailForAdmin(
     paymentProofStatus: order.paymentProofStatus,
     paymentProofRejectionReason: order.paymentProofRejectionReason,
     placedAt: order.placedAt,
+    customerType: resolveOrderCustomerType(
+      { id: order.id, placedAt: order.placedAt },
+      firstByCustomer.get(order.customer.id),
+    ),
     customer: {
       id: order.customer.id,
       displayName: order.customer.displayName,

@@ -67,3 +67,10 @@ export {
   initialPaymentProofStatus,
   paymentProofStatusLabel,
 } from "./payment-proof";
+export {
+  compareOrderSequence,
+  customerLifecycleLabel,
+  orderCustomerTypeLabel,
+  resolveOrderCustomerType,
+} from "./customer-type";
+export type { CustomerLifecycleLabel, OrderCustomerType } from "./customer-type";

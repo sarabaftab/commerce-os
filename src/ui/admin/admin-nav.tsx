@@ -9,6 +9,7 @@ import {
   Package,
   Settings2,
   ShoppingBag,
+  Users,
 } from "lucide-react";
 
 import { cn } from "@/ui/lib/utils";
@@ -16,6 +17,7 @@ import { cn } from "@/ui/lib/utils";
 const links = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
+  { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
   { href: "/admin/faqs", label: "FAQs", icon: CircleHelp },

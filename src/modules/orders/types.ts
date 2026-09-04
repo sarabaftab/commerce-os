@@ -175,7 +175,9 @@ export type AdminOrderListItem = {
   totalMinor: number;
   currency: string;
   placedAt: Date;
+  customerType: import("./customer-type").OrderCustomerType;
   customer: {
+    id: string;
     displayName: string | null;
     phone: string | null;
   };
@@ -222,6 +224,7 @@ export type AdminOrderDetail = {
   paymentProofStatus: import("@prisma/client").PaymentProofStatus;
   paymentProofRejectionReason: string | null;
   placedAt: Date;
+  customerType: import("./customer-type").OrderCustomerType;
   customer: {
     id: string;
     displayName: string | null;

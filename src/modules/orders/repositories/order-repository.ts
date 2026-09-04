@@ -1,9 +1,9 @@
-import type {
-  FulfillmentMethod,
-  IdentityChannel,
-  PaymentMethod,
+import {
+  type FulfillmentMethod,
+  type IdentityChannel,
+  type PaymentMethod,
   Prisma,
-  SellingUnit,
+  type SellingUnit,
 } from "@prisma/client";
 
 import { prisma } from "@/shared/db/prisma";
@@ -391,4 +391,34 @@ export async function findOrderDetailForAdmin(
     where: { id: orderId, tenantId },
     include: adminOrderDetailInclude,
   });
+}
+
+/**
+ * First placed order per customer (by placedAt, then id), tenant-scoped.
+ * One query for the batch — used to derive New vs Returning without N+1.
+ */
+export async function findFirstOrdersByCustomerIds(
+  tenantId: string,
+  customerIds: string[],
+): Promise<Map<string, { id: string; placedAt: Date }>> {
+  const unique = [...new Set(customerIds.filter(Boolean))];
+  const result = new Map<string, { id: string; placedAt: Date }>();
+  if (unique.length === 0) {
+    return result;
+  }
+
+  const rows = await prisma.$queryRaw<
+    Array<{ customer_id: string; id: string; placed_at: Date }>
+  >(Prisma.sql`
+    SELECT DISTINCT ON (customer_id) customer_id, id, placed_at
+    FROM orders
+    WHERE tenant_id = ${tenantId}
+      AND customer_id IN (${Prisma.join(unique)})
+    ORDER BY customer_id ASC, placed_at ASC, id ASC
+  `);
+
+  for (const row of rows) {
+    result.set(row.customer_id, { id: row.id, placedAt: row.placed_at });
+  }
+  return result;
 }
