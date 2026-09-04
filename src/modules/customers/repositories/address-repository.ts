@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 
 import { prisma } from "@/shared/db/prisma";
+import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
 
 import type { CustomerAddressInput } from "../schemas/profile";
 import { formatAddressShort, type CustomerAddressDto } from "../types";
@@ -26,7 +27,7 @@ export function toAddressDto(row: {
     label: row.label,
     recipientFirstName: row.recipientFirstName,
     recipientLastName: row.recipientLastName,
-    phone: row.phone,
+    phone: formatPhoneForDisplay(row.phone) || row.phone,
     addressLine1: row.addressLine1,
     addressLine2: row.addressLine2,
     cityOrDistrict: row.cityOrDistrict,

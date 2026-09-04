@@ -203,12 +203,14 @@ model Customer {
   tenantId    String    @map("tenant_id")
   firstName   String?   @map("first_name")
   lastName    String?   @map("last_name")
-  displayName String?   @map("display_name")
-  phone       String?
-  email       String?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
+  displayName     String?   @map("display_name")
+  phone           String?
+  /** Canonical E.164 for identity matching (e.g. +85512345678). Nullable until backfilled. */
+  phoneNormalized String?   @map("phone_normalized")
+  email           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
 
   tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   identities CustomerIdentity[]
@@ -220,6 +222,7 @@ model Customer {
 
   @@index([tenantId])
   @@index([tenantId, phone])
+  @@index([tenantId, phoneNormalized])
   @@map("customers")
 }
 

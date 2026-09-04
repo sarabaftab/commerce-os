@@ -1,7 +1,12 @@
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
+import {
+  formatPhoneForDisplay,
+  normalizePhoneToE164,
+} from "@/shared/phone/normalize-phone";
 
 import type { CustomerProfileUpdateInput } from "../schemas/profile";
+import { findCustomerByPhone } from "../repositories/customer-repository";
 import { logCustomerEvent } from "./customer-log";
 import type { CustomerProfileDto } from "../types";
 
@@ -34,7 +39,7 @@ export async function getCustomerProfile(
     firstName: customer.firstName,
     lastName: customer.lastName,
     displayName: customer.displayName,
-    phone: customer.phone,
+    phone: customer.phone ? formatPhoneForDisplay(customer.phone) : customer.phone,
     email: customer.email,
     photoUrl: photoFromIdentities(customer.identities),
   };
@@ -52,6 +57,19 @@ export async function updateCustomerProfile(
     throw new AppError("NOT_FOUND", "Profile not found");
   }
 
+  const e164 = normalizePhoneToE164(input.phone);
+  if (e164) {
+    const phoneOwner = await findCustomerByPhone(tenantId, input.phone);
+    if (phoneOwner && phoneOwner.id !== customerId) {
+      console.error("[customer.phone_conflict]", {
+        tenantId,
+        profileCustomerId: customerId,
+        phoneOwnerCustomerId: phoneOwner.id,
+        phoneNormalized: e164,
+      });
+    }
+  }
+
   await prisma.customer.update({
     where: { id: customerId },
     data: {
@@ -59,6 +77,7 @@ export async function updateCustomerProfile(
       lastName: input.lastName,
       displayName: input.displayName,
       phone: input.phone,
+      ...(e164 ? { phoneNormalized: e164 } : {}),
       email: input.email ?? null,
     },
   });

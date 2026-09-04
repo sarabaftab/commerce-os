@@ -13,6 +13,7 @@ import {
 import { assertCheckoutOptions, getCheckoutSettings } from "@/modules/settings";
 import { prisma } from "@/shared/db/prisma";
 import { AppError, isAppError } from "@/shared/errors/app-error";
+import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
 
 import {
   findOpenCheckoutCartInTransaction,
@@ -222,7 +223,9 @@ export async function getCheckoutPreview(
     prefillDisplayName: context.customerDisplayName ?? null,
     prefillFirstName: context.customerFirstName ?? null,
     prefillLastName: context.customerLastName ?? null,
-    prefillPhone: context.customerPhone ?? null,
+    prefillPhone: context.customerPhone
+      ? formatPhoneForDisplay(context.customerPhone)
+      : null,
     prefillEmail: context.customerEmail ?? null,
     savedAddresses,
     defaultAddressId: savedAddresses.find((a) => a.isDefault)?.id ?? null,

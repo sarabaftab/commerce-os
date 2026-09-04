@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import type { AdminOrderListItem } from "@/modules/orders";
 import { formatMoney } from "@/shared/money/money";
+import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
 import { Badge } from "@/ui/components/ui/badge";
 import {
   Table,
@@ -57,7 +58,7 @@ export function OrderListTable({ orders }: OrderListTableProps) {
               <TableCell>
                 <div className="text-sm">{order.customer.displayName ?? "—"}</div>
                 <div className="text-xs text-muted-foreground">
-                  {order.customer.phone ?? ""}
+                  {order.customer.phone ? formatPhoneForDisplay(order.customer.phone) : ""}
                 </div>
               </TableCell>
               <TableCell>

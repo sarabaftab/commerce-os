@@ -16,7 +16,7 @@ export const checkoutInputSchema = z
       .string()
       .trim()
       .min(1, "Phone is required")
-      .refine(isValidPhone, "Enter a valid phone number"),
+      .refine((value) => isValidPhone(value), "Enter a valid phone number"),
     email: z
       .string()
       .trim()

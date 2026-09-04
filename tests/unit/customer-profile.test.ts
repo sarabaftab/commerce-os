@@ -22,7 +22,7 @@ describe("customerProfileUpdateSchema", () => {
     expect(parsed.firstName).toBe("Ada");
     expect(parsed.lastName).toBe("Lovelace");
     expect(parsed.displayName).toBe("Ada Lovelace");
-    expect(parsed.phone).toBe("85512345678");
+    expect(parsed.phone).toBe("+85512345678");
     expect(parsed.email).toBe("ada@example.com");
   });
 

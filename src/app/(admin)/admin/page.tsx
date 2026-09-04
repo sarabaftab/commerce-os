@@ -11,6 +11,7 @@ import {
 import { getProductCountsForTenant } from "@/modules/catalog";
 import { listOrdersForAdminTenant } from "@/modules/orders/services/order-admin-service";
 import { formatMoney } from "@/shared/money/money";
+import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
 import { requireAdminSession } from "@/shared/auth/admin-session";
 import { createTimer } from "@/shared/observability/timing";
 import { prisma } from "@/shared/db/prisma";
@@ -200,7 +201,9 @@ export default async function AdminDashboardPage() {
                       </div>
                       <p className="mt-1 truncate text-xs text-[color:var(--admin-ink-muted)]">
                         {order.customer.displayName ?? "Customer"}
-                        {order.customer.phone ? ` · ${order.customer.phone}` : ""}
+                        {order.customer.phone
+                          ? ` · ${formatPhoneForDisplay(order.customer.phone)}`
+                          : ""}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">

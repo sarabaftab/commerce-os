@@ -26,8 +26,8 @@ export const phoneField = z
   .string()
   .trim()
   .min(1, "Phone is required")
-  .refine(isValidPhone, "Enter a valid phone number")
-  .transform(normalizePhone);
+  .refine((value) => isValidPhone(value), "Enter a valid phone number")
+  .transform((value) => normalizePhone(value));
 
 export const optionalEmailField = z
   .union([z.literal(""), z.string().trim().email("Enter a valid email").max(254)])

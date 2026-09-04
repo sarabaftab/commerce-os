@@ -9,6 +9,7 @@ import type {
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
 import { createOrderConfirmationToken } from "@/shared/orders/confirmation-cookie";
+import { normalizePhoneToE164 } from "@/shared/phone/normalize-phone";
 
 import type { OrderConfirmation, OrderLineView } from "../types";
 import { initialPaymentProofStatus } from "../payment-proof";
@@ -354,11 +355,16 @@ export async function listOrdersForAdmin(params: ListOrdersForAdminParams) {
   const q = params.q?.trim();
   if (q) {
     const phoneDigits = q.replace(/\D/g, "");
+    const e164 = normalizePhoneToE164(q);
     where.OR = [
       { orderNumber: { contains: q, mode: "insensitive" } },
       { customer: { displayName: { contains: q, mode: "insensitive" } } },
       ...(phoneDigits
-        ? [{ customer: { phone: { contains: phoneDigits } } }]
+        ? [
+            { customer: { phone: { contains: phoneDigits } } },
+            { customer: { phoneNormalized: { contains: phoneDigits } } },
+            ...(e164 ? [{ customer: { phoneNormalized: e164 } }] : []),
+          ]
         : [{ customer: { phone: { contains: q } } }]),
     ];
   }
