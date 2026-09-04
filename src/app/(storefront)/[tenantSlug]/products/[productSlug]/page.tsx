@@ -114,7 +114,12 @@ export default async function StorefrontProductDetailPage({
         className="sticky bottom-0 -mx-4 border-t border-[color:var(--shop-line)] bg-[color:var(--shop-bg)]/95 px-4 pt-3 backdrop-blur-md"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
-        <AddToCartButton tenantSlug={tenantSlug} productId={product.id} showQuantity />
+        <AddToCartButton
+          tenantSlug={tenantSlug}
+          productId={product.id}
+          showQuantity
+          navigateToCatalogOnSuccess
+        />
       </div>
     </div>
   );
