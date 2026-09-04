@@ -70,8 +70,6 @@ export function OrderPaymentPanel({ order }: OrderPaymentPanelProps) {
         {hasProof ? (
           <a
             href={`/admin/orders/${order.id}/payment-proof`}
-            target="_blank"
-            rel="noopener noreferrer"
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           >
             View proof
