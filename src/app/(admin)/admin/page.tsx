@@ -4,41 +4,23 @@ import {
   Package,
   Plus,
   Settings2,
-  ShoppingBag,
   Sparkles,
-  Users,
 } from "lucide-react";
 
 import { getProductCountsForTenant } from "@/modules/catalog";
-import { CustomerTypeBadge } from "@/modules/customers/components/admin/customer-type-badge";
+import { DashboardLiveSections } from "@/modules/orders/components/admin/dashboard-live-sections";
 import { DashboardRangeSelector } from "@/modules/orders/components/admin/dashboard-range-selector";
 import {
   dashboardRangeLabel,
-  dashboardRangeStart,
   parseDashboardRange,
 } from "@/modules/orders/dashboard-range";
-import {
-  getDashboardPeriodStats,
-  listRecentOrdersSince,
-} from "@/modules/orders/services/dashboard-stats-service";
-import { formatMoney } from "@/shared/money/money";
-import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
+import { getAdminDashboardLiveSnapshot } from "@/modules/orders/services/dashboard-stats-service";
 import { requireAdminSession } from "@/shared/auth/admin-session";
 import { createTimer } from "@/shared/observability/timing";
-import { prisma } from "@/shared/db/prisma";
 import { TimingBadge } from "@/ui/admin/timing-badge";
-import { Badge } from "@/ui/components/ui/badge";
 import { buttonVariants } from "@/ui/components/ui/button";
 import { cn } from "@/ui/lib/utils";
 import { STOREFRONT_BRAND } from "@/ui/storefront/brand";
-
-const ACTIVE_ORDER_STATUSES = [
-  "pending",
-  "confirmed",
-  "processing",
-  "ready_for_pickup",
-  "out_for_delivery",
-] as const;
 
 type AdminDashboardPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -54,26 +36,17 @@ export default async function AdminDashboardPage({
 
   const rawParams = await searchParams;
   const range = parseDashboardRange(rawParams.range);
-  const periodFrom = dashboardRangeStart(range);
 
-  const [productCounts, periodStats, recent, orderTotal, activeOrders] = await Promise.all([
+  const [productCounts, liveSnapshot] = await Promise.all([
     getProductCountsForTenant(session.tenantId),
-    getDashboardPeriodStats(session.tenantId, range),
-    listRecentOrdersSince(session.tenantId, periodFrom, 6),
-    prisma.order.count({ where: { tenantId: session.tenantId } }),
-    prisma.order.count({
-      where: {
-        tenantId: session.tenantId,
-        status: { in: [...ACTIVE_ORDER_STATUSES] },
-      },
-    }),
+    getAdminDashboardLiveSnapshot(session.tenantId, range),
   ]);
 
   timer.mark("dataMs");
 
   const timings = timer.log({
     productCount: productCounts.total,
-    orderCount: orderTotal,
+    orderCount: liveSnapshot.ordersAllTime,
   });
   const availableCount = productCounts.available;
   const unavailableCount = productCounts.total - productCounts.available;
@@ -145,160 +118,68 @@ export default async function AdminDashboardPage({
         <DashboardRangeSelector range={range} />
       </div>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          label="Orders"
-          value={String(periodStats.ordersInPeriod)}
-          hint={`${rangeLabel} · ${orderTotal} all-time`}
-          href="/admin/orders"
-          icon={<ShoppingBag className="size-4" />}
-        />
-        <MetricCard
-          label="New customers"
-          value={String(periodStats.newCustomersInPeriod)}
-          hint={`First order in ${rangeLabel.toLowerCase()}`}
-          href="/admin/customers"
-          icon={<Users className="size-4" />}
-        />
-        <MetricCard
-          label="Returning customers"
-          value={String(periodStats.returningCustomersInPeriod)}
-          hint={`Ordered again in ${rangeLabel.toLowerCase()}`}
-          href="/admin/customers"
-          icon={<Users className="size-4" />}
-        />
-        <MetricCard
-          label="Active orders"
-          value={String(activeOrders)}
-          hint="Open pipeline (all-time)"
-          href="/admin/orders"
-          icon={<ShoppingBag className="size-4" />}
-        />
-      </section>
-
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <MetricCard
-          label="Products"
-          value={String(productCounts.total)}
-          hint={`${availableCount} available`}
-          href="/admin/products"
-          icon={<Package className="size-4" />}
-        />
-        <MetricCard
-          label="Unavailable"
-          value={String(unavailableCount)}
-          hint="Hidden from storefront"
-          href="/admin/products"
-          icon={<Package className="size-4 opacity-60" />}
-        />
-        <MetricCard
-          label="Currency"
-          value={session.tenantCurrency}
-          hint="Tenant default"
-          href="/admin/settings"
-          icon={<Settings2 className="size-4" />}
-        />
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
-        <div className="overflow-hidden rounded-2xl border border-[color:var(--admin-line)] bg-[color:var(--admin-surface-elevated)] shadow-[var(--admin-shadow)]">
-          <div className="flex items-center justify-between gap-3 border-b border-[color:var(--admin-line)] px-5 py-4">
-            <div>
-              <h2 className="font-[family-name:var(--font-admin-display)] text-lg tracking-tight">
-                Recent orders
-              </h2>
-              <p className="text-xs text-[color:var(--admin-ink-muted)]">
-                Latest activity in {rangeLabel.toLowerCase()}
-              </p>
-            </div>
-            <Link
+      <DashboardLiveSections
+        key={range}
+        range={range}
+        initial={liveSnapshot}
+        middle={
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <MetricCard
+              label="Products"
+              value={String(productCounts.total)}
+              hint={`${availableCount} available`}
+              href="/admin/products"
+              icon={<Package className="size-4" />}
+            />
+            <MetricCard
+              label="Unavailable"
+              value={String(unavailableCount)}
+              hint="Hidden from storefront"
+              href="/admin/products"
+              icon={<Package className="size-4 opacity-60" />}
+            />
+            <MetricCard
+              label="Currency"
+              value={session.tenantCurrency}
+              hint="Tenant default"
+              href="/admin/settings"
+              icon={<Settings2 className="size-4" />}
+            />
+          </section>
+        }
+        aside={
+          <div className="space-y-3">
+            <h2 className="px-1 font-[family-name:var(--font-admin-display)] text-lg tracking-tight">
+              Quick actions
+            </h2>
+            <QuickAction
               href="/admin/orders"
-              className={cn(
-                buttonVariants({ variant: "ghost", size: "sm" }),
-                "rounded-full",
-              )}
-            >
-              All orders
-              <ArrowUpRight className="size-3.5" />
-            </Link>
+              title="Fulfill orders"
+              description="Update status and track delivery or pickup"
+            />
+            <QuickAction
+              href="/admin/products"
+              title="Manage catalog"
+              description="Edit prices, availability, and product details"
+            />
+            <QuickAction
+              href="/admin/products/new"
+              title="Add a product"
+              description="Create a new item for the storefront"
+            />
+            <QuickAction
+              href="/admin/faqs"
+              title="Manage FAQs"
+              description="Customer questions for the storefront and Telegram"
+            />
+            <QuickAction
+              href="/admin/settings"
+              title="Store settings"
+              description="Delivery, pickup, and payment options"
+            />
           </div>
-
-          {recent.items.length === 0 ? (
-            <div className="px-5 py-12 text-center text-sm text-[color:var(--admin-ink-muted)]">
-              No orders in this period.
-            </div>
-          ) : (
-            <ul className="divide-y divide-[color:var(--admin-line)]">
-              {recent.items.map((order) => (
-                <li key={order.id}>
-                  <Link
-                    href={`/admin/orders/${order.id}`}
-                    className="flex items-center justify-between gap-4 px-5 py-3.5 transition hover:bg-[color:var(--admin-surface)]/40"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium">{order.orderNumber}</span>
-                        <Badge
-                          variant="secondary"
-                          className="rounded-full capitalize"
-                        >
-                          {order.status.replaceAll("_", " ")}
-                        </Badge>
-                        <CustomerTypeBadge type={order.customerType} />
-                      </div>
-                      <p className="mt-1 truncate text-xs text-[color:var(--admin-ink-muted)]">
-                        {order.customer.displayName ?? "Customer"}
-                        {order.customer.phone
-                          ? ` · ${formatPhoneForDisplay(order.customer.phone)}`
-                          : ""}
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className="text-sm font-semibold">
-                        {formatMoney(order.totalMinor, order.currency)}
-                      </p>
-                      <p className="text-[11px] text-[color:var(--admin-ink-muted)]">
-                        {order.placedAt.toLocaleString()}
-                      </p>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="space-y-3">
-          <h2 className="px-1 font-[family-name:var(--font-admin-display)] text-lg tracking-tight">
-            Quick actions
-          </h2>
-          <QuickAction
-            href="/admin/orders"
-            title="Fulfill orders"
-            description="Update status and track delivery or pickup"
-          />
-          <QuickAction
-            href="/admin/products"
-            title="Manage catalog"
-            description="Edit prices, availability, and product details"
-          />
-          <QuickAction
-            href="/admin/products/new"
-            title="Add a product"
-            description="Create a new item for the storefront"
-          />
-          <QuickAction
-            href="/admin/faqs"
-            title="Manage FAQs"
-            description="Customer questions for the storefront and Telegram"
-          />
-          <QuickAction
-            href="/admin/settings"
-            title="Store settings"
-            description="Delivery, pickup, and payment options"
-          />
-        </div>
-      </section>
+        }
+      />
     </div>
   );
 }

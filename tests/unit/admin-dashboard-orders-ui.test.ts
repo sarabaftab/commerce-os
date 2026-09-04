@@ -36,6 +36,16 @@ describe("dashboard date range", () => {
   });
 });
 
+describe("dashboard live poll interval", () => {
+  it("uses a 10–15 second quiet refresh window", async () => {
+    const { DASHBOARD_POLL_INTERVAL_MS } = await import(
+      "@/modules/orders/dashboard-live"
+    );
+    expect(DASHBOARD_POLL_INTERVAL_MS).toBeGreaterThanOrEqual(10_000);
+    expect(DASHBOARD_POLL_INTERVAL_MS).toBeLessThanOrEqual(15_000);
+  });
+});
+
 describe("orders filter reset defaults", () => {
   it("treats an empty query as the default unfiltered orders state", async () => {
     const { parseOrderAdminListSearchParams } = await import(
