@@ -57,10 +57,9 @@ export default async function StorefrontLayout({
 
   return (
     <div
-      className={`${shopSans.variable} ${shopDisplay.variable}`}
+      className={`${shopSans.variable} ${shopDisplay.variable} w-full max-w-full overflow-x-clip`}
       style={{
-        minHeight: "var(--tg-viewport-height, 100dvh)",
-        paddingBottom: "var(--tg-safe-area-inset-bottom, 0px)",
+        minHeight: "var(--tg-viewport-stable-height, var(--tg-viewport-height, 100dvh))",
       }}
     >
       {/*

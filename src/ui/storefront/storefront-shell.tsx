@@ -4,6 +4,7 @@ import { CircleHelp } from "lucide-react";
 
 import { BrandImage } from "@/ui/storefront/brand-image";
 import { STOREFRONT_BRAND } from "@/ui/storefront/brand";
+import { shop } from "@/ui/storefront/shop-classes";
 import { StorefrontAsyncBoundary } from "@/ui/storefront/storefront-chrome";
 
 type StorefrontShellProps = {
@@ -15,11 +16,13 @@ export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) 
   const basePath = `/${tenantSlug}`;
 
   return (
-    <div className="shop-shell min-h-dvh text-[color:var(--shop-ink)]">
+    <div className="shop-shell text-[color:var(--shop-ink)]">
       <header className="sticky top-0 z-20 border-b border-[color:var(--shop-line)] bg-[color:var(--shop-bg)]/90 backdrop-blur-md">
         <div
-          className="mx-auto flex max-w-lg items-center justify-between px-4 py-3"
-          style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
+          className={`flex items-center justify-between py-3 ${shop.contentWidth}`}
+          style={{
+            paddingTop: "max(0.75rem, var(--tg-safe-area-inset-top, env(safe-area-inset-top, 0px)))",
+          }}
         >
           <Link href={basePath} className="flex min-w-0 items-center gap-3">
             <BrandImage
@@ -39,7 +42,7 @@ export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) 
               </p>
             </div>
           </Link>
-          <nav className="flex items-center gap-1 text-sm">
+          <nav className="flex shrink-0 items-center gap-1 text-sm">
             <Link
               href={`${basePath}/products`}
               prefetch={false}
@@ -61,14 +64,17 @@ export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) 
       </header>
 
       <main
-        className="mx-auto max-w-lg px-4 pb-10"
-        style={{ paddingBottom: "max(2.5rem, env(safe-area-inset-bottom))" }}
+        className={`pb-10 ${shop.contentWidth}`}
+        style={{
+          paddingBottom:
+            "max(2.5rem, var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))",
+        }}
       >
         {children}
       </main>
 
       <footer className="border-t border-[color:var(--shop-line)] bg-[color:var(--shop-surface)]/40">
-        <div className="mx-auto flex max-w-lg flex-col items-center gap-2 px-4 py-6 text-center">
+        <div className={`flex flex-col items-center gap-2 py-6 text-center ${shop.contentWidth}`}>
           <BrandImage
             src={STOREFRONT_BRAND.logoSrc}
             alt=""

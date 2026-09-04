@@ -46,11 +46,11 @@ export function AbaPaymentDetails({
       ) : null}
 
       {qrImageUrl ? (
-        <div className="relative mx-auto h-56 w-56 overflow-hidden rounded-xl bg-white">
+        <div className="relative mx-auto aspect-square w-full max-w-[14rem] overflow-hidden rounded-xl bg-white sm:max-w-[16rem]">
           <ProductImage
             src={qrImageUrl}
             alt="ABA payment QR code"
-            sizes="224px"
+            sizes="(max-width: 640px) 224px, 256px"
             className="object-contain"
           />
         </div>

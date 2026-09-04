@@ -26,4 +26,7 @@ export const shop = {
     "bg-[color:var(--shop-primary)] text-[color:var(--shop-on-primary)] shadow-[var(--shop-shadow-sm)]",
   navIdle:
     "text-[color:var(--shop-ink-muted)] hover:bg-[color:var(--shop-surface)] hover:text-[color:var(--shop-ink)]",
+  /** Responsive content rail — phone → tablet → desktop Telegram/browser. */
+  contentWidth:
+    "mx-auto w-full max-w-lg px-4 sm:max-w-2xl md:max-w-3xl lg:max-w-5xl",
 } as const;

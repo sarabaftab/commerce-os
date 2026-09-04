@@ -13,6 +13,10 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 
 import { waitForTelegramInitData } from "@/channels/telegram/client/wait-for-init-data";
+import {
+  applyTelegramViewportCss,
+  requestTelegramFullscreenOnce,
+} from "@/channels/telegram/client/telegram-viewport";
 
 type TelegramThemeParams = {
   bg_color?: string;
@@ -22,6 +26,13 @@ type TelegramThemeParams = {
   button_color?: string;
   button_text_color?: string;
   secondary_bg_color?: string;
+};
+
+type TelegramSafeAreaInset = {
+  top?: number;
+  bottom?: number;
+  left?: number;
+  right?: number;
 };
 
 type TelegramWebApp = {
@@ -35,8 +46,13 @@ type TelegramWebApp = {
   isExpanded: boolean;
   viewportHeight: number;
   viewportStableHeight: number;
+  viewportWidth?: number;
+  isFullscreen?: boolean;
+  safeAreaInset?: TelegramSafeAreaInset;
+  contentSafeAreaInset?: TelegramSafeAreaInset;
   ready: () => void;
   expand: () => void;
+  requestFullscreen?: () => void;
   close: () => void;
   BackButton: {
     isVisible: boolean;
@@ -283,6 +299,7 @@ export function TelegramProvider({
     let webApp: TelegramWebApp | undefined;
     let onThemeChanged: (() => void) | undefined;
     let onViewportChanged: (() => void) | undefined;
+    let fullscreenRequested = false;
 
     async function boot() {
       await loadTelegramScript();
@@ -299,32 +316,23 @@ export function TelegramProvider({
       setIsTelegram(true);
       webApp.ready();
       webApp.expand();
+      fullscreenRequested =
+        requestTelegramFullscreenOnce(webApp, fullscreenRequested) || fullscreenRequested;
       webApp.enableClosingConfirmation?.();
       syncThemeFromWebApp(webApp, setColorScheme, setThemeParams);
 
       const root = document.documentElement;
-      root.style.setProperty(
-        "--tg-viewport-height",
-        `${webApp.viewportStableHeight || webApp.viewportHeight}px`,
-      );
-      root.style.setProperty(
-        "--tg-safe-area-inset-top",
-        "env(safe-area-inset-top, 0px)",
-      );
-      root.style.setProperty(
-        "--tg-safe-area-inset-bottom",
-        "env(safe-area-inset-bottom, 0px)",
-      );
+      applyTelegramViewportCss(root.style, webApp);
 
       onThemeChanged = () => {
         if (webApp) syncThemeFromWebApp(webApp, setColorScheme, setThemeParams);
       };
       onViewportChanged = () => {
         if (!webApp) return;
-        root.style.setProperty(
-          "--tg-viewport-height",
-          `${webApp.viewportStableHeight || webApp.viewportHeight}px`,
-        );
+        applyTelegramViewportCss(root.style, {
+          ...webApp,
+          viewportWidth: webApp.viewportWidth ?? window.innerWidth,
+        });
       };
       webApp.onEvent("themeChanged", onThemeChanged);
       webApp.onEvent("viewportChanged", onViewportChanged);
