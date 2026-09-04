@@ -2,17 +2,34 @@ import Link from "next/link";
 
 import type { OrderAdminListQueryInput } from "@/modules/orders/schemas/order-admin";
 import { ORDER_STATUSES } from "@/modules/orders";
-import { Button } from "@/ui/components/ui/button";
+import { Button, buttonVariants } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
+import { cn } from "@/ui/lib/utils";
 
 type OrderListFiltersProps = {
   query: OrderAdminListQueryInput;
 };
 
+function filtersKey(query: OrderAdminListQueryInput): string {
+  return [
+    query.q ?? "",
+    query.status ?? "",
+    query.paymentMethod ?? "",
+    query.fulfillmentMethod ?? "",
+    query.from ?? "",
+    query.to ?? "",
+    String(query.page ?? 1),
+  ].join("|");
+}
+
 export function OrderListFilters({ query }: OrderListFiltersProps) {
   return (
-    <form method="get" className="grid gap-3 rounded-lg border p-4 md:grid-cols-6">
+    <form
+      key={filtersKey(query)}
+      method="get"
+      className="grid gap-3 rounded-lg border p-4 md:grid-cols-6"
+    >
       <div className="md:col-span-2 space-y-1.5">
         <Label htmlFor="q">Search</Label>
         <Input
@@ -80,10 +97,12 @@ export function OrderListFilters({ query }: OrderListFiltersProps) {
 
       <div className="flex items-end gap-2 md:col-span-6">
         <Button type="submit">Apply filters</Button>
-        <Link href="/admin/orders">
-          <Button type="button" variant="outline">
-            Reset
-          </Button>
+        <Link
+          href="/admin/orders"
+          className={cn(buttonVariants({ variant: "outline" }))}
+          prefetch={false}
+        >
+          Reset
         </Link>
       </div>
     </form>

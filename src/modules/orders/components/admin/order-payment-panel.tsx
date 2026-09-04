@@ -78,26 +78,35 @@ export function OrderPaymentPanel({ order }: OrderPaymentPanelProps) {
 
         {canReview ? (
           <div className="space-y-3 border-t pt-3">
-            <form action={verifyAction}>
-              <input type="hidden" name="orderId" value={order.id} />
-              <Button type="submit" size="sm" disabled={pending}>
-                {verifyPending ? "Verifying…" : "Verify payment"}
-              </Button>
-              {verifyState.error ? (
-                <p className="mt-2 text-destructive">{verifyState.error}</p>
-              ) : null}
-            </form>
-            <form action={rejectAction} className="space-y-2">
-              <input type="hidden" name="orderId" value={order.id} />
+            <div className="space-y-2">
               <Label htmlFor="reason">Customer-facing rejection reason (optional)</Label>
-              <Input id="reason" name="reason" maxLength={240} />
-              <Button type="submit" variant="outline" size="sm" disabled={pending}>
-                {rejectPending ? "Rejecting…" : "Reject proof"}
-              </Button>
-              {rejectState.error ? (
-                <p className="text-destructive">{rejectState.error}</p>
-              ) : null}
-            </form>
+              <Input
+                id="reason"
+                name="reason"
+                form="reject-proof-form"
+                maxLength={240}
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <form action={verifyAction}>
+                <input type="hidden" name="orderId" value={order.id} />
+                <Button type="submit" size="sm" variant="success" disabled={pending}>
+                  {verifyPending ? "Verifying…" : "Verify payment"}
+                </Button>
+              </form>
+              <form id="reject-proof-form" action={rejectAction}>
+                <input type="hidden" name="orderId" value={order.id} />
+                <Button type="submit" size="sm" variant="destructive" disabled={pending}>
+                  {rejectPending ? "Rejecting…" : "Reject proof"}
+                </Button>
+              </form>
+            </div>
+            {verifyState.error ? (
+              <p className="text-destructive">{verifyState.error}</p>
+            ) : null}
+            {rejectState.error ? (
+              <p className="text-destructive">{rejectState.error}</p>
+            ) : null}
           </div>
         ) : null}
       </CardContent>

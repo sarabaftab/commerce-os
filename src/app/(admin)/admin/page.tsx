@@ -6,11 +6,21 @@ import {
   Settings2,
   ShoppingBag,
   Sparkles,
+  Users,
 } from "lucide-react";
 
 import { getProductCountsForTenant } from "@/modules/catalog";
 import { CustomerTypeBadge } from "@/modules/customers/components/admin/customer-type-badge";
-import { listOrdersForAdminTenant } from "@/modules/orders/services/order-admin-service";
+import { DashboardRangeSelector } from "@/modules/orders/components/admin/dashboard-range-selector";
+import {
+  dashboardRangeLabel,
+  dashboardRangeStart,
+  parseDashboardRange,
+} from "@/modules/orders/dashboard-range";
+import {
+  getDashboardPeriodStats,
+  listRecentOrdersSince,
+} from "@/modules/orders/services/dashboard-stats-service";
 import { formatMoney } from "@/shared/money/money";
 import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
 import { requireAdminSession } from "@/shared/auth/admin-session";
@@ -30,24 +40,26 @@ const ACTIVE_ORDER_STATUSES = [
   "out_for_delivery",
 ] as const;
 
-export default async function AdminDashboardPage() {
+type AdminDashboardPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AdminDashboardPage({
+  searchParams,
+}: AdminDashboardPageProps) {
   const timer = createTimer("page.admin.dashboard");
 
   const session = await requireAdminSession();
   timer.mark("sessionMs");
 
-  const [productCounts, recentOrders, orderTotal, activeOrders] = await Promise.all([
+  const rawParams = await searchParams;
+  const range = parseDashboardRange(rawParams.range);
+  const periodFrom = dashboardRangeStart(range);
+
+  const [productCounts, periodStats, recent, orderTotal, activeOrders] = await Promise.all([
     getProductCountsForTenant(session.tenantId),
-    listOrdersForAdminTenant(session.tenantId, {
-      q: "",
-      status: "",
-      paymentMethod: "",
-      fulfillmentMethod: "",
-      from: "",
-      to: "",
-      page: 1,
-      pageSize: 6,
-    }),
+    getDashboardPeriodStats(session.tenantId, range),
+    listRecentOrdersSince(session.tenantId, periodFrom, 6),
     prisma.order.count({ where: { tenantId: session.tenantId } }),
     prisma.order.count({
       where: {
@@ -56,6 +68,7 @@ export default async function AdminDashboardPage() {
       },
     }),
   ]);
+
   timer.mark("dataMs");
 
   const timings = timer.log({
@@ -64,6 +77,7 @@ export default async function AdminDashboardPage() {
   });
   const availableCount = productCounts.available;
   const unavailableCount = productCounts.total - productCounts.available;
+  const rangeLabel = dashboardRangeLabel(range);
 
   return (
     <div className="space-y-8">
@@ -124,14 +138,45 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-[color:var(--admin-ink-muted)]">
+          Activity for <span className="font-medium text-[color:var(--admin-ink)]">{rangeLabel}</span>
+        </p>
+        <DashboardRangeSelector range={range} />
+      </div>
+
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Active orders"
-          value={String(activeOrders)}
-          hint={`${orderTotal} total placed`}
+          label="Orders"
+          value={String(periodStats.ordersInPeriod)}
+          hint={`${rangeLabel} · ${orderTotal} all-time`}
           href="/admin/orders"
           icon={<ShoppingBag className="size-4" />}
         />
+        <MetricCard
+          label="New customers"
+          value={String(periodStats.newCustomersInPeriod)}
+          hint={`First order in ${rangeLabel.toLowerCase()}`}
+          href="/admin/customers"
+          icon={<Users className="size-4" />}
+        />
+        <MetricCard
+          label="Returning customers"
+          value={String(periodStats.returningCustomersInPeriod)}
+          hint={`Ordered again in ${rangeLabel.toLowerCase()}`}
+          href="/admin/customers"
+          icon={<Users className="size-4" />}
+        />
+        <MetricCard
+          label="Active orders"
+          value={String(activeOrders)}
+          hint="Open pipeline (all-time)"
+          href="/admin/orders"
+          icon={<ShoppingBag className="size-4" />}
+        />
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <MetricCard
           label="Products"
           value={String(productCounts.total)}
@@ -163,7 +208,7 @@ export default async function AdminDashboardPage() {
                 Recent orders
               </h2>
               <p className="text-xs text-[color:var(--admin-ink-muted)]">
-                Latest activity across channels
+                Latest activity in {rangeLabel.toLowerCase()}
               </p>
             </div>
             <Link
@@ -178,13 +223,13 @@ export default async function AdminDashboardPage() {
             </Link>
           </div>
 
-          {recentOrders.items.length === 0 ? (
+          {recent.items.length === 0 ? (
             <div className="px-5 py-12 text-center text-sm text-[color:var(--admin-ink-muted)]">
-              No orders yet. They’ll show up here as customers check out.
+              No orders in this period.
             </div>
           ) : (
             <ul className="divide-y divide-[color:var(--admin-line)]">
-              {recentOrders.items.map((order) => (
+              {recent.items.map((order) => (
                 <li key={order.id}>
                   <Link
                     href={`/admin/orders/${order.id}`}
