@@ -11,8 +11,10 @@ import { AppError } from "@/shared/errors/app-error";
 
 import {
   buildAccountOrderWebAppUrl,
+  buildOrderPlacedTelegramMessage,
   buildOrderStatusTelegramMessage,
   shouldNotifyOrderStatus,
+  type NotifiableOrderStatus,
 } from "../templates/order-status";
 
 function logNotification(fields: {
@@ -33,6 +35,38 @@ function logNotification(fields: {
     ...(fields.telegramErrorCode ? { telegramErrorCode: fields.telegramErrorCode } : {}),
     ...(fields.reason ? { reason: fields.reason } : {}),
   });
+}
+
+/**
+ * Enqueue the Order Placed Telegram notification inside the order-create transaction.
+ * Stored as type `order_status` + toStatus `pending` (unique per order/channel).
+ */
+export async function enqueueOrderPlacedNotification(
+  tx: Prisma.TransactionClient,
+  input: {
+    tenantId: string;
+    customerId: string;
+    orderId: string;
+  },
+): Promise<void> {
+  try {
+    await tx.customerNotification.create({
+      data: {
+        tenantId: input.tenantId,
+        customerId: input.customerId,
+        orderId: input.orderId,
+        channel: "telegram",
+        type: "order_status",
+        toStatus: "pending",
+        status: "pending",
+      },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return;
+    }
+    throw error;
+  }
 }
 
 export async function enqueueOrderStatusNotification(
@@ -68,12 +102,40 @@ export async function enqueueOrderStatusNotification(
   }
 }
 
+/**
+ * Deliver Order Placed after the create-order transaction commits.
+ * Never throws to the caller — failures are logged and stored on the notification row.
+ */
+export async function notifyOrderPlacedAfterCommit(input: {
+  tenantId: string;
+  orderId: string;
+}): Promise<void> {
+  try {
+    await deliverOrderStatusNotification({
+      tenantId: input.tenantId,
+      orderId: input.orderId,
+      toStatus: "pending",
+    });
+  } catch (error) {
+    logNotification({
+      tenantId: input.tenantId,
+      orderId: input.orderId,
+      type: "order_status",
+      channel: "telegram",
+      outcome: "failed",
+      reason: "unhandled",
+    });
+    void error;
+  }
+}
+
 export async function deliverOrderStatusNotification(input: {
   tenantId: string;
   orderId: string;
   toStatus: OrderStatus;
 }): Promise<void> {
-  if (!shouldNotifyOrderStatus(input.toStatus)) {
+  const isOrderPlaced = input.toStatus === "pending";
+  if (!isOrderPlaced && !shouldNotifyOrderStatus(input.toStatus)) {
     return;
   }
 
@@ -164,14 +226,23 @@ export async function deliverOrderStatusNotification(input: {
     return;
   }
 
-  const message = buildOrderStatusTelegramMessage({
-    orderNumber: order.orderNumber,
-    storeName: settings?.displayName?.trim() || tenant.name,
-    toStatus: input.toStatus,
-    fulfillmentMethod: order.fulfillmentMethod,
-    pickupLocationName: order.pickupLocationName,
-    pickupLocationAddress: order.pickupLocationAddress,
-  });
+  const message = isOrderPlaced
+    ? buildOrderPlacedTelegramMessage({
+        orderNumber: order.orderNumber,
+        totalMinor: order.totalMinor,
+        currency: order.currency,
+        fulfillmentMethod: order.fulfillmentMethod,
+        paymentMethod: order.paymentMethod,
+        paymentProofStatus: order.paymentProofStatus,
+      })
+    : buildOrderStatusTelegramMessage({
+        orderNumber: order.orderNumber,
+        storeName: settings?.displayName?.trim() || tenant.name,
+        toStatus: input.toStatus as NotifiableOrderStatus,
+        fulfillmentMethod: order.fulfillmentMethod,
+        pickupLocationName: order.pickupLocationName,
+        pickupLocationAddress: order.pickupLocationAddress,
+      });
 
   const webAppUrl = buildAccountOrderWebAppUrl({
     appUrl: env().NEXT_PUBLIC_APP_URL,

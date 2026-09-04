@@ -1,4 +1,11 @@
-import type { FulfillmentMethod, OrderStatus } from "@prisma/client";
+import type {
+  FulfillmentMethod,
+  OrderStatus,
+  PaymentMethod,
+  PaymentProofStatus,
+} from "@prisma/client";
+
+import { formatMoney } from "@/shared/money/money";
 
 export const ORDER_STATUS_NOTIFICATION_STATUSES = [
   "confirmed",
@@ -11,8 +18,20 @@ export const ORDER_STATUS_NOTIFICATION_STATUSES = [
 
 export type NotifiableOrderStatus = (typeof ORDER_STATUS_NOTIFICATION_STATUSES)[number];
 
+/**
+ * Status-change notifications only. Order placement uses `toStatus: pending`
+ * via a dedicated enqueue path — not through this list.
+ */
 export function shouldNotifyOrderStatus(status: OrderStatus): status is NotifiableOrderStatus {
   return (ORDER_STATUS_NOTIFICATION_STATUSES as readonly string[]).includes(status);
+}
+
+export function customerFulfillmentLabel(method: FulfillmentMethod): string {
+  return method === "pickup" ? "Showroom Pickup" : "Home Delivery";
+}
+
+export function customerPaymentLabel(method: PaymentMethod): string {
+  return method === "aba_transfer" ? "ABA Bank Transfer" : "Cash on Delivery";
 }
 
 export type OrderStatusMessageInput = {
@@ -22,6 +41,15 @@ export type OrderStatusMessageInput = {
   fulfillmentMethod: FulfillmentMethod;
   pickupLocationName: string | null;
   pickupLocationAddress: string | null;
+};
+
+export type OrderPlacedMessageInput = {
+  orderNumber: string;
+  totalMinor: number;
+  currency: string;
+  fulfillmentMethod: FulfillmentMethod;
+  paymentMethod: PaymentMethod;
+  paymentProofStatus: PaymentProofStatus;
 };
 
 export type OrderStatusTelegramMessage = {
@@ -40,6 +68,39 @@ function pickupLines(input: OrderStatusMessageInput): string {
     return "";
   }
   return `\n\nPickup: ${bits.join(" — ")}`;
+}
+
+/** Customer Telegram copy for successful order creation (`toStatus: pending`). */
+export function buildOrderPlacedTelegramMessage(
+  input: OrderPlacedMessageInput,
+): OrderStatusTelegramMessage {
+  const fulfillment = customerFulfillmentLabel(input.fulfillmentMethod);
+  const payment = customerPaymentLabel(input.paymentMethod);
+  const total = formatMoney(input.totalMinor, input.currency);
+  const lines = [
+    "Order Placed ✅",
+    "",
+    `We've received your order #${input.orderNumber}.`,
+    "",
+    `Total: ${total}`,
+    `${input.fulfillmentMethod === "pickup" ? "Pickup" : "Delivery"}: ${fulfillment}`,
+    `Payment: ${payment}`,
+  ];
+
+  if (
+    input.paymentMethod === "aba_transfer" &&
+    (input.paymentProofStatus === "awaiting_proof" ||
+      input.paymentProofStatus === "rejected")
+  ) {
+    lines.push("", "Payment confirmation is still awaiting submission.");
+  }
+
+  lines.push("", "We'll notify you again once your order is confirmed.");
+
+  return {
+    text: lines.join("\n"),
+    buttonText: "View Order",
+  };
 }
 
 export function buildOrderStatusTelegramMessage(

@@ -11,6 +11,7 @@ import {
   upsertCustomerByPhone,
 } from "@/modules/customers/repositories/customer-repository";
 import { assertCheckoutOptions, getCheckoutSettings } from "@/modules/settings";
+import { notifyOrderPlacedAfterCommit } from "@/modules/notifications/services/notification-service";
 import { prisma } from "@/shared/db/prisma";
 import { AppError, isAppError } from "@/shared/errors/app-error";
 import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
@@ -242,6 +243,10 @@ export async function placeGuestOrder(
 ): Promise<OrderConfirmation> {
   const existing = await findOrderByIdempotencyKey(context.tenantId, input.idempotencyKey);
   if (existing) {
+    await notifyOrderPlacedAfterCommit({
+      tenantId: context.tenantId,
+      orderId: existing.id,
+    });
     return existing;
   }
 
@@ -274,7 +279,7 @@ export async function placeGuestOrder(
   );
 
   try {
-    return await prisma.$transaction(
+    const order = await prisma.$transaction(
       async (tx) => {
         const cart = await findOpenCheckoutCartInTransaction(tx, {
           tenantId: context.tenantId,
@@ -319,7 +324,7 @@ export async function placeGuestOrder(
         // Claim cart before insert so concurrent checkouts cannot both succeed.
         await convertCartInTransaction(tx, context.tenantId, cart.id, customer.id);
 
-        const order = await createOrderInTransaction(tx, {
+        return createOrderInTransaction(tx, {
           tenantId: context.tenantId,
           tenantSlug: context.tenantSlug,
           customerId: customer.id,
@@ -360,18 +365,26 @@ export async function placeGuestOrder(
             lineTotalMinor: line.lineTotalMinor,
           })),
         });
-
-        return order;
       },
       {
         maxWait: 10_000,
         timeout: 20_000,
       },
     );
+
+    await notifyOrderPlacedAfterCommit({
+      tenantId: context.tenantId,
+      orderId: order.id,
+    });
+    return order;
   } catch (error) {
     if (isAppError(error) && error.code === "CONFLICT") {
       const replay = await findOrderByIdempotencyKey(context.tenantId, input.idempotencyKey);
       if (replay) {
+        await notifyOrderPlacedAfterCommit({
+          tenantId: context.tenantId,
+          orderId: replay.id,
+        });
         return replay;
       }
     }
@@ -381,6 +394,10 @@ export async function placeGuestOrder(
     ) {
       const replay = await findOrderByIdempotencyKey(context.tenantId, input.idempotencyKey);
       if (replay) {
+        await notifyOrderPlacedAfterCommit({
+          tenantId: context.tenantId,
+          orderId: replay.id,
+        });
         return replay;
       }
     }

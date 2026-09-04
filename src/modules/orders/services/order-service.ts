@@ -8,6 +8,10 @@ import { Prisma as PrismaNamespace } from "@prisma/client";
 
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
+import {
+  enqueueOrderPlacedNotification,
+  notifyOrderPlacedAfterCommit,
+} from "@/modules/notifications/services/notification-service";
 
 import {
   allocateOrderNumber,
@@ -175,6 +179,12 @@ export async function createOrderInTransaction(
     orderId: record.id,
   });
 
+  await enqueueOrderPlacedNotification(tx, {
+    tenantId: command.tenantId,
+    customerId: command.customerId,
+    orderId: record.id,
+  });
+
   return toOrderConfirmation(record, { includeConfirmationToken: true });
 }
 
@@ -195,18 +205,28 @@ export async function createOrder(
       command.idempotencyKey,
     );
     if (existing) {
+      await notifyOrderPlacedAfterCommit({
+        tenantId: command.tenantId,
+        orderId: existing.id,
+      });
       return existing;
     }
   }
 
   try {
-    return await prisma.$transaction(async (tx) => {
-      const order = await createOrderInTransaction(tx, command);
+    const order = await prisma.$transaction(async (tx) => {
+      const created = await createOrderInTransaction(tx, command);
       if (options.afterCreateInTransaction) {
-        await options.afterCreateInTransaction(tx, order);
+        await options.afterCreateInTransaction(tx, created);
       }
-      return order;
+      return created;
     });
+
+    await notifyOrderPlacedAfterCommit({
+      tenantId: command.tenantId,
+      orderId: order.id,
+    });
+    return order;
   } catch (error) {
     if (
       error instanceof PrismaNamespace.PrismaClientKnownRequestError &&
@@ -218,6 +238,10 @@ export async function createOrder(
         command.idempotencyKey,
       );
       if (replay) {
+        await notifyOrderPlacedAfterCommit({
+          tenantId: command.tenantId,
+          orderId: replay.id,
+        });
         return replay;
       }
     }

@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildAccountOrderWebAppUrl,
+  buildOrderPlacedTelegramMessage,
   buildOrderStatusTelegramMessage,
+  customerFulfillmentLabel,
+  customerPaymentLabel,
   shouldNotifyOrderStatus,
 } from "@/modules/notifications/templates/order-status";
 
 describe("order status notification rules", () => {
-  it("does not notify pending placement", () => {
+  it("does not treat pending as a status-change notification", () => {
     expect(shouldNotifyOrderStatus("pending")).toBe(false);
   });
 
@@ -18,6 +21,52 @@ describe("order status notification rules", () => {
     expect(shouldNotifyOrderStatus("out_for_delivery")).toBe(true);
     expect(shouldNotifyOrderStatus("completed")).toBe(true);
     expect(shouldNotifyOrderStatus("cancelled")).toBe(true);
+  });
+});
+
+describe("order placed telegram copy", () => {
+  it("renders friendly labels, total, and View Order", () => {
+    const message = buildOrderPlacedTelegramMessage({
+      orderNumber: "BIL-1042",
+      totalMinor: 3000,
+      currency: "USD",
+      fulfillmentMethod: "delivery",
+      paymentMethod: "aba_transfer",
+      paymentProofStatus: "awaiting_proof",
+    });
+
+    expect(message.buttonText).toBe("View Order");
+    expect(message.text).toContain("Order Placed");
+    expect(message.text).toContain("BIL-1042");
+    expect(message.text).toContain("$30.00");
+    expect(message.text).toContain("Home Delivery");
+    expect(message.text).toContain("ABA Bank Transfer");
+    expect(message.text).toContain("Payment confirmation is still awaiting submission.");
+    expect(message.text).toContain("We'll notify you again once your order is confirmed.");
+    expect(message.text).not.toContain("aba_transfer");
+    expect(message.text).not.toContain("undefined");
+  });
+
+  it("uses Cash on Delivery without ABA proof note", () => {
+    const message = buildOrderPlacedTelegramMessage({
+      orderNumber: "BIL-1042",
+      totalMinor: 1500,
+      currency: "USD",
+      fulfillmentMethod: "pickup",
+      paymentMethod: "cod",
+      paymentProofStatus: "not_required",
+    });
+
+    expect(message.text).toContain("Showroom Pickup");
+    expect(message.text).toContain("Cash on Delivery");
+    expect(message.text).not.toContain("Payment confirmation");
+  });
+
+  it("maps fulfillment and payment enums to customer labels", () => {
+    expect(customerFulfillmentLabel("delivery")).toBe("Home Delivery");
+    expect(customerFulfillmentLabel("pickup")).toBe("Showroom Pickup");
+    expect(customerPaymentLabel("aba_transfer")).toBe("ABA Bank Transfer");
+    expect(customerPaymentLabel("cod")).toBe("Cash on Delivery");
   });
 });
 

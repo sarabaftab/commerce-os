@@ -50,6 +50,13 @@ function formatNotificationError(code: string) {
   return `Could not send (${code})`;
 }
 
+function formatNotificationEvent(toStatus: OrderStatus) {
+  if (toStatus === "pending") {
+    return "order placed";
+  }
+  return toStatus.replaceAll("_", " ");
+}
+
 export function OrderNotificationPanel({
   orderId,
   telegramLinked,
@@ -71,7 +78,7 @@ export function OrderNotificationPanel({
         {latest ? (
           <p>
             Telegram — {formatDelivery(latest.status)}
-            {` (${latest.toStatus.replaceAll("_", " ")})`}
+            {` (${formatNotificationEvent(latest.toStatus)})`}
           </p>
         ) : telegramLinked ? (
           <p className="text-muted-foreground">Telegram — No status messages yet</p>
