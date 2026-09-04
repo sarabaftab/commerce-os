@@ -102,6 +102,7 @@ export function CheckoutPaymentFields({
             instructions={abaInstructions}
             customerNote={abaCustomerNote}
             showProofNote
+            showCheckoutSteps
           />
           <div>
             <FieldLabel htmlFor="paymentReference">

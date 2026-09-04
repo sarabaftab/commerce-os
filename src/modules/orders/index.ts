@@ -64,7 +64,10 @@ export {
 } from "./services/order-status-service";
 export {
   customerCanUploadPaymentProof,
+  customerPaymentConfirmationCopy,
+  customerPaymentConfirmationUploadLabel,
   initialPaymentProofStatus,
+  mapCustomerPaymentUploadError,
   paymentProofStatusLabel,
 } from "./payment-proof";
 export {

@@ -7,7 +7,10 @@ type AbaPaymentDetailsProps = {
   amountLabel?: string | null;
   instructions?: string | null;
   customerNote?: string | null;
+  /** Checkout/confirmation helper about uploading later. */
   showProofNote?: boolean;
+  /** Numbered Scan → Pay → Upload guidance. */
+  showCheckoutSteps?: boolean;
 };
 
 export function AbaPaymentDetails({
@@ -18,10 +21,30 @@ export function AbaPaymentDetails({
   instructions,
   customerNote,
   showProofNote = false,
+  showCheckoutSteps = false,
 }: AbaPaymentDetailsProps) {
   return (
     <div className="space-y-3">
-      <p className="font-medium">ABA Bank Transfer</p>
+      <p className="font-medium">Pay with ABA</p>
+
+      {showCheckoutSteps ? (
+        <ol className="space-y-3 text-sm">
+          <li className="space-y-1">
+            <p className="font-medium">1. Scan the QR code</p>
+            <p className="text-[color:var(--shop-ink-muted)]">
+              Scan the ABA QR code with your banking app and complete the payment.
+            </p>
+          </li>
+          <li className="space-y-1">
+            <p className="font-medium">2. Upload your payment confirmation</p>
+            <p className="text-[color:var(--shop-ink-muted)]">
+              After payment, upload a screenshot or photo showing that the transfer was
+              successful. You can do this after placing your order.
+            </p>
+          </li>
+        </ol>
+      ) : null}
+
       {qrImageUrl ? (
         <div className="relative mx-auto h-56 w-56 overflow-hidden rounded-xl bg-white">
           <ProductImage
@@ -32,7 +55,9 @@ export function AbaPaymentDetails({
           />
         </div>
       ) : null}
-      {qrImageUrl ? <p className="text-sm">Scan the QR code to pay.</p> : null}
+      {qrImageUrl && !showCheckoutSteps ? (
+        <p className="text-sm">Scan the QR code with your banking app to pay.</p>
+      ) : null}
       {accountName ? (
         <p className="text-sm">
           <span className="text-[color:var(--shop-ink-muted)]">Account name:</span>{" "}
@@ -63,7 +88,8 @@ export function AbaPaymentDetails({
       ) : null}
       {showProofNote ? (
         <p className="text-sm text-[color:var(--shop-ink-muted)]">
-          You can upload your payment proof after placing the order.
+          You can upload your payment confirmation later from your order details if you
+          don&apos;t have it ready now.
         </p>
       ) : null}
     </div>

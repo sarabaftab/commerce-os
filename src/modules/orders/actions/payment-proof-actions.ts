@@ -9,6 +9,7 @@ import { isAppError } from "@/shared/errors/app-error";
 import { readOrderConfirmationCookie } from "@/shared/orders/confirmation-cookie";
 import { PAYMENT_PROOF_MAX_BYTES } from "@/shared/storage/payment-proof-storage";
 
+import { mapCustomerPaymentUploadError } from "../payment-proof";
 import {
   rejectOrderPaymentProof,
   submitCustomerPaymentProof,
@@ -36,7 +37,7 @@ export async function uploadPaymentProofAction(
   const tenant = await getTenantBySlug(tenantSlug);
   const file = formData.get("proof");
   if (!(file instanceof File) || file.size === 0) {
-    return { error: "Choose a transfer screenshot to upload" };
+    return { error: mapCustomerPaymentUploadError("Choose a transfer screenshot to upload") };
   }
 
   try {
@@ -56,10 +57,12 @@ export async function uploadPaymentProofAction(
     });
   } catch (error) {
     if (error instanceof Error && error.message.includes("5 MB")) {
-      return { error: error.message };
+      return { error: mapCustomerPaymentUploadError(error.message) };
     }
     return {
-      error: isAppError(error) ? error.message : "Could not upload the screenshot",
+      error: mapCustomerPaymentUploadError(
+        isAppError(error) ? error.message : "Could not upload the screenshot",
+      ),
     };
   }
 

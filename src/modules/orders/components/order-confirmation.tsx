@@ -51,8 +51,17 @@ export function OrderConfirmationView({
           {order.orderNumber}
         </h1>
         <p className="mt-2 text-sm text-[color:var(--shop-ink-muted)]">
-          Thank you. Your order has been received and is being processed.
+          Thank you. Your order has been placed successfully and is being processed.
         </p>
+        {order.paymentMethod === "aba_transfer" &&
+        (order.paymentProofStatus === "awaiting_proof" ||
+          order.paymentProofStatus === "submitted") ? (
+          <p className="mt-2 text-sm text-[color:var(--shop-ink-muted)]">
+            {order.paymentProofStatus === "awaiting_proof"
+              ? "Payment awaiting verification — please upload your payment confirmation below."
+              : "Payment awaiting verification — your confirmation is being reviewed."}
+          </p>
+        ) : null}
         <p className="mt-2 text-sm capitalize text-[color:var(--shop-ink-muted)]">
           Status: {formatStatus(order.status)}
         </p>
@@ -111,6 +120,7 @@ export function OrderConfirmationView({
               paymentMethod={order.paymentMethod}
               paymentProofStatus={order.paymentProofStatus}
               paymentProofRejectionReason={order.paymentProofRejectionReason}
+              showLaterNote
             />
           </div>
         </section>

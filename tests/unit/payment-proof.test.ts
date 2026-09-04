@@ -2,8 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   customerCanUploadPaymentProof,
+  customerPaymentConfirmationCopy,
+  customerPaymentConfirmationUploadLabel,
   initialPaymentProofStatus,
+  mapCustomerPaymentUploadError,
   paymentProofStatusLabel,
+  PAYMENT_PROOF_REQUIREMENTS_LABEL,
 } from "@/modules/orders/payment-proof";
 import {
   detectPaymentProofMime,
@@ -53,9 +57,51 @@ describe("payment proof rules", () => {
     ).toBe(false);
   });
 
-  it("labels statuses for customers", () => {
+  it("keeps admin labels short", () => {
     expect(paymentProofStatusLabel("submitted")).toBe("Submitted");
     expect(paymentProofStatusLabel("verified")).toBe("Verified");
+  });
+
+  it("uses clear customer-facing confirmation copy", () => {
+    expect(customerPaymentConfirmationCopy("awaiting_proof").title).toBe(
+      "Payment Confirmation Needed",
+    );
+    expect(customerPaymentConfirmationCopy("submitted").title).toBe(
+      "Payment Confirmation Submitted",
+    );
+    expect(customerPaymentConfirmationCopy("verified").title).toBe("Payment Verified");
+    expect(customerPaymentConfirmationCopy("rejected").title).toBe(
+      "Payment Confirmation Needs Attention",
+    );
+    expect(customerPaymentConfirmationUploadLabel("awaiting_proof")).toBe(
+      "Upload Payment Confirmation",
+    );
+    expect(customerPaymentConfirmationUploadLabel("rejected")).toBe(
+      "Upload New Payment Confirmation",
+    );
+  });
+
+  it("maps upload errors to customer-friendly messages", () => {
+    expect(mapCustomerPaymentUploadError("Image must be 5 MB or smaller")).toBe(
+      "This file is too large. Please choose a smaller file.",
+    );
+    expect(mapCustomerPaymentUploadError("Upload a PNG, JPG, or WEBP screenshot")).toBe(
+      "Please upload a supported image file.",
+    );
+    expect(mapCustomerPaymentUploadError("Choose a transfer screenshot to upload")).toBe(
+      "Please choose a payment confirmation file to upload.",
+    );
+    expect(mapCustomerPaymentUploadError("storage bucket failed")).toBe(
+      "We couldn't upload your payment confirmation. Please try again.",
+    );
+  });
+
+  it("documents the actual accepted file requirements", () => {
+    expect(PAYMENT_PROOF_REQUIREMENTS_LABEL).toContain("JPG");
+    expect(PAYMENT_PROOF_REQUIREMENTS_LABEL).toContain("PNG");
+    expect(PAYMENT_PROOF_REQUIREMENTS_LABEL).toContain("WEBP");
+    expect(PAYMENT_PROOF_REQUIREMENTS_LABEL).toContain("5 MB");
+    expect(PAYMENT_PROOF_REQUIREMENTS_LABEL.toLowerCase()).not.toContain("pdf");
   });
 });
 
