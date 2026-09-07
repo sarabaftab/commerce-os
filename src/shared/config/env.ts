@@ -9,6 +9,12 @@ const serverSchema = z.object({
   /** Phase 1: single bot mapped to one tenant slug. Optional until Telegram is used. */
   TELEGRAM_BOT_TOKEN: z.string().min(1).optional(),
   TELEGRAM_TENANT_SLUG: z.string().min(1).default("kin-a2"),
+  /** Public channel username for Admin broadcasts (e.g. @billioncocambodia). */
+  TELEGRAM_BROADCAST_CHANNEL: z
+    .string()
+    .trim()
+    .regex(/^@?[A-Za-z0-9_]{5,}$/, "TELEGRAM_BROADCAST_CHANNEL must be a Telegram username")
+    .optional(),
   TELEGRAM_INIT_DATA_MAX_AGE_SECONDS: z.coerce.number().int().positive().default(300),
   CUSTOMER_SESSION_TTL_SECONDS: z.coerce
     .number()
@@ -46,6 +52,7 @@ function getServerEnv(): ServerEnv {
     DEFAULT_TENANT_SLUG: process.env.DEFAULT_TENANT_SLUG,
     TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN?.trim() || undefined,
     TELEGRAM_TENANT_SLUG: process.env.TELEGRAM_TENANT_SLUG,
+    TELEGRAM_BROADCAST_CHANNEL: process.env.TELEGRAM_BROADCAST_CHANNEL?.trim() || undefined,
     TELEGRAM_INIT_DATA_MAX_AGE_SECONDS: process.env.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS,
     CUSTOMER_SESSION_TTL_SECONDS: process.env.CUSTOMER_SESSION_TTL_SECONDS,
     PHOTON_BASE_URL: process.env.PHOTON_BASE_URL,

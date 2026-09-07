@@ -43,6 +43,19 @@ export function getTelegramBotTokenForTenantSlugOrNull(tenantSlug: string): stri
   return normalizeTelegramBotToken(TELEGRAM_BOT_TOKEN);
 }
 
+/**
+ * Configured public channel for Admin broadcasts.
+ * Normalized to always include a leading `@`.
+ */
+export function getTelegramBroadcastChannelOrNull(tenantSlug: string): string | null {
+  const { TELEGRAM_BROADCAST_CHANNEL, TELEGRAM_TENANT_SLUG } = env();
+  if (!TELEGRAM_BROADCAST_CHANNEL || tenantSlug !== TELEGRAM_TENANT_SLUG) {
+    return null;
+  }
+  const trimmed = TELEGRAM_BROADCAST_CHANNEL.trim();
+  return trimmed.startsWith("@") ? trimmed : `@${trimmed}`;
+}
+
 export function getTelegramInitDataMaxAgeSeconds(): number {
   return env().TELEGRAM_INIT_DATA_MAX_AGE_SECONDS;
 }

@@ -28,6 +28,7 @@ Telegram requires HTTPS for Mini Apps.
 |----------|---------|
 | `TELEGRAM_BOT_TOKEN` | BotFather token (HMAC secret for `initData`) |
 | `TELEGRAM_TENANT_SLUG` | Only this slug may use the bot token (Phase 1) |
+| `TELEGRAM_BROADCAST_CHANNEL` | Public channel username for Admin broadcasts (e.g. `@billioncocambodia`) |
 | `TELEGRAM_INIT_DATA_MAX_AGE_SECONDS` | Max age of `auth_date` (default `300`) |
 | `CUSTOMER_SESSION_TTL_SECONDS` | Customer session lifetime (default 30 days) |
 | `TELEGRAM_FORCE_SECURE_COOKIES` | `1` = `SameSite=None; Secure` (HTTPS tunnels only; production Mini App uses Lax) |
@@ -64,6 +65,14 @@ Requirements:
 View Order opens `/{tenantSlug}/account/orders/{orderNumber}` inside the Mini App. That route still requires a customer session. The existing Account cookie issue is unchanged; we do not use a public order URL.
 
 Admin order detail shows Telegram Sent / Failed / Not linked, with Retry for failed/pending rows. Duplicate transitions for the same status do not send a second message.
+
+## Channel broadcasts (Admin)
+
+Admins can publish plain-text announcements from **Admin → Broadcasts** to the configured public channel (`TELEGRAM_BROADCAST_CHANNEL`).
+
+- Uses the same `TELEGRAM_BOT_TOKEN` (bot must be a channel administrator with post permission).
+- Optional CTA becomes an HTTPS URL button (channel-compatible). Blank destination opens the tenant storefront Mini App URL.
+- Broadcasts are not stored in the database in Phase 1 (no campaign history/analytics).
 
 ## Out of scope (Phase 1)
 

@@ -6,6 +6,7 @@ import {
   CircleHelp,
   FolderTree,
   LayoutDashboard,
+  Megaphone,
   Package,
   Settings2,
   ShoppingBag,
@@ -20,6 +21,7 @@ const links = [
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
+  { href: "/admin/broadcasts", label: "Broadcasts", icon: Megaphone },
   { href: "/admin/faqs", label: "FAQs", icon: CircleHelp },
   { href: "/admin/settings", label: "Settings", icon: Settings2 },
 ] as const;
