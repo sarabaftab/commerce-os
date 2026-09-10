@@ -24,6 +24,7 @@ const sampleSnapshot = {
   rangeLabel: "Past 7 Days",
   ordersInPeriod: 2,
   ordersAllTime: 10,
+  customersAllTime: 5,
   newCustomersInPeriod: 1,
   returningCustomersInPeriod: 1,
   activeOrders: 3,

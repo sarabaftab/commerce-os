@@ -51,6 +51,7 @@ export type AdminDashboardLiveSnapshot = {
   rangeLabel: string;
   ordersInPeriod: number;
   ordersAllTime: number;
+  customersAllTime: number;
   newCustomersInPeriod: number;
   returningCustomersInPeriod: number;
   activeOrders: number;
@@ -65,23 +66,26 @@ export async function getAdminDashboardLiveSnapshot(
 ): Promise<AdminDashboardLiveSnapshot> {
   const periodFrom = dashboardRangeStart(rangeDays, now);
 
-  const [periodStats, recent, ordersAllTime, activeOrders] = await Promise.all([
-    getDashboardPeriodStats(tenantId, rangeDays, now),
-    listRecentOrdersSince(tenantId, periodFrom, 6),
-    prisma.order.count({ where: { tenantId } }),
-    prisma.order.count({
-      where: {
-        tenantId,
-        status: { in: [...ACTIVE_ORDER_STATUSES] },
-      },
-    }),
-  ]);
+  const [periodStats, recent, ordersAllTime, customersAllTime, activeOrders] =
+    await Promise.all([
+      getDashboardPeriodStats(tenantId, rangeDays, now),
+      listRecentOrdersSince(tenantId, periodFrom, 6),
+      prisma.order.count({ where: { tenantId } }),
+      prisma.customer.count({ where: { tenantId } }),
+      prisma.order.count({
+        where: {
+          tenantId,
+          status: { in: [...ACTIVE_ORDER_STATUSES] },
+        },
+      }),
+    ]);
 
   return {
     rangeDays,
     rangeLabel: dashboardRangeLabel(rangeDays),
     ordersInPeriod: periodStats.ordersInPeriod,
     ordersAllTime,
+    customersAllTime,
     newCustomersInPeriod: periodStats.newCustomersInPeriod,
     returningCustomersInPeriod: periodStats.returningCustomersInPeriod,
     activeOrders,

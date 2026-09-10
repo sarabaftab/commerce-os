@@ -131,13 +131,20 @@ export function DashboardLiveSections({
         {updatedLabel ?? "Auto-updates while this page is open"}
       </p>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <MetricCard
           label="Orders"
           value={String(data.ordersInPeriod)}
           hint={`${rangeLabel} · ${data.ordersAllTime} all-time`}
           href="/admin/orders"
           icon={<ShoppingBag className="size-4" />}
+        />
+        <MetricCard
+          label="Total customers"
+          value={String(data.customersAllTime)}
+          hint="All-time accounts"
+          href="/admin/customers"
+          icon={<Users className="size-4" />}
         />
         <MetricCard
           label="New customers"
