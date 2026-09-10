@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import type { Category } from "@prisma/client";
 
 import type { ProductWithRelations } from "@/modules/catalog";
 import type { ActionState } from "@/modules/catalog/actions/product-actions";
+import { ProductImageField } from "@/modules/catalog/components/product-image-field";
 import { fromMinor } from "@/shared/money/money";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
@@ -28,7 +29,9 @@ export function ProductForm({
   submitLabel,
 }: ProductFormProps) {
   const [state, formAction, pending] = useActionState(action, {});
+  const [imageUploading, setImageUploading] = useState(false);
   const primaryMedia = product?.media[0]?.url ?? "";
+  const saveDisabled = pending || imageUploading;
 
   return (
     <form action={formAction} className="mx-auto max-w-2xl space-y-6">
@@ -164,19 +167,10 @@ export function ProductForm({
         />
       </div>
 
-      <div className="grid gap-2">
-        <Label htmlFor="mediaUrl">Media URL (optional)</Label>
-        <Input
-          id="mediaUrl"
-          name="mediaUrl"
-          type="url"
-          defaultValue={primaryMedia}
-          placeholder="https://..."
-        />
-        {state.fieldErrors?.mediaUrl ? (
-          <p className="text-xs text-destructive">{state.fieldErrors.mediaUrl[0]}</p>
-        ) : null}
-      </div>
+      <ProductImageField initialUrl={primaryMedia} onUploadingChange={setImageUploading} />
+      {state.fieldErrors?.mediaUrl ? (
+        <p className="text-xs text-destructive">{state.fieldErrors.mediaUrl[0]}</p>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
@@ -202,8 +196,8 @@ export function ProductForm({
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : submitLabel}
+        <Button type="submit" disabled={saveDisabled}>
+          {imageUploading ? "Uploading image…" : pending ? "Saving…" : submitLabel}
         </Button>
       </div>
     </form>
