@@ -14,6 +14,10 @@ vi.mock("@/modules/orders/services/dashboard-stats-service", () => ({
 }));
 
 import { GET } from "@/app/api/admin/dashboard/route";
+import {
+  buildAdminDashboardPollUrl,
+  DASHBOARD_POLL_INTERVAL_MS,
+} from "@/modules/orders/dashboard-live";
 
 const sampleSnapshot = {
   rangeDays: 7 as const,
@@ -65,7 +69,10 @@ describe("GET /api/admin/dashboard", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+    expect(response.headers.get("Cache-Control")).toContain("no-store");
+    expect(response.headers.get("Cache-Control")).toContain("private");
+    expect(response.headers.get("Pragma")).toBe("no-cache");
+    expect(response.headers.get("X-Dashboard-Generated-At")).toBe(sampleSnapshot.generatedAt);
     expect(body.data).toEqual(sampleSnapshot);
     expect(getAdminDashboardLiveSnapshot).toHaveBeenCalledWith("tenant-a", 7);
   });
@@ -102,6 +109,46 @@ describe("GET /api/admin/dashboard", () => {
       "tenant-b",
       expect.anything(),
     );
+  });
+
+  it("ignores cache-bust query params when resolving the snapshot", async () => {
+    getAdminSession.mockResolvedValue({ tenantId: "tenant-a", tenantSlug: "shop-a" });
+    getAdminDashboardLiveSnapshot.mockResolvedValue({
+      ...sampleSnapshot,
+      ordersInPeriod: 3,
+      recent: [
+        {
+          ...sampleSnapshot.recent[0],
+          id: "order-new",
+          orderNumber: "ORD-NEW",
+        },
+        ...sampleSnapshot.recent,
+      ],
+    });
+
+    const response = await GET(
+      new Request("http://localhost/api/admin/dashboard?range=7&_ts=1710000000000"),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(getAdminDashboardLiveSnapshot).toHaveBeenCalledWith("tenant-a", 7);
+    expect(body.data.ordersInPeriod).toBe(3);
+    expect(body.data.recent[0].id).toBe("order-new");
+  });
+});
+
+describe("dashboard poll helpers", () => {
+  it("polls every 12 seconds", () => {
+    expect(DASHBOARD_POLL_INTERVAL_MS).toBe(12_000);
+  });
+
+  it("builds a range-preserving cache-busted poll URL", () => {
+    expect(buildAdminDashboardPollUrl(14, 1_700_000_000_000)).toBe(
+      "/api/admin/dashboard?range=14&_ts=1700000000000",
+    );
+    expect(buildAdminDashboardPollUrl(7, 42)).toContain("range=7");
+    expect(buildAdminDashboardPollUrl(28, 42)).toContain("range=28");
   });
 });
 

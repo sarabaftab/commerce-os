@@ -6,7 +6,11 @@ import { ArrowUpRight, ShoppingBag, Users } from "lucide-react";
 
 import { CustomerTypeBadge } from "@/modules/customers/components/admin/customer-type-badge";
 import type { DashboardRangeDays } from "@/modules/orders/dashboard-range";
-import { DASHBOARD_POLL_INTERVAL_MS } from "@/modules/orders/dashboard-live";
+import {
+  buildAdminDashboardPollUrl,
+  DASHBOARD_POLL_INTERVAL_MS,
+  DASHBOARD_POLL_TIMEOUT_MS,
+} from "@/modules/orders/dashboard-live";
 import type { AdminDashboardLiveSnapshot } from "@/modules/orders/services/dashboard-stats-service";
 import { formatMoney } from "@/shared/money/money";
 import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
@@ -36,6 +40,8 @@ export function DashboardLiveSections({
   const [updatedLabel, setUpdatedLabel] = useState<string | null>(null);
   const knownIdsRef = useRef(new Set(initial.recent.map((order) => order.id)));
   const inFlightRef = useRef(false);
+  const rangeRef = useRef(range);
+  rangeRef.current = range;
 
   useEffect(() => {
     let cancelled = false;
@@ -65,13 +71,22 @@ export function DashboardLiveSections({
       }
 
       inFlightRef.current = true;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), DASHBOARD_POLL_TIMEOUT_MS);
+
       try {
-        const response = await fetch(`/api/admin/dashboard?range=${range}`, {
+        const response = await fetch(buildAdminDashboardPollUrl(rangeRef.current), {
           credentials: "same-origin",
-          headers: { Accept: "application/json" },
+          headers: {
+            Accept: "application/json",
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
+          },
           cache: "no-store",
+          signal: controller.signal,
         });
         if (!response.ok) {
+          // Keep existing UI; auth/network issues retry on the next interval.
           return;
         }
         const payload = (await response.json()) as { data?: AdminDashboardLiveSnapshot };
@@ -79,11 +94,15 @@ export function DashboardLiveSections({
           applySnapshot(payload.data);
         }
       } catch {
-        // Keep existing UI; retry on the next interval.
+        // Keep existing UI; retry on the next interval (includes abort/timeout).
       } finally {
+        clearTimeout(timeoutId);
         inFlightRef.current = false;
       }
     };
+
+    // Fetch once on mount / range change, then on the quiet interval.
+    void refresh();
 
     const intervalId = setInterval(() => {
       void refresh();

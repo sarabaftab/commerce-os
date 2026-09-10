@@ -5,6 +5,14 @@ import { parseDashboardRange } from "@/modules/orders/dashboard-range";
 import { getAdminDashboardLiveSnapshot } from "@/modules/orders/services/dashboard-stats-service";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
+const NO_STORE_HEADERS = {
+  "Cache-Control": "private, no-store, no-cache, max-age=0, must-revalidate",
+  Pragma: "no-cache",
+  Expires: "0",
+} as const;
 
 /**
  * Lightweight Admin dashboard snapshot for background polling.
@@ -23,7 +31,8 @@ export async function GET(request: Request) {
 
     return jsonOk(snapshot, {
       headers: {
-        "Cache-Control": "private, no-store",
+        ...NO_STORE_HEADERS,
+        "X-Dashboard-Generated-At": snapshot.generatedAt,
       },
     });
   } catch (error) {

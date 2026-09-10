@@ -44,12 +44,15 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  const isAdminApiRoute = pathname.startsWith("/api/admin");
   const isAdminRoute = pathname.startsWith("/admin");
   const isLoginRoute = pathname === "/admin/login";
 
   const response = await updateSession(request);
 
-  if (!isAdminRoute || isLoginRoute) {
+  // Admin API routes need cookie refresh, but must not HTML-redirect (fetch callers
+  // expect JSON 401 from the route handler when unauthenticated).
+  if (isAdminApiRoute || !isAdminRoute || isLoginRoute) {
     return response;
   }
 
@@ -91,5 +94,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/:tenantSlug/account", "/:tenantSlug/account/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/:tenantSlug/account",
+    "/:tenantSlug/account/:path*",
+  ],
 };
