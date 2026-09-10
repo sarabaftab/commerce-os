@@ -1,5 +1,6 @@
 import type { PaymentProofStatus } from "@prisma/client";
 
+import { notifyPaymentProofReviewedAfterCommit } from "@/modules/notifications/services/notification-service";
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
 import {
@@ -142,6 +143,17 @@ export async function verifyOrderPaymentProof(input: {
   if (updated.count !== 1) {
     throw new AppError("VALIDATION", "Only a submitted transfer screenshot can be verified");
   }
+
+  // After successful DB transition only — Telegram failures must not affect payment state.
+  try {
+    await notifyPaymentProofReviewedAfterCommit({
+      tenantId: input.tenantId,
+      orderId: input.orderId,
+      outcome: "verified",
+    });
+  } catch {
+    // notifyPaymentProofReviewedAfterCommit already swallows errors; keep Verify durable.
+  }
 }
 
 export async function rejectOrderPaymentProof(input: {
@@ -168,5 +180,17 @@ export async function rejectOrderPaymentProof(input: {
   });
   if (updated.count !== 1) {
     throw new AppError("VALIDATION", "Only a submitted transfer screenshot can be rejected");
+  }
+
+  // After successful DB transition only — Telegram failures must not affect payment state.
+  try {
+    await notifyPaymentProofReviewedAfterCommit({
+      tenantId: input.tenantId,
+      orderId: input.orderId,
+      outcome: "rejected",
+      rejectionReason: reason,
+    });
+  } catch {
+    // notifyPaymentProofReviewedAfterCommit already swallows errors; keep Reject durable.
   }
 }

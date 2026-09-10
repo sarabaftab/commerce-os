@@ -16,6 +16,10 @@ import {
   shouldNotifyOrderStatus,
   type NotifiableOrderStatus,
 } from "../templates/order-status";
+import {
+  buildPaymentProofRejectedTelegramMessage,
+  buildPaymentProofVerifiedTelegramMessage,
+} from "../templates/payment-proof";
 
 function logNotification(fields: {
   tenantId: string;
@@ -310,6 +314,199 @@ async function markFailed(id: string, errorCode: string) {
       lastAttemptAt: new Date(),
       errorCode,
     },
+  });
+}
+
+export type PaymentProofNotificationOutcome = "verified" | "rejected";
+
+/**
+ * Deliver ABA payment-proof Verify/Reject Telegram messages after the DB mutation commits.
+ * Never throws — payment state is already the source of truth.
+ *
+ * Idempotency relies on payment-proof state transitions (`submitted` → verified/rejected):
+ * only a successful mutation should call this, so double-clicks do not re-send.
+ */
+export async function notifyPaymentProofReviewedAfterCommit(input: {
+  tenantId: string;
+  orderId: string;
+  outcome: PaymentProofNotificationOutcome;
+  rejectionReason?: string | null;
+}): Promise<void> {
+  try {
+    await deliverPaymentProofNotification(input);
+  } catch (error) {
+    logNotification({
+      tenantId: input.tenantId,
+      orderId: input.orderId,
+      type: `payment_proof_${input.outcome}`,
+      channel: "telegram",
+      outcome: "failed",
+      reason: "unhandled",
+    });
+    void error;
+  }
+}
+
+async function deliverPaymentProofNotification(input: {
+  tenantId: string;
+  orderId: string;
+  outcome: PaymentProofNotificationOutcome;
+  rejectionReason?: string | null;
+}): Promise<void> {
+  const type = `payment_proof_${input.outcome}`;
+
+  const order = await prisma.order.findFirst({
+    where: { id: input.orderId, tenantId: input.tenantId },
+    select: {
+      id: true,
+      customerId: true,
+      orderNumber: true,
+      paymentMethod: true,
+      paymentProofStatus: true,
+      paymentProofRejectionReason: true,
+    },
+  });
+  if (!order) {
+    logNotification({
+      tenantId: input.tenantId,
+      orderId: input.orderId,
+      type,
+      channel: "telegram",
+      outcome: "skipped",
+      reason: "order_not_found",
+    });
+    return;
+  }
+
+  if (order.paymentMethod !== "aba_transfer") {
+    logNotification({
+      tenantId: input.tenantId,
+      orderId: input.orderId,
+      type,
+      channel: "telegram",
+      outcome: "skipped",
+      reason: "not_aba",
+    });
+    return;
+  }
+
+  if (order.paymentProofStatus !== input.outcome) {
+    logNotification({
+      tenantId: input.tenantId,
+      orderId: input.orderId,
+      type,
+      channel: "telegram",
+      outcome: "skipped",
+      reason: "status_mismatch",
+    });
+    return;
+  }
+
+  const settings = await prisma.tenantSettings.findUnique({
+    where: { tenantId: input.tenantId },
+  });
+  if (settings && settings.telegramOrderNotificationsEnabled === false) {
+    logNotification({
+      tenantId: input.tenantId,
+      orderId: input.orderId,
+      type,
+      channel: "telegram",
+      outcome: "skipped",
+      reason: "disabled",
+    });
+    return;
+  }
+
+  const tenant = await findTenantById(input.tenantId);
+  if (!tenant) {
+    logNotification({
+      tenantId: input.tenantId,
+      orderId: input.orderId,
+      type,
+      channel: "telegram",
+      outcome: "skipped",
+      reason: "tenant_not_found",
+    });
+    return;
+  }
+
+  const botToken = getTelegramBotTokenForTenantSlugOrNull(tenant.slug);
+  if (!botToken) {
+    logNotification({
+      tenantId: input.tenantId,
+      orderId: input.orderId,
+      type,
+      channel: "telegram",
+      outcome: "skipped",
+      reason: "no_bot_token",
+    });
+    return;
+  }
+
+  const identity = await findTelegramIdentityForCustomer({
+    tenantId: input.tenantId,
+    customerId: order.customerId,
+  });
+  if (!identity?.externalId) {
+    logNotification({
+      tenantId: input.tenantId,
+      orderId: input.orderId,
+      type,
+      channel: "telegram",
+      outcome: "skipped",
+      reason: "no_telegram_identity",
+    });
+    return;
+  }
+
+  logNotification({
+    tenantId: input.tenantId,
+    orderId: input.orderId,
+    type,
+    channel: "telegram",
+    outcome: "attempted",
+  });
+
+  const message =
+    input.outcome === "verified"
+      ? buildPaymentProofVerifiedTelegramMessage({ orderNumber: order.orderNumber })
+      : buildPaymentProofRejectedTelegramMessage({
+          orderNumber: order.orderNumber,
+          rejectionReason: input.rejectionReason ?? order.paymentProofRejectionReason,
+        });
+
+  const webAppUrl = buildAccountOrderWebAppUrl({
+    appUrl: env().NEXT_PUBLIC_APP_URL,
+    tenantSlug: tenant.slug,
+    orderNumber: order.orderNumber,
+  });
+
+  const result = await sendTelegramBotMessage({
+    botToken,
+    chatId: identity.externalId,
+    text: message.text,
+    webAppUrl,
+    buttonText: message.buttonText,
+  });
+
+  if (result.ok) {
+    logNotification({
+      tenantId: input.tenantId,
+      orderId: input.orderId,
+      type,
+      channel: "telegram",
+      outcome: "sent",
+    });
+    return;
+  }
+
+  logNotification({
+    tenantId: input.tenantId,
+    orderId: input.orderId,
+    type,
+    channel: "telegram",
+    outcome: "failed",
+    telegramErrorCode: result.errorCode,
   });
 }
 
