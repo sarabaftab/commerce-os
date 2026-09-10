@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { CircleHelp } from "lucide-react";
 
+import { STOREFRONT_HEADER_INSET_STYLE } from "@/channels/telegram/client/telegram-viewport";
 import { BrandImage } from "@/ui/storefront/brand-image";
 import { STOREFRONT_BRAND } from "@/ui/storefront/brand";
 import { shop } from "@/ui/storefront/shop-classes";
@@ -22,13 +23,10 @@ export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) 
       <div className="shop-shell text-[color:var(--shop-ink)]">
         <header className="sticky top-0 z-20 border-b border-[color:var(--shop-line)] bg-[color:var(--shop-bg)]/90 backdrop-blur-md">
           <div
-            className={`flex items-center justify-between py-3 ${shop.contentWidth}`}
-            style={{
-              paddingTop:
-                "max(0.75rem, var(--tg-safe-area-inset-top, env(safe-area-inset-top, 0px)))",
-            }}
+            className="mx-auto flex w-full max-w-lg items-center justify-between gap-2 sm:max-w-2xl md:max-w-3xl lg:max-w-5xl"
+            style={STOREFRONT_HEADER_INSET_STYLE}
           >
-            <Link href={basePath} className="flex min-w-0 items-center gap-3">
+            <Link href={basePath} className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
               <BrandImage
                 src={STOREFRONT_BRAND.logoSrc}
                 alt={STOREFRONT_BRAND.logoAlt}
@@ -46,11 +44,11 @@ export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) 
                 </p>
               </div>
             </Link>
-            <nav className="flex shrink-0 items-center gap-1 text-sm">
+            <nav className="flex shrink-0 items-center gap-0.5 text-sm sm:gap-1">
               <Link
                 href={`${basePath}/products`}
                 prefetch={false}
-                className="rounded-full px-3 py-2 text-[color:var(--shop-ink)] transition hover:bg-[color:var(--shop-surface)]/70"
+                className="rounded-full px-2.5 py-2 text-[color:var(--shop-ink)] transition hover:bg-[color:var(--shop-surface)]/70 sm:px-3"
               >
                 Shop
               </Link>

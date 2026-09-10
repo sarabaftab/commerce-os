@@ -15,6 +15,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { waitForTelegramInitData } from "@/channels/telegram/client/wait-for-init-data";
 import {
   applyTelegramViewportCss,
+  bindTelegramSafeAreaListeners,
   requestTelegramFullscreenOnce,
 } from "@/channels/telegram/client/telegram-viewport";
 
@@ -70,6 +71,8 @@ type TelegramWebApp = {
   setBackgroundColor?: (color: string) => void;
   enableClosingConfirmation?: () => void;
   disableClosingConfirmation?: () => void;
+  requestSafeArea?: () => void;
+  requestContentSafeArea?: () => void;
 };
 
 declare global {
@@ -298,7 +301,7 @@ export function TelegramProvider({
     cancelledRef.current = false;
     let webApp: TelegramWebApp | undefined;
     let onThemeChanged: (() => void) | undefined;
-    let onViewportChanged: (() => void) | undefined;
+    let unbindSafeArea: (() => void) | undefined;
     let fullscreenRequested = false;
 
     async function boot() {
@@ -322,20 +325,20 @@ export function TelegramProvider({
       syncThemeFromWebApp(webApp, setColorScheme, setThemeParams);
 
       const root = document.documentElement;
-      applyTelegramViewportCss(root.style, webApp);
-
-      onThemeChanged = () => {
-        if (webApp) syncThemeFromWebApp(webApp, setColorScheme, setThemeParams);
-      };
-      onViewportChanged = () => {
+      const syncViewport = () => {
         if (!webApp) return;
         applyTelegramViewportCss(root.style, {
           ...webApp,
           viewportWidth: webApp.viewportWidth ?? window.innerWidth,
         });
       };
+      syncViewport();
+
+      onThemeChanged = () => {
+        if (webApp) syncThemeFromWebApp(webApp, setColorScheme, setThemeParams);
+      };
       webApp.onEvent("themeChanged", onThemeChanged);
-      webApp.onEvent("viewportChanged", onViewportChanged);
+      unbindSafeArea = bindTelegramSafeAreaListeners(webApp, syncViewport);
 
       setReady(true);
       setAuthStatus("loading");
@@ -355,9 +358,7 @@ export function TelegramProvider({
       if (webApp && onThemeChanged) {
         webApp.offEvent("themeChanged", onThemeChanged);
       }
-      if (webApp && onViewportChanged) {
-        webApp.offEvent("viewportChanged", onViewportChanged);
-      }
+      unbindSafeArea?.();
     };
   }, [authenticate, tenantSlug]);
 

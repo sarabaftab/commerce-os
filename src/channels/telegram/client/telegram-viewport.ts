@@ -8,6 +8,7 @@ export type TelegramViewportSource = {
   viewportStableHeight: number;
   /** Present on some clients / events; optional. */
   viewportWidth?: number;
+  isFullscreen?: boolean;
   safeAreaInset?: {
     top?: number;
     bottom?: number;
@@ -29,7 +30,13 @@ function px(value: number | undefined, fallback = "0px"): string {
   return fallback;
 }
 
-/** Mirror Telegram viewport metrics into CSS variables on :root. */
+/**
+ * Mirror Telegram viewport + safe-area metrics into CSS variables on :root.
+ *
+ * Fullscreen native controls (Back / More / Collapse) live in
+ * `contentSafeAreaInset`. Device notch / home indicator live in `safeAreaInset`.
+ * Header chrome must sum them — using only `safeAreaInset` leaves content under Telegram UI.
+ */
 export function applyTelegramViewportCss(
   style: CSSStyleDeclaration,
   webApp: TelegramViewportSource,
@@ -56,13 +63,74 @@ export function applyTelegramViewportCss(
   } else {
     style.setProperty("--tg-safe-area-inset-top", "env(safe-area-inset-top, 0px)");
     style.setProperty("--tg-safe-area-inset-bottom", "env(safe-area-inset-bottom, 0px)");
+    style.setProperty("--tg-safe-area-inset-left", "0px");
+    style.setProperty("--tg-safe-area-inset-right", "0px");
   }
 
   const contentSafe = webApp.contentSafeAreaInset;
-  if (contentSafe) {
-    style.setProperty("--tg-content-safe-area-inset-top", px(contentSafe.top));
-    style.setProperty("--tg-content-safe-area-inset-bottom", px(contentSafe.bottom));
+  style.setProperty("--tg-content-safe-area-inset-top", px(contentSafe?.top, "0px"));
+  style.setProperty("--tg-content-safe-area-inset-bottom", px(contentSafe?.bottom, "0px"));
+  style.setProperty("--tg-content-safe-area-inset-left", px(contentSafe?.left, "0px"));
+  style.setProperty("--tg-content-safe-area-inset-right", px(contentSafe?.right, "0px"));
+
+  if (webApp.isFullscreen) {
+    style.setProperty("--tg-is-fullscreen", "1");
+  } else {
+    style.setProperty("--tg-is-fullscreen", "0");
   }
+}
+
+/** CSS for storefront sticky header — below Telegram fullscreen chrome + device safe area. */
+export const STOREFRONT_HEADER_INSET_STYLE = {
+  paddingTop:
+    "max(0.75rem, calc(var(--tg-safe-area-inset-top, env(safe-area-inset-top, 0px)) + var(--tg-content-safe-area-inset-top, 0px)))",
+  paddingLeft: "calc(1rem + var(--tg-content-safe-area-inset-left, 0px))",
+  paddingRight: "calc(1rem + var(--tg-content-safe-area-inset-right, 0px))",
+  paddingBottom: "0.75rem",
+} as const;
+
+type TelegramSafeAreaCapable = {
+  onEvent: (event: string, cb: () => void) => void;
+  offEvent: (event: string, cb: () => void) => void;
+  requestSafeArea?: () => void;
+  requestContentSafeArea?: () => void;
+};
+
+const SAFE_AREA_EVENTS = [
+  "viewportChanged",
+  "safeAreaChanged",
+  "contentSafeAreaChanged",
+  "fullscreenChanged",
+] as const;
+
+/**
+ * Keep CSS vars in sync when Telegram changes viewport / safe areas / fullscreen.
+ * Also nudges Telegram to publish current insets when the APIs exist.
+ */
+export function bindTelegramSafeAreaListeners(
+  webApp: TelegramSafeAreaCapable & TelegramViewportSource,
+  onUpdate: () => void,
+): () => void {
+  for (const event of SAFE_AREA_EVENTS) {
+    webApp.onEvent(event, onUpdate);
+  }
+
+  try {
+    webApp.requestSafeArea?.();
+  } catch {
+    // Older clients — ignore.
+  }
+  try {
+    webApp.requestContentSafeArea?.();
+  } catch {
+    // Older clients — ignore.
+  }
+
+  return () => {
+    for (const event of SAFE_AREA_EVENTS) {
+      webApp.offEvent(event, onUpdate);
+    }
+  };
 }
 
 type TelegramFullscreenCapable = {
