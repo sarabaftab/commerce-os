@@ -10,11 +10,13 @@ import {
 } from "@/modules/orders/actions/payment-proof-actions";
 import {
   customerCanUploadPaymentProof,
+  customerPaymentConfirmationCopy,
+  customerPaymentConfirmationUploadLabel,
   isPaymentProofFileTooLarge,
   PAYMENT_PROOF_ACCEPT,
+  PAYMENT_PROOF_REQUIREMENTS_LABEL,
   PAYMENT_PROOF_TOO_LARGE_MESSAGE,
 } from "@/modules/orders/payment-proof";
-import { useLocale, type MessageKey } from "@/shared/i18n";
 
 type AbaProofUploadProps = {
   tenantSlug: string;
@@ -28,13 +30,6 @@ type AbaProofUploadProps = {
 
 const initial: PaymentProofActionState = {};
 
-const KNOWN_UPLOAD_ERRORS: Record<string, MessageKey> = {
-  [PAYMENT_PROOF_TOO_LARGE_MESSAGE]: "imageTooLarge",
-  "Please upload a supported image file.": "unsupportedFile",
-  "Please choose a payment confirmation file to upload.": "choosePaymentFile",
-  "We couldn't upload your payment confirmation. Please try again.": "uploadFailed",
-};
-
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) {
     return `${bytes} B`;
@@ -45,57 +40,6 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function statusCopy(
-  status: PaymentProofStatus,
-  t: (key: MessageKey) => string,
-): { title: string; body: string } {
-  switch (status) {
-    case "awaiting_proof":
-      return {
-        title: t("paymentConfirmationNeeded"),
-        body: t("paymentConfirmationNeededBody"),
-      };
-    case "submitted":
-      return {
-        title: t("paymentConfirmationSubmitted"),
-        body: t("paymentConfirmationSubmittedBody"),
-      };
-    case "verified":
-      return {
-        title: t("paymentVerified"),
-        body: t("paymentVerifiedBody"),
-      };
-    case "rejected":
-      return {
-        title: t("paymentNeedsAttention"),
-        body: t("paymentNeedsAttentionBody"),
-      };
-    case "not_required":
-    default:
-      return {
-        title: t("paymentMethod"),
-        body: "",
-      };
-  }
-}
-
-function localizeUploadError(
-  message: string,
-  t: (key: MessageKey) => string,
-): string {
-  const mapped = KNOWN_UPLOAD_ERRORS[message];
-  if (mapped) {
-    return t(mapped);
-  }
-  if (
-    message === PAYMENT_PROOF_TOO_LARGE_MESSAGE ||
-    /too large|smaller than|5\s*mb/i.test(message)
-  ) {
-    return t("imageTooLarge");
-  }
-  return t("uploadFailed");
-}
-
 export function AbaProofUpload({
   tenantSlug,
   orderNumber,
@@ -104,7 +48,6 @@ export function AbaProofUpload({
   paymentProofRejectionReason,
   showLaterNote = false,
 }: AbaProofUploadProps) {
-  const { t } = useLocale();
   const inputId = useId();
   const [selectedFile, setSelectedFile] = useState<{ name: string; size: number } | null>(
     null,
@@ -124,15 +67,9 @@ export function AbaProofUpload({
     paymentMethod,
     paymentProofStatus: effectiveStatus,
   });
-  const copy = statusCopy(effectiveStatus, t);
-  const uploadLabel =
-    effectiveStatus === "rejected"
-      ? t("uploadNewPaymentConfirmation")
-      : t("uploadPaymentConfirmation");
+  const copy = customerPaymentConfirmationCopy(effectiveStatus);
   const fileTooLarge = selectedFile ? isPaymentProofFileTooLarge(selectedFile.size) : false;
-  const rawError =
-    clientError ?? (fileTooLarge ? PAYMENT_PROOF_TOO_LARGE_MESSAGE : null) ?? state.error ?? null;
-  const displayError = rawError ? localizeUploadError(rawError, t) : null;
+  const displayError = clientError ?? (fileTooLarge ? PAYMENT_PROOF_TOO_LARGE_MESSAGE : null) ?? state.error;
   const submitDisabled = pending || !selectedFile || fileTooLarge;
 
   return (
@@ -152,7 +89,7 @@ export function AbaProofUpload({
 
       {state.success ? (
         <p className="text-sm text-emerald-700" role="status">
-          {t("uploadSuccess")}
+          Payment confirmation uploaded successfully.
         </p>
       ) : null}
 
@@ -174,9 +111,12 @@ export function AbaProofUpload({
         >
           <div className="space-y-1.5">
             <label htmlFor={inputId} className="block text-sm font-medium">
-              {uploadLabel}
+              {customerPaymentConfirmationUploadLabel(effectiveStatus)}
             </label>
-            <p className="text-xs text-[color:var(--shop-ink-muted)]">{t("uploadProofHint")}</p>
+            <p className="text-xs text-[color:var(--shop-ink-muted)]">
+              After making your ABA payment, upload a screenshot or photo of the successful
+              transfer confirmation.
+            </p>
             <input
               id={inputId}
               name="proof"
@@ -199,11 +139,11 @@ export function AbaProofUpload({
               }}
             />
             <p className="text-xs text-[color:var(--shop-ink-muted)]">
-              {t("paymentProofRequirements")}
+              {PAYMENT_PROOF_REQUIREMENTS_LABEL}
             </p>
             {selectedFile ? (
               <p className="truncate text-sm" role="status">
-                {t("selectedFile")}: {selectedFile.name}
+                Selected: {selectedFile.name}
                 <span className="text-[color:var(--shop-ink-muted)]">
                   {" "}
                   · {formatFileSize(selectedFile.size)}
@@ -214,7 +154,8 @@ export function AbaProofUpload({
 
           {showLaterNote && effectiveStatus === "awaiting_proof" ? (
             <p className="text-xs leading-relaxed text-[color:var(--shop-ink-muted)]">
-              {t("uploadLaterNote")}
+              You can also upload your payment confirmation later from your order details if you
+              don&apos;t have it ready now.
             </p>
           ) : null}
 
@@ -229,7 +170,9 @@ export function AbaProofUpload({
             disabled={submitDisabled}
             className="flex h-11 w-full items-center justify-center rounded-full bg-[color:var(--shop-primary)] text-sm font-semibold text-[color:var(--shop-on-primary)] disabled:opacity-60"
           >
-            {pending ? t("uploading") : uploadLabel}
+            {pending
+              ? "Uploading…"
+              : customerPaymentConfirmationUploadLabel(effectiveStatus)}
           </button>
         </form>
       ) : null}

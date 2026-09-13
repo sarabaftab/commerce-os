@@ -76,8 +76,6 @@ export async function countProductsInCategory(
 export async function createCategory(data: {
   tenantId: string;
   name: string;
-  nameKm?: string | null;
-  nameZh?: string | null;
   slug: string;
   sortOrder: number;
   isActive: boolean;
@@ -86,8 +84,6 @@ export async function createCategory(data: {
     data: {
       tenantId: data.tenantId,
       name: data.name,
-      nameKm: data.nameKm,
-      nameZh: data.nameZh,
       slug: data.slug,
       sortOrder: data.sortOrder,
       isActive: data.isActive,
@@ -100,8 +96,6 @@ export async function updateCategory(
   tenantId: string,
   data: {
     name: string;
-    nameKm?: string | null;
-    nameZh?: string | null;
     slug: string;
     sortOrder: number;
     isActive: boolean;
@@ -113,8 +107,6 @@ export async function updateCategory(
     where: { id: categoryId },
     data: {
       name: data.name,
-      nameKm: data.nameKm,
-      nameZh: data.nameZh,
       slug: data.slug,
       sortOrder: data.sortOrder,
       isActive: data.isActive,

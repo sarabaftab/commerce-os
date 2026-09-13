@@ -172,7 +172,6 @@ export type CreateOrderRecordInput = {
     lineTotalMinor: number;
   }[];
   confirmationToken?: string;
-  customerLocale?: string | null;
 };
 
 /**
@@ -219,7 +218,6 @@ export async function createOrderRecordInTransaction(
       campaignId: input.campaignId ?? null,
       idempotencyKey: input.idempotencyKey ?? null,
       confirmationToken: input.confirmationToken ?? createOrderConfirmationToken(),
-      customerLocale: input.customerLocale ?? null,
       items: {
         create: input.items.map((item) => ({
           tenantId: input.tenantId,

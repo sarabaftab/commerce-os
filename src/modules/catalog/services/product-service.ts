@@ -74,12 +74,8 @@ export async function createProductForTenant(input: CreateProductInput) {
   const product = await createProduct({
     tenantId: input.tenantId,
     name: input.name,
-    nameKm: input.nameKm,
-    nameZh: input.nameZh,
     slug: input.slug,
     description: input.description,
-    descriptionKm: input.descriptionKm,
-    descriptionZh: input.descriptionZh,
     brand: input.brand,
     volume: input.volume,
     sellingUnit: input.sellingUnit ?? "item",
@@ -118,12 +114,8 @@ export async function updateProductForTenant(input: UpdateProductInput) {
 
   await updateProduct(input.productId, input.tenantId, {
     name: input.name,
-    nameKm: input.nameKm,
-    nameZh: input.nameZh,
     slug: input.slug,
     description: input.description,
-    descriptionKm: input.descriptionKm,
-    descriptionZh: input.descriptionZh,
     brand: input.brand,
     volume: input.volume,
     sellingUnit: input.sellingUnit ?? "item",

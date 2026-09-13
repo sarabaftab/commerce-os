@@ -11,17 +11,7 @@ import { Label } from "@/ui/components/ui/label";
 import { Textarea } from "@/ui/components/ui/textarea";
 
 type FaqFormProps = {
-  faq?: Pick<
-    Faq,
-    | "question"
-    | "answer"
-    | "questionKm"
-    | "answerKm"
-    | "questionZh"
-    | "answerZh"
-    | "sortOrder"
-    | "isActive"
-  >;
+  faq?: Pick<Faq, "question" | "answer" | "sortOrder" | "isActive">;
   action: (prev: FaqActionState, formData: FormData) => Promise<FaqActionState>;
   submitLabel: string;
 };
@@ -71,48 +61,6 @@ export function FaqForm({ faq, action, submitLabel }: FaqFormProps) {
         <p className="text-xs text-[color:var(--admin-ink-muted)]">
           Plain text only. Line breaks are kept on the storefront.
         </p>
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="questionKm">Question (Khmer)</Label>
-        <Input
-          id="questionKm"
-          name="questionKm"
-          maxLength={240}
-          defaultValue={faq?.questionKm ?? ""}
-        />
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="answerKm">Answer (Khmer)</Label>
-        <Textarea
-          id="answerKm"
-          name="answerKm"
-          maxLength={4000}
-          rows={6}
-          defaultValue={faq?.answerKm ?? ""}
-        />
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="questionZh">Question (Chinese)</Label>
-        <Input
-          id="questionZh"
-          name="questionZh"
-          maxLength={240}
-          defaultValue={faq?.questionZh ?? ""}
-        />
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="answerZh">Answer (Chinese)</Label>
-        <Textarea
-          id="answerZh"
-          name="answerZh"
-          maxLength={4000}
-          rows={6}
-          defaultValue={faq?.answerZh ?? ""}
-        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">

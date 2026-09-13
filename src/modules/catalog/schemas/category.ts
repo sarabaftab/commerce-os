@@ -11,8 +11,6 @@ export function slugifyCategoryName(name: string): string {
 
 export const categoryFormSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(80),
-  nameKm: z.union([z.literal(""), z.string().trim().max(80)]).optional(),
-  nameZh: z.union([z.literal(""), z.string().trim().max(80)]).optional(),
   slug: z
     .string()
     .trim()
@@ -25,16 +23,10 @@ export const categoryFormSchema = z.object({
 
 export type CategoryFormValues = z.infer<typeof categoryFormSchema>;
 
-function emptyToNull(value: string | undefined): string | null {
-  return value && value.trim() ? value.trim() : null;
-}
-
 export function categoryFormToCreateInput(values: CategoryFormValues, tenantId: string) {
   return {
     tenantId,
     name: values.name,
-    nameKm: emptyToNull(values.nameKm),
-    nameZh: emptyToNull(values.nameZh),
     slug: values.slug,
     sortOrder: values.sortOrder,
     isActive: values.isActive,
@@ -57,8 +49,6 @@ export function categoryFormDataToObject(formData: FormData) {
   const slugRaw = String(formData.get("slug") ?? "").trim();
   return {
     name,
-    nameKm: String(formData.get("nameKm") ?? ""),
-    nameZh: String(formData.get("nameZh") ?? ""),
     slug: slugRaw || slugifyCategoryName(name),
     sortOrder: String(formData.get("sortOrder") ?? "0"),
     isActive: formData.get("isActive") === "on" || formData.get("isActive") === "true",

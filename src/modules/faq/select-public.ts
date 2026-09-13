@@ -19,10 +19,6 @@ export function selectPublicFaqs(faqs: FaqRecord[]): PublicFaq[] {
       id: faq.id,
       question: faq.question,
       answer: faq.answer,
-      questionKm: faq.questionKm,
-      answerKm: faq.answerKm,
-      questionZh: faq.questionZh,
-      answerZh: faq.answerZh,
     }));
 }
 

@@ -355,7 +355,6 @@ export async function placeGuestOrder(
           discountMinor,
           totalMinor,
           referralCode: context.referralCode ?? undefined,
-          customerLocale: input.customerLocale ?? null,
           items: availableLines.map((line) => ({
             productId: line.productId,
             nameSnapshot: line.name,

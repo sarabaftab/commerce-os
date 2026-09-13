@@ -62,8 +62,6 @@ export type CreateOrderCommand = {
   promotionId?: string;
   referralCode?: string;
   campaignId?: string;
-  /** Snapshot of storefront locale at checkout for notifications. */
-  customerLocale?: string | null;
   items: {
     productId: string;
     nameSnapshot: string;
@@ -173,7 +171,6 @@ export async function createOrderInTransaction(
     promotionId: command.promotionId,
     referralCode: command.referralCode,
     campaignId: command.campaignId,
-    customerLocale: command.customerLocale,
     items: command.items,
   });
 

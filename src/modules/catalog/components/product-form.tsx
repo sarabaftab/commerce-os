@@ -52,16 +52,6 @@ export function ProductForm({
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="nameKm">Name (Khmer)</Label>
-        <Input id="nameKm" name="nameKm" defaultValue={product?.nameKm ?? ""} />
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="nameZh">Name (Chinese)</Label>
-        <Input id="nameZh" name="nameZh" defaultValue={product?.nameZh ?? ""} />
-      </div>
-
-      <div className="grid gap-2">
         <Label htmlFor="slug" required>
           Slug
         </Label>
@@ -78,26 +68,6 @@ export function ProductForm({
           name="description"
           rows={4}
           defaultValue={product?.description ?? ""}
-        />
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="descriptionKm">Description (Khmer)</Label>
-        <Textarea
-          id="descriptionKm"
-          name="descriptionKm"
-          rows={3}
-          defaultValue={product?.descriptionKm ?? ""}
-        />
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="descriptionZh">Description (Chinese)</Label>
-        <Textarea
-          id="descriptionZh"
-          name="descriptionZh"
-          rows={3}
-          defaultValue={product?.descriptionZh ?? ""}
         />
       </div>
 

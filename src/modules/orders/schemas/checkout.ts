@@ -40,7 +40,6 @@ export const checkoutInputSchema = z
     pickupLocationKey: z.string().trim().max(64).optional().or(z.literal("")),
     paymentMethod: paymentMethodSchema,
     paymentReference: z.string().trim().max(120).optional().or(z.literal("")),
-    customerLocale: z.enum(["en", "km", "zh"]).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.fulfillmentMethod === "delivery") {
@@ -120,6 +119,5 @@ export function checkoutFormDataToObject(formData: FormData) {
     pickupLocationKey: String(formData.get("pickupLocationKey") ?? ""),
     paymentMethod: String(formData.get("paymentMethod") ?? ""),
     paymentReference: String(formData.get("paymentReference") ?? ""),
-    customerLocale: String(formData.get("customerLocale") ?? ""),
   };
 }

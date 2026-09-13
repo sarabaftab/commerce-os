@@ -4,7 +4,6 @@ import { useState } from "react";
 
 import { LocationAutocomplete } from "@/modules/locations/components/location-autocomplete";
 import type { LocationSearchResult } from "@/modules/locations/types";
-import { useLocale } from "@/shared/i18n";
 import { FieldLabel } from "@/ui/components/field-label";
 
 type SavedAddress = {
@@ -42,7 +41,6 @@ export function CheckoutFulfillmentFields({
   defaultAddressId = null,
   isAuthenticated = false,
 }: CheckoutFulfillmentFieldsProps) {
-  const { t } = useLocale();
   const methods = [
     ...(deliveryEnabled ? (["delivery"] as const) : []),
     ...(pickupEnabled ? (["pickup"] as const) : []),
@@ -77,19 +75,16 @@ export function CheckoutFulfillmentFields({
     }));
   }
 
-  const methodLabel = (method: "delivery" | "pickup") =>
-    method === "delivery" ? t("homeDelivery") : t("showroomPickup");
-
   return (
     <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-      <h2 className="text-sm font-semibold">{t("fulfillmentMethod")}</h2>
+      <h2 className="text-sm font-semibold">Fulfillment</h2>
 
       {methods.length > 1 ? (
         <div className="grid grid-cols-2 gap-2">
           {methods.map((method) => (
             <label
               key={method}
-              className={`flex cursor-pointer items-center justify-center rounded-xl border px-3 py-3 text-sm font-medium ${
+              className={`flex cursor-pointer items-center justify-center rounded-xl border px-3 py-3 text-sm font-medium capitalize ${
                 fulfillmentMethod === method
                   ? "border-[color:var(--shop-primary)] bg-[color:var(--shop-primary)]/20 text-[color:var(--shop-ink)]"
                   : "border-[color:var(--shop-line)]"
@@ -103,7 +98,7 @@ export function CheckoutFulfillmentFields({
                 onChange={() => onFulfillmentMethodChange(method)}
                 className="sr-only"
               />
-              {methodLabel(method)}
+              {method}
             </label>
           ))}
         </div>
@@ -172,7 +167,7 @@ export function CheckoutFulfillmentFields({
             <>
               <div>
                 <FieldLabel htmlFor="addressLine" required>
-                  {t("deliveryAddress")}
+                  Delivery address
                 </FieldLabel>
                 <LocationAutocomplete
                   id="addressLine"
@@ -188,11 +183,14 @@ export function CheckoutFulfillmentFields({
                   required={addressMode === "new" || !hasSaved}
                   aria-required={addressMode === "new" || !hasSaved}
                   className={fieldClass}
-                  placeholder={t("locationSearchPlaceholder")}
+                  placeholder="Start typing your address…"
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="addressLine2">{t("addressLine2")}</FieldLabel>
+                <FieldLabel htmlFor="addressLine2">
+                  Address line 2{" "}
+                  <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
+                </FieldLabel>
                 <input
                   id="addressLine2"
                   name="addressLine2"
@@ -208,7 +206,7 @@ export function CheckoutFulfillmentFields({
               </div>
               <div>
                 <FieldLabel htmlFor="cityOrArea" required>
-                  {t("cityOrDistrict")}
+                  City or area
                 </FieldLabel>
                 <input
                   id="cityOrArea"
@@ -227,7 +225,10 @@ export function CheckoutFulfillmentFields({
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="provinceOrState">{t("provinceOrState")}</FieldLabel>
+                <FieldLabel htmlFor="provinceOrState">
+                  Province / state{" "}
+                  <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
+                </FieldLabel>
                 <input
                   id="provinceOrState"
                   name="provinceOrState"
@@ -242,7 +243,10 @@ export function CheckoutFulfillmentFields({
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="deliveryInstructions">{t("deliveryInstructions")}</FieldLabel>
+                <FieldLabel htmlFor="deliveryInstructions">
+                  Delivery instructions{" "}
+                  <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
+                </FieldLabel>
                 <textarea
                   id="deliveryInstructions"
                   name="deliveryInstructions"
@@ -274,7 +278,7 @@ export function CheckoutFulfillmentFields({
       {fulfillmentMethod === "pickup" && pickupEnabled ? (
         <div>
           <FieldLabel htmlFor="pickupLocationKey" required>
-            {t("pickup")}
+            Pickup location
           </FieldLabel>
           <select
             id="pickupLocationKey"

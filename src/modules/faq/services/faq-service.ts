@@ -26,10 +26,6 @@ export async function createFaqForTenant(input: CreateFaqInput) {
     tenantId: input.tenantId,
     question: input.question,
     answer: input.answer,
-    questionKm: input.questionKm,
-    answerKm: input.answerKm,
-    questionZh: input.questionZh,
-    answerZh: input.answerZh,
     sortOrder: input.sortOrder ?? 0,
     isActive: input.isActive,
   });
@@ -41,10 +37,6 @@ export async function updateFaqForTenant(input: UpdateFaqInput) {
   return updateFaq(input.faqId, input.tenantId, {
     question: input.question,
     answer: input.answer,
-    questionKm: input.questionKm,
-    answerKm: input.answerKm,
-    questionZh: input.questionZh,
-    answerZh: input.answerZh,
     sortOrder: input.sortOrder ?? 0,
     isActive: input.isActive,
   });

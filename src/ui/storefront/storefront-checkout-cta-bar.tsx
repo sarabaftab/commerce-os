@@ -7,9 +7,9 @@ import { shop } from "@/ui/storefront/shop-classes";
 import { useStorefrontCartItemCount } from "@/ui/storefront/storefront-cart-count";
 import {
   shouldShowStorefrontCheckoutCta,
+  STOREFRONT_CHECKOUT_CTA_LABEL,
   storefrontCheckoutCtaHref,
 } from "@/ui/storefront/storefront-checkout-cta-helpers";
-import { useLocale } from "@/shared/i18n";
 
 type Props = {
   tenantSlug: string;
@@ -22,8 +22,6 @@ type Props = {
 export function StorefrontCheckoutCta({ tenantSlug }: Props) {
   const pathname = usePathname();
   const itemCount = useStorefrontCartItemCount();
-  const { t } = useLocale();
-  const label = t("proceedToCheckout");
   const visible =
     itemCount > 0 && shouldShowStorefrontCheckoutCta(pathname, tenantSlug);
 
@@ -48,9 +46,9 @@ export function StorefrontCheckoutCta({ tenantSlug }: Props) {
             href={storefrontCheckoutCtaHref(tenantSlug)}
             prefetch={false}
             className={shop.btnPrimaryBlock}
-            aria-label={label}
+            aria-label={STOREFRONT_CHECKOUT_CTA_LABEL}
           >
-            {label}
+            {STOREFRONT_CHECKOUT_CTA_LABEL}
           </Link>
         </div>
       </div>

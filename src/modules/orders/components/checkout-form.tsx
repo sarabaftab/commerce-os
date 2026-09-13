@@ -8,7 +8,6 @@ import {
   placeOrderAction,
   type PlaceOrderActionState,
 } from "@/modules/orders/actions/checkout-actions";
-import { useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
 
 import { CheckoutFulfillmentFields } from "./checkout-fulfillment-fields";
@@ -26,7 +25,6 @@ const fieldClass =
 const initialState: PlaceOrderActionState = {};
 
 export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
-  const { locale, t } = useLocale();
   const initialFulfillment = preview.deliveryEnabled
     ? "delivery"
     : preview.pickupEnabled
@@ -55,27 +53,20 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
     [preview.prefillFirstName, preview.prefillLastName].filter(Boolean).join(" ") ||
     "";
 
-  const errorMessage = state.error
-    ? /required|invalid|fill/i.test(state.error)
-      ? t("validationRequired")
-      : t("checkoutError")
-    : null;
-
   return (
     <form action={formAction} className="space-y-4 pb-28">
       <input type="hidden" name="idempotencyKey" value={preview.idempotencyKey} />
-      <input type="hidden" name="customerLocale" value={locale} />
       <input type="hidden" name="firstName" value={preview.prefillFirstName ?? ""} />
       <input type="hidden" name="lastName" value={preview.prefillLastName ?? ""} />
 
       <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-start lg:gap-6 lg:space-y-0">
         <div className="space-y-4">
           <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-            <h2 className="text-sm font-semibold">{t("contact")}</h2>
+            <h2 className="text-sm font-semibold">Contact</h2>
             <div className="space-y-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
               <div className="sm:col-span-2">
                 <FieldLabel htmlFor="displayName" required>
-                  {t("fullName")}
+                  Full name
                 </FieldLabel>
                 <input
                   id="displayName"
@@ -84,13 +75,13 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
                   aria-required="true"
                   autoComplete="name"
                   className={fieldClass}
-                  placeholder={t("fullNamePlaceholder")}
+                  placeholder="Your name"
                   defaultValue={composedName}
                 />
               </div>
               <div>
                 <FieldLabel htmlFor="phone" required>
-                  {t("phone")}
+                  Phone
                 </FieldLabel>
                 <input
                   id="phone"
@@ -105,7 +96,10 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="email">{t("emailOptional")}</FieldLabel>
+                <FieldLabel htmlFor="email">
+                  Email{" "}
+                  <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
+                </FieldLabel>
                 <input
                   id="email"
                   name="email"
@@ -154,9 +148,9 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
             freeDeliveryThresholdMinor={preview.freeDeliveryThresholdMinor}
           />
 
-          {errorMessage ? (
+          {state.error ? (
             <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {errorMessage}
+              {state.error}
             </p>
           ) : null}
         </div>
@@ -176,8 +170,8 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
             className="flex h-12 w-full items-center justify-center rounded-full bg-[color:var(--shop-primary)] px-4 text-sm font-semibold text-[color:var(--shop-on-primary)] disabled:opacity-60"
           >
             {pending
-              ? t("placingOrder")
-              : `${t("placeOrder")} · ${formatMoney(totalMinor, preview.cart.currency)}`}
+              ? "Placing order…"
+              : `Place order · ${formatMoney(totalMinor, preview.cart.currency)}`}
           </button>
         </div>
       </div>
