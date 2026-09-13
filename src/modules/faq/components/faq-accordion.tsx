@@ -1,6 +1,6 @@
 "use client";
 
-import type { PublicFaq } from "@/modules/faq";
+import type { PublicFaq } from "@/modules/faq/types";
 import { localizedValue, useLocale } from "@/shared/i18n";
 
 type FaqAccordionProps = {

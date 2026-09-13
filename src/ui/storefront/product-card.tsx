@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import type { ProductWithRelations } from "@/modules/catalog";
+import type { ProductWithRelations } from "@/modules/catalog/types";
 import { formatPackSizeLine, formatUnitPriceLabel } from "@/modules/catalog/selling-unit";
 import { localizedValue, useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
