@@ -20,6 +20,10 @@ function record(overrides: Partial<FaqRecord>): FaqRecord {
     tenantId: "tenant-a",
     question: "How do I order?",
     answer: "Use the shop and checkout.",
+    questionKm: null,
+    answerKm: null,
+    questionZh: null,
+    answerZh: null,
     isActive: true,
     sortOrder: 0,
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -101,7 +105,24 @@ describe("selectPublicFaqs", () => {
       id: "a",
       question: "Visible",
       answer: "Use the shop and checkout.",
+      questionKm: null,
+      answerKm: null,
+      questionZh: null,
+      answerZh: null,
     });
+  });
+
+  it("includes optional localized FAQ fields for the storefront", () => {
+    const publicFaqs = selectPublicFaqs([
+      record({
+        questionKm: "តើខ្ញុំកម្មង់ដូចម្តេច?",
+        answerKm: "ប្រើហាង។",
+        questionZh: "如何下单？",
+        answerZh: "使用商店结账。",
+      }),
+    ]);
+    expect(publicFaqs[0]?.questionKm).toContain("កម្មង់");
+    expect(publicFaqs[0]?.questionZh).toBe("如何下单？");
   });
 
   it("orders by sortOrder then createdAt then question", () => {
@@ -164,7 +185,17 @@ describe("FaqAccordion", () => {
   it("renders accessible details/summary rows for active FAQs", () => {
     const html = renderToStaticMarkup(
       createElement(FaqAccordion, {
-        faqs: [{ id: "1", question: "Do you deliver?", answer: "Yes, in the city." }],
+        faqs: [
+          {
+            id: "1",
+            question: "Do you deliver?",
+            answer: "Yes, in the city.",
+            questionKm: null,
+            answerKm: null,
+            questionZh: null,
+            answerZh: null,
+          },
+        ],
       }),
     );
     expect(html).toContain("<details");

@@ -10,16 +10,24 @@ import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
 
 import {
+  buildLocalizedOrderPlacedMessage,
+  buildLocalizedPaymentRejectedMessage,
+  buildLocalizedPaymentVerifiedMessage,
+  localeFromTelegramLanguageCode,
+  localizedFulfillmentLabel,
+  localizedPaymentLabel,
+  parseLocale,
+  type Locale,
+} from "@/shared/i18n";
+import { formatMoney } from "@/shared/money/money";
+
+import {
   buildAccountOrderWebAppUrl,
-  buildOrderPlacedTelegramMessage,
   buildOrderStatusTelegramMessage,
   shouldNotifyOrderStatus,
   type NotifiableOrderStatus,
 } from "../templates/order-status";
-import {
-  buildPaymentProofRejectedTelegramMessage,
-  buildPaymentProofVerifiedTelegramMessage,
-} from "../templates/payment-proof";
+import { resolvePaymentProofRejectionReason } from "../templates/payment-proof";
 
 function logNotification(fields: {
   tenantId: string;
@@ -39,6 +47,28 @@ function logNotification(fields: {
     ...(fields.telegramErrorCode ? { telegramErrorCode: fields.telegramErrorCode } : {}),
     ...(fields.reason ? { reason: fields.reason } : {}),
   });
+}
+
+/** Prefer checkout snapshot; else Telegram language_code; else English. */
+function resolveNotificationLocale(input: {
+  customerLocale?: string | null;
+  telegramLanguageCode?: string | null;
+}): Locale {
+  if (input.customerLocale?.trim()) {
+    return parseLocale(input.customerLocale);
+  }
+  if (input.telegramLanguageCode?.trim()) {
+    return localeFromTelegramLanguageCode(input.telegramLanguageCode);
+  }
+  return parseLocale("en");
+}
+
+function telegramLanguageCodeFromMeta(meta: unknown): string | null {
+  if (!meta || typeof meta !== "object") {
+    return null;
+  }
+  const code = (meta as { languageCode?: unknown }).languageCode;
+  return typeof code === "string" ? code : null;
 }
 
 /**
@@ -230,14 +260,23 @@ export async function deliverOrderStatusNotification(input: {
     return;
   }
 
+  const locale = resolveNotificationLocale({
+    customerLocale: order.customerLocale,
+    telegramLanguageCode: telegramLanguageCodeFromMeta(identity.meta),
+  });
+
   const message = isOrderPlaced
-    ? buildOrderPlacedTelegramMessage({
+    ? buildLocalizedOrderPlacedMessage({
+        locale,
         orderNumber: order.orderNumber,
-        totalMinor: order.totalMinor,
-        currency: order.currency,
-        fulfillmentMethod: order.fulfillmentMethod,
-        paymentMethod: order.paymentMethod,
-        paymentProofStatus: order.paymentProofStatus,
+        totalFormatted: formatMoney(order.totalMinor, order.currency),
+        fulfillmentLabel: localizedFulfillmentLabel(locale, order.fulfillmentMethod),
+        paymentLabel: localizedPaymentLabel(locale, order.paymentMethod),
+        fulfillmentKind: order.fulfillmentMethod === "pickup" ? "pickup" : "delivery",
+        awaitingProof:
+          order.paymentMethod === "aba_transfer" &&
+          (order.paymentProofStatus === "awaiting_proof" ||
+            order.paymentProofStatus === "rejected"),
       })
     : buildOrderStatusTelegramMessage({
         orderNumber: order.orderNumber,
@@ -364,6 +403,7 @@ async function deliverPaymentProofNotification(input: {
       paymentMethod: true,
       paymentProofStatus: true,
       paymentProofRejectionReason: true,
+      customerLocale: true,
     },
   });
   if (!order) {
@@ -467,12 +507,23 @@ async function deliverPaymentProofNotification(input: {
     outcome: "attempted",
   });
 
+  const locale = resolveNotificationLocale({
+    customerLocale: order.customerLocale,
+    telegramLanguageCode: telegramLanguageCodeFromMeta(identity.meta),
+  });
+
   const message =
     input.outcome === "verified"
-      ? buildPaymentProofVerifiedTelegramMessage({ orderNumber: order.orderNumber })
-      : buildPaymentProofRejectedTelegramMessage({
+      ? buildLocalizedPaymentVerifiedMessage({
+          locale,
           orderNumber: order.orderNumber,
-          rejectionReason: input.rejectionReason ?? order.paymentProofRejectionReason,
+        })
+      : buildLocalizedPaymentRejectedMessage({
+          locale,
+          orderNumber: order.orderNumber,
+          reason: resolvePaymentProofRejectionReason(
+            input.rejectionReason ?? order.paymentProofRejectionReason,
+          ),
         });
 
   const webAppUrl = buildAccountOrderWebAppUrl({

@@ -12,6 +12,7 @@ import {
 } from "@/modules/orders/add-to-cart-ui";
 import { addToCartAction } from "@/modules/orders/actions/cart-actions";
 import { MAX_CART_QUANTITY } from "@/modules/orders/types";
+import { useLocale } from "@/shared/i18n";
 import { notifyCartChanged } from "@/ui/storefront/cart-events";
 
 type AddToCartButtonProps = {
@@ -29,10 +30,12 @@ type AddToCartButtonProps = {
 export function AddToCartButton({
   tenantSlug,
   productId,
-  label = "Add to Cart",
+  label,
   showQuantity = false,
   navigateToCatalogOnSuccess = false,
 }: AddToCartButtonProps) {
+  const { t } = useLocale();
+  const idleLabel = label ?? t("addToCart");
   const router = useRouter();
   const [phase, setPhase] = useState<AddToCartPhase>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -69,7 +72,7 @@ export function AddToCartButton({
         }
       } catch {
         setPhase("error");
-        setErrorMessage("Could not add to cart");
+        setErrorMessage(t("errorGeneric"));
       } finally {
         inFlightRef.current = false;
       }
@@ -86,7 +89,7 @@ export function AddToCartButton({
               disabled={busy || quantity <= 1}
               onClick={() => setQuantity((value) => Math.max(1, value - 1))}
               className="flex size-10 items-center justify-center rounded-full disabled:opacity-40"
-              aria-label="Decrease quantity"
+              aria-label={t("quantity")}
             >
               <Minus className="size-4" />
             </button>
@@ -98,7 +101,7 @@ export function AddToCartButton({
               disabled={busy || quantity >= MAX_CART_QUANTITY}
               onClick={() => setQuantity((value) => Math.min(MAX_CART_QUANTITY, value + 1))}
               className="flex size-10 items-center justify-center rounded-full disabled:opacity-40"
-              aria-label="Increase quantity"
+              aria-label={t("quantity")}
             >
               <Plus className="size-4" />
             </button>
@@ -112,7 +115,11 @@ export function AddToCartButton({
           aria-busy={phase === "adding"}
           className="flex h-12 min-h-12 flex-1 items-center justify-center rounded-full bg-[color:var(--shop-primary)] px-4 text-sm font-semibold text-[color:var(--shop-on-primary)] shadow-[var(--shop-shadow-sm)] transition hover:bg-[color:var(--shop-accent-soft)] active:scale-[0.98] disabled:opacity-70"
         >
-          {addToCartButtonLabel(phase, label)}
+          {addToCartButtonLabel(phase, {
+            idle: idleLabel,
+            adding: t("addingToCart"),
+            added: `✓ ${t("addedToCart")}`,
+          })}
         </button>
       </div>
       {errorMessage ? (

@@ -24,6 +24,10 @@ function formDataToObject(formData: FormData) {
   return {
     question: String(formData.get("question") ?? ""),
     answer: String(formData.get("answer") ?? ""),
+    questionKm: String(formData.get("questionKm") ?? ""),
+    answerKm: String(formData.get("answerKm") ?? ""),
+    questionZh: String(formData.get("questionZh") ?? ""),
+    answerZh: String(formData.get("answerZh") ?? ""),
     sortOrder: String(formData.get("sortOrder") ?? "0"),
     isActive: formData.get("isActive") === "on" || formData.get("isActive") === "true",
   };

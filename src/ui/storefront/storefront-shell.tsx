@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { CircleHelp } from "lucide-react";
 
 import { STOREFRONT_HEADER_INSET_STYLE } from "@/channels/telegram/client/telegram-viewport";
+import { LanguageSwitcher, LocaleProvider, useLocale } from "@/shared/i18n";
 import { BrandImage } from "@/ui/storefront/brand-image";
 import { STOREFRONT_BRAND } from "@/ui/storefront/brand";
 import { shop } from "@/ui/storefront/shop-classes";
@@ -15,8 +18,9 @@ type StorefrontShellProps = {
   children: ReactNode;
 };
 
-export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) {
+function StorefrontShellChrome({ tenantSlug, children }: StorefrontShellProps) {
   const basePath = `/${tenantSlug}`;
+  const { t } = useLocale();
 
   return (
     <StorefrontCartCountProvider tenantSlug={tenantSlug}>
@@ -45,17 +49,18 @@ export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) 
               </div>
             </Link>
             <nav className="flex shrink-0 items-center gap-0.5 text-sm sm:gap-1">
+              <LanguageSwitcher className="mr-0.5 inline-flex items-center gap-0.5 rounded-full bg-[color:var(--shop-surface)]/80 p-0.5 text-[10px] font-semibold tracking-wide sm:mr-1 sm:text-[11px]" />
               <Link
                 href={`${basePath}/products`}
                 prefetch={false}
                 className="rounded-full px-2.5 py-2 text-[color:var(--shop-ink)] transition hover:bg-[color:var(--shop-surface)]/70 sm:px-3"
               >
-                Shop
+                {t("shop")}
               </Link>
               <Link
                 href={`${basePath}/faq`}
                 prefetch={false}
-                aria-label="Frequently Asked Questions"
+                aria-label={t("faqAriaLabel")}
                 className="inline-flex size-10 items-center justify-center rounded-full text-[color:var(--shop-ink)] transition hover:bg-[color:var(--shop-surface)]/70"
               >
                 <CircleHelp className="size-5" strokeWidth={1.75} />
@@ -79,16 +84,25 @@ export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) 
             <p className="text-xs font-medium tracking-wide text-[color:var(--shop-ink)]">
               {STOREFRONT_BRAND.name}
             </p>
+            <LanguageSwitcher />
             <Link
               href={`${basePath}/faq`}
               className="text-xs font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
             >
-              FAQ
+              {t("faq")}
             </Link>
             <StorefrontAsyncBoundary tenantSlug={tenantSlug} slot="footer" />
           </div>
         </footer>
       </div>
     </StorefrontCartCountProvider>
+  );
+}
+
+export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) {
+  return (
+    <LocaleProvider>
+      <StorefrontShellChrome tenantSlug={tenantSlug}>{children}</StorefrontShellChrome>
+    </LocaleProvider>
   );
 }
