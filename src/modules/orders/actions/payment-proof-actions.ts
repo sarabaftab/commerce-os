@@ -7,9 +7,9 @@ import { getTenantBySlug } from "@/modules/identity";
 import { requireAdminSession } from "@/shared/auth/admin-session";
 import { isAppError } from "@/shared/errors/app-error";
 import { readOrderConfirmationCookie } from "@/shared/orders/confirmation-cookie";
-import { PAYMENT_PROOF_MAX_BYTES } from "@/shared/storage/payment-proof-storage";
+import { PAYMENT_PROOF_MAX_BYTES } from "@/shared/storage/payment-proof-constants";
 
-import { mapCustomerPaymentUploadError } from "../payment-proof";
+import { mapCustomerPaymentUploadError, PAYMENT_PROOF_TOO_LARGE_MESSAGE } from "../payment-proof";
 import {
   rejectOrderPaymentProof,
   submitCustomerPaymentProof,
@@ -23,7 +23,7 @@ export type PaymentProofActionState = {
 
 async function fileToBytes(file: File): Promise<Uint8Array> {
   if (file.size > PAYMENT_PROOF_MAX_BYTES) {
-    throw new Error("Image must be 5 MB or smaller");
+    throw new Error(PAYMENT_PROOF_TOO_LARGE_MESSAGE);
   }
   return new Uint8Array(await file.arrayBuffer());
 }
@@ -34,13 +34,16 @@ export async function uploadPaymentProofAction(
   _prev: PaymentProofActionState,
   formData: FormData,
 ): Promise<PaymentProofActionState> {
-  const tenant = await getTenantBySlug(tenantSlug);
-  const file = formData.get("proof");
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: mapCustomerPaymentUploadError("Choose a transfer screenshot to upload") };
-  }
-
   try {
+    const tenant = await getTenantBySlug(tenantSlug);
+    const file = formData.get("proof");
+    if (!(file instanceof File) || file.size === 0) {
+      return { error: mapCustomerPaymentUploadError("Choose a transfer screenshot to upload") };
+    }
+    if (file.size > PAYMENT_PROOF_MAX_BYTES) {
+      return { error: PAYMENT_PROOF_TOO_LARGE_MESSAGE };
+    }
+
     const [session, confirmCookie] = await Promise.all([
       getOptionalCustomerSession(tenant.id),
       readOrderConfirmationCookie(),
@@ -55,20 +58,18 @@ export async function uploadPaymentProofAction(
       customerId: session?.customerId ?? null,
       bytes: await fileToBytes(file),
     });
+
+    revalidatePath(`/${tenantSlug}/orders/${orderNumber}/confirmation`);
+    revalidatePath(`/${tenantSlug}/account/orders/${orderNumber}`);
+    return { success: true };
   } catch (error) {
-    if (error instanceof Error && error.message.includes("5 MB")) {
-      return { error: mapCustomerPaymentUploadError(error.message) };
-    }
+    const message = error instanceof Error ? error.message : "Could not upload the screenshot";
     return {
       error: mapCustomerPaymentUploadError(
-        isAppError(error) ? error.message : "Could not upload the screenshot",
+        isAppError(error) ? error.message : message,
       ),
     };
   }
-
-  revalidatePath(`/${tenantSlug}/orders/${orderNumber}/confirmation`);
-  revalidatePath(`/${tenantSlug}/account/orders/${orderNumber}`);
-  return { success: true };
 }
 
 export async function verifyPaymentProofAction(

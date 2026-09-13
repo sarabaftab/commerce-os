@@ -12,8 +12,10 @@ import {
   customerCanUploadPaymentProof,
   customerPaymentConfirmationCopy,
   customerPaymentConfirmationUploadLabel,
+  isPaymentProofFileTooLarge,
   PAYMENT_PROOF_ACCEPT,
   PAYMENT_PROOF_REQUIREMENTS_LABEL,
+  PAYMENT_PROOF_TOO_LARGE_MESSAGE,
 } from "@/modules/orders/payment-proof";
 
 type AbaProofUploadProps = {
@@ -50,6 +52,7 @@ export function AbaProofUpload({
   const [selectedFile, setSelectedFile] = useState<{ name: string; size: number } | null>(
     null,
   );
+  const [clientError, setClientError] = useState<string | null>(null);
   const [state, action, pending] = useActionState(
     uploadPaymentProofAction.bind(null, tenantSlug, orderNumber),
     initial,
@@ -65,6 +68,9 @@ export function AbaProofUpload({
     paymentProofStatus: effectiveStatus,
   });
   const copy = customerPaymentConfirmationCopy(effectiveStatus);
+  const fileTooLarge = selectedFile ? isPaymentProofFileTooLarge(selectedFile.size) : false;
+  const displayError = clientError ?? (fileTooLarge ? PAYMENT_PROOF_TOO_LARGE_MESSAGE : null) ?? state.error;
+  const submitDisabled = pending || !selectedFile || fileTooLarge;
 
   return (
     <div className="space-y-3 rounded-xl bg-[color:var(--shop-surface)] p-3">
@@ -88,7 +94,21 @@ export function AbaProofUpload({
       ) : null}
 
       {canUpload ? (
-        <form action={action} className="space-y-3">
+        <form
+          action={action}
+          className="space-y-3"
+          onSubmit={(event) => {
+            if (!selectedFile) {
+              event.preventDefault();
+              setClientError("Please choose a payment confirmation file to upload.");
+              return;
+            }
+            if (isPaymentProofFileTooLarge(selectedFile.size)) {
+              event.preventDefault();
+              setClientError(PAYMENT_PROOF_TOO_LARGE_MESSAGE);
+            }
+          }}
+        >
           <div className="space-y-1.5">
             <label htmlFor={inputId} className="block text-sm font-medium">
               {customerPaymentConfirmationUploadLabel(effectiveStatus)}
@@ -107,7 +127,15 @@ export function AbaProofUpload({
               className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-[color:var(--shop-primary)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[color:var(--shop-on-primary)]"
               onChange={(event) => {
                 const file = event.target.files?.[0];
-                setSelectedFile(file ? { name: file.name, size: file.size } : null);
+                setClientError(null);
+                if (!file) {
+                  setSelectedFile(null);
+                  return;
+                }
+                setSelectedFile({ name: file.name, size: file.size });
+                if (isPaymentProofFileTooLarge(file.size)) {
+                  setClientError(PAYMENT_PROOF_TOO_LARGE_MESSAGE);
+                }
               }}
             />
             <p className="text-xs text-[color:var(--shop-ink-muted)]">
@@ -131,15 +159,15 @@ export function AbaProofUpload({
             </p>
           ) : null}
 
-          {state.error ? (
+          {displayError ? (
             <p role="alert" className="text-sm text-destructive">
-              {state.error}
+              {displayError}
             </p>
           ) : null}
 
           <button
             type="submit"
-            disabled={pending}
+            disabled={submitDisabled}
             className="flex h-11 w-full items-center justify-center rounded-full bg-[color:var(--shop-primary)] text-sm font-semibold text-[color:var(--shop-on-primary)] disabled:opacity-60"
           >
             {pending

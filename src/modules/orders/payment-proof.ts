@@ -1,11 +1,25 @@
 import type { PaymentMethod, PaymentProofStatus } from "@prisma/client";
 
-/** Browser `accept` attribute for customer uploads — matches server mime checks. */
-export const PAYMENT_PROOF_ACCEPT = "image/png,image/jpeg,image/webp";
+import {
+  PAYMENT_PROOF_ACCEPT,
+  PAYMENT_PROOF_MAX_BYTES,
+  PAYMENT_PROOF_MAX_MB,
+  PAYMENT_PROOF_REQUIREMENTS_LABEL,
+} from "@/shared/storage/payment-proof-constants";
 
-/** Customer-facing file requirement copy — matches server validation. */
-export const PAYMENT_PROOF_REQUIREMENTS_LABEL =
-  "Accepted files: JPG, PNG, or WEBP · Maximum 5 MB";
+export {
+  PAYMENT_PROOF_ACCEPT,
+  PAYMENT_PROOF_MAX_BYTES,
+  PAYMENT_PROOF_MAX_MB,
+  PAYMENT_PROOF_REQUIREMENTS_LABEL,
+};
+
+/** Customer-facing oversized-file message — keep in sync with PAYMENT_PROOF_MAX_MB. */
+export const PAYMENT_PROOF_TOO_LARGE_MESSAGE = `Image is too large. Please choose a file smaller than ${PAYMENT_PROOF_MAX_MB} MB.`;
+
+export function isPaymentProofFileTooLarge(sizeBytes: number): boolean {
+  return sizeBytes > PAYMENT_PROOF_MAX_BYTES;
+}
 
 export function initialPaymentProofStatus(method: PaymentMethod): PaymentProofStatus {
   return method === "aba_transfer" ? "awaiting_proof" : "not_required";
@@ -84,8 +98,15 @@ export function customerPaymentConfirmationUploadLabel(status: PaymentProofStatu
 
 export function mapCustomerPaymentUploadError(message: string): string {
   const lower = message.toLowerCase();
-  if (lower.includes("5 mb") || lower.includes("too large") || lower.includes("smaller")) {
-    return "This file is too large. Please choose a smaller file.";
+  if (
+    lower.includes("5 mb") ||
+    lower.includes("too large") ||
+    lower.includes("smaller") ||
+    lower.includes("body exceeded") ||
+    lower.includes("413") ||
+    lower.includes("payload too large")
+  ) {
+    return PAYMENT_PROOF_TOO_LARGE_MESSAGE;
   }
   if (
     lower.includes("png") ||

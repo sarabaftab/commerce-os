@@ -4,9 +4,14 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import { env, publicEnv } from "@/shared/config/env";
 import { AppError } from "@/shared/errors/app-error";
+import { PAYMENT_PROOF_MAX_BYTES } from "@/shared/storage/payment-proof-constants";
+
+export {
+  PAYMENT_PROOF_MAX_BYTES,
+  PAYMENT_PROOF_MAX_MB,
+} from "@/shared/storage/payment-proof-constants";
 
 export const PAYMENT_PROOF_BUCKET = "payment-proofs";
-export const PAYMENT_PROOF_MAX_BYTES = 5 * 1024 * 1024;
 
 const MIME_TO_EXT = {
   "image/png": "png",

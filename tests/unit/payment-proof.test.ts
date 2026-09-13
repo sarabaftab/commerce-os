@@ -5,9 +5,12 @@ import {
   customerPaymentConfirmationCopy,
   customerPaymentConfirmationUploadLabel,
   initialPaymentProofStatus,
+  isPaymentProofFileTooLarge,
   mapCustomerPaymentUploadError,
   paymentProofStatusLabel,
+  PAYMENT_PROOF_MAX_BYTES,
   PAYMENT_PROOF_REQUIREMENTS_LABEL,
+  PAYMENT_PROOF_TOO_LARGE_MESSAGE,
 } from "@/modules/orders/payment-proof";
 import {
   detectPaymentProofMime,
@@ -83,7 +86,13 @@ describe("payment proof rules", () => {
 
   it("maps upload errors to customer-friendly messages", () => {
     expect(mapCustomerPaymentUploadError("Image must be 5 MB or smaller")).toBe(
-      "This file is too large. Please choose a smaller file.",
+      PAYMENT_PROOF_TOO_LARGE_MESSAGE,
+    );
+    expect(mapCustomerPaymentUploadError("Body exceeded 1 MB limit.")).toBe(
+      PAYMENT_PROOF_TOO_LARGE_MESSAGE,
+    );
+    expect(mapCustomerPaymentUploadError("413 Payload Too Large")).toBe(
+      PAYMENT_PROOF_TOO_LARGE_MESSAGE,
     );
     expect(mapCustomerPaymentUploadError("Upload a PNG, JPG, or WEBP screenshot")).toBe(
       "Please upload a supported image file.",
@@ -94,6 +103,13 @@ describe("payment proof rules", () => {
     expect(mapCustomerPaymentUploadError("storage bucket failed")).toBe(
       "We couldn't upload your payment confirmation. Please try again.",
     );
+  });
+
+  it("rejects files above the 5 MB application limit", () => {
+    expect(isPaymentProofFileTooLarge(PAYMENT_PROOF_MAX_BYTES)).toBe(false);
+    expect(isPaymentProofFileTooLarge(PAYMENT_PROOF_MAX_BYTES + 1)).toBe(true);
+    expect(isPaymentProofFileTooLarge(1.5 * 1024 * 1024)).toBe(false);
+    expect(PAYMENT_PROOF_TOO_LARGE_MESSAGE).toContain("5 MB");
   });
 
   it("documents the actual accepted file requirements", () => {
@@ -137,6 +153,18 @@ describe("payment proof file validation", () => {
     expect(() => validatePaymentProofBytes(Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]))).toThrow(
       AppError,
     );
+  });
+
+  it("accepts images between the old 1 MB framework limit and the 5 MB app limit", () => {
+    const bytes = new Uint8Array(1.5 * 1024 * 1024);
+    bytes.set(pngHeader, 0);
+    expect(validatePaymentProofBytes(bytes)).toEqual({ mime: "image/png", ext: "png" });
+  });
+
+  it("rejects images above the 5 MB application limit", () => {
+    const bytes = new Uint8Array(PAYMENT_PROOF_MAX_BYTES + 1);
+    bytes.set(pngHeader, 0);
+    expect(() => validatePaymentProofBytes(bytes)).toThrow(AppError);
   });
 });
 
