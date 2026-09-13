@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
 
 import { AbaPaymentDetails } from "@/modules/orders/components/aba-payment-details";
 import { AbaProofUpload } from "@/modules/orders/components/aba-proof-upload";
-import { formatMoney } from "@/shared/money/money";
 import { formatPackSizeLine, formatPriceTimesQuantity } from "@/modules/catalog/selling-unit";
+import { useLocale } from "@/shared/i18n";
+import { formatMoney } from "@/shared/money/money";
 import { ProductImage } from "@/ui/storefront/product-image";
 
 import type { CustomerOrderDetailDto } from "../types";
@@ -14,6 +17,8 @@ type Props = {
 };
 
 export function CustomerOrderDetail({ tenantSlug, order }: Props) {
+  const { t } = useLocale();
+
   return (
     <div className="space-y-5">
       <div>
@@ -21,7 +26,7 @@ export function CustomerOrderDetail({ tenantSlug, order }: Props) {
           href={`/${tenantSlug}/account/orders`}
           className="text-sm font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
         >
-          ← My orders
+          ← {t("orderHistory")}
         </Link>
         <h1 className="mt-3 font-[family-name:var(--font-shop-display)] text-3xl tracking-tight">
           {order.orderNumber}
@@ -32,7 +37,7 @@ export function CustomerOrderDetail({ tenantSlug, order }: Props) {
       </div>
 
       <section className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-        <h2 className="text-sm font-semibold">Status</h2>
+        <h2 className="text-sm font-semibold">{t("orderStatus")}</h2>
         <ol className="mt-3 space-y-3">
           {order.timeline.map((entry) => (
             <li key={`${entry.status}-${entry.createdAt.toISOString()}`} className="flex gap-3">
@@ -49,7 +54,7 @@ export function CustomerOrderDetail({ tenantSlug, order }: Props) {
       </section>
 
       <section className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-        <h2 className="text-sm font-semibold">Items</h2>
+        <h2 className="text-sm font-semibold">{t("orderDetails")}</h2>
         <ul className="mt-3 space-y-3">
           {order.items.map((item, index) => (
             <li key={`${item.name}-${index}`} className="flex gap-3">
@@ -84,32 +89,34 @@ export function CustomerOrderDetail({ tenantSlug, order }: Props) {
       </section>
 
       <section className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-        <h2 className="text-sm font-semibold">Pricing</h2>
+        <h2 className="text-sm font-semibold">{t("totals")}</h2>
         <dl className="mt-3 space-y-1 text-sm">
           <div className="flex justify-between">
-            <dt>Subtotal</dt>
+            <dt>{t("subtotal")}</dt>
             <dd>{formatMoney(order.subtotalMinor, order.currency)}</dd>
           </div>
           {order.discountMinor > 0 ? (
             <div className="flex justify-between">
-              <dt>Discount</dt>
+              <dt>{t("discount")}</dt>
               <dd>-{formatMoney(order.discountMinor, order.currency)}</dd>
             </div>
           ) : null}
           <div className="flex justify-between">
-            <dt>Delivery</dt>
+            <dt>{t("deliveryFee")}</dt>
             <dd>{formatMoney(order.deliveryFeeMinor, order.currency)}</dd>
           </div>
           <div className="flex justify-between font-semibold">
-            <dt>Total</dt>
+            <dt>{t("total")}</dt>
             <dd>{formatMoney(order.totalMinor, order.currency)}</dd>
           </div>
         </dl>
       </section>
 
       <section className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-        <h2 className="text-sm font-semibold">Fulfillment</h2>
-        <p className="mt-2 text-sm capitalize">{order.fulfillmentMethod.replaceAll("_", " ")}</p>
+        <h2 className="text-sm font-semibold">{t("fulfillmentMethod")}</h2>
+        <p className="mt-2 text-sm">
+          {order.fulfillmentMethod === "pickup" ? t("pickup") : t("delivery")}
+        </p>
         {order.delivery ? (
           <div className="mt-2 space-y-1 text-sm text-[color:var(--shop-ink-muted)]">
             {order.delivery.label ? <p>{order.delivery.label}</p> : null}
@@ -141,9 +148,9 @@ export function CustomerOrderDetail({ tenantSlug, order }: Props) {
       </section>
 
       <section className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-        <h2 className="text-sm font-semibold">Payment</h2>
+        <h2 className="text-sm font-semibold">{t("paymentMethod")}</h2>
         <p className="mt-2 text-sm">
-          {order.paymentMethod === "aba_transfer" ? "ABA Bank Transfer" : "Cash on Delivery"}
+          {order.paymentMethod === "aba_transfer" ? t("abaTransfer") : t("cashOnDelivery")}
         </p>
         {order.paymentMethod === "aba_transfer" ? (
           <>
@@ -170,17 +177,16 @@ export function CustomerOrderDetail({ tenantSlug, order }: Props) {
         ) : null}
         {order.paymentReference ? (
           <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
-            Reference: {order.paymentReference}
+            {order.paymentReference}
           </p>
         ) : null}
       </section>
 
       {(order.supportPhone || order.supportEmail) && (
         <section className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-          <h2 className="text-sm font-semibold">Need help?</h2>
+          <h2 className="text-sm font-semibold">{t("account")}</h2>
           <p className="mt-2 text-sm text-[color:var(--shop-ink-muted)]">
-            Contact the store
-            {order.supportPhone ? ` at ${order.supportPhone}` : ""}
+            {order.supportPhone ? order.supportPhone : ""}
             {order.supportEmail ? ` · ${order.supportEmail}` : ""}
           </p>
         </section>

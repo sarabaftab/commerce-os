@@ -5,15 +5,15 @@ export type AddToCartPhase = "idle" | "adding" | "added" | "error";
 
 export function addToCartButtonLabel(
   phase: AddToCartPhase,
-  idleLabel = "Add to Cart",
+  labels: { idle: string; adding: string; added: string },
 ): string {
   if (phase === "adding") {
-    return "Adding…";
+    return labels.adding;
   }
   if (phase === "added") {
-    return "✓ Added to Cart";
+    return labels.added;
   }
-  return idleLabel;
+  return labels.idle;
 }
 
 /** Canonical tenant product catalog (main browsing menu). */

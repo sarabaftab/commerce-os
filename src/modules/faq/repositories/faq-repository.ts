@@ -24,8 +24,16 @@ export async function listActiveFaqs(tenantId: string) {
     where: { tenantId, isActive: true },
     select: {
       id: true,
+      tenantId: true,
       question: true,
       answer: true,
+      questionKm: true,
+      answerKm: true,
+      questionZh: true,
+      answerZh: true,
+      isActive: true,
+      sortOrder: true,
+      createdAt: true,
     },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { question: "asc" }],
   });

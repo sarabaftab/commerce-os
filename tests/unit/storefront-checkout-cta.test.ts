@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { t } from "@/shared/i18n";
 import {
   shouldShowStorefrontCheckoutCta,
   STOREFRONT_CHECKOUT_CTA_LABEL,
@@ -9,8 +10,9 @@ import {
 describe("storefront checkout CTA helpers", () => {
   const slug = "kin-a2";
 
-  it("labels the CTA Proceed to Checkout", () => {
+  it("keeps the English helper label aligned with the dictionary", () => {
     expect(STOREFRONT_CHECKOUT_CTA_LABEL).toBe("Proceed to Checkout");
+    expect(t("en", "proceedToCheckout")).toBe(STOREFRONT_CHECKOUT_CTA_LABEL);
   });
 
   it("routes to the existing Cart page for review before checkout", () => {

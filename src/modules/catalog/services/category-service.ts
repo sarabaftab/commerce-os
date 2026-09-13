@@ -18,6 +18,8 @@ import {
 export type CreateCategoryInput = {
   tenantId: string;
   name: string;
+  nameKm?: string | null;
+  nameZh?: string | null;
   slug: string;
   sortOrder: number;
   isActive: boolean;
@@ -60,6 +62,8 @@ export async function createCategoryForTenant(input: CreateCategoryInput) {
   return createCategory({
     tenantId: input.tenantId,
     name: input.name,
+    nameKm: input.nameKm,
+    nameZh: input.nameZh,
     slug: input.slug,
     sortOrder: input.sortOrder,
     isActive: input.isActive,
@@ -76,6 +80,8 @@ export async function updateCategoryForTenant(input: UpdateCategoryInput) {
 
   return updateCategory(input.categoryId, input.tenantId, {
     name: input.name,
+    nameKm: input.nameKm,
+    nameZh: input.nameZh,
     slug: input.slug,
     sortOrder: input.sortOrder,
     isActive: input.isActive,
