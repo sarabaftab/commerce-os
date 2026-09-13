@@ -74,6 +74,11 @@ enum SellingUnit {
   case
 }
 
+enum PromotionDiscountType {
+  percentage
+  fixed
+}
+
 model Tenant {
   id            String   @id @default(cuid())
   slug          String   @unique
@@ -98,6 +103,7 @@ model Tenant {
   customerAddresses  CustomerAddress[]
   faqs               Faq[]
   notifications      CustomerNotification[]
+  promotions         Promotion[]
 
   @@map("tenants")
 }
@@ -330,6 +336,8 @@ model Order {
   channel                   IdentityChannel   @default(manual)
   // Optional attribution — stored only; no promotion/referral/campaign logic yet.
   promotionId               String?           @map("promotion_id")
+  /** Snapshot of campaign name at order time — never recalculated from live promotions. */
+  promotionNameSnapshot     String?           @map("promotion_name_snapshot")
   referralCode              String?           @map("referral_code")
   campaignId                String?           @map("campaign_id")
   idempotencyKey            String?           @map("idempotency_key")
@@ -521,4 +529,26 @@ model Faq {
 
   @@index([tenantId, isActive, sortOrder])
   @@map("faqs")
+}
+
+/** Tenant-scoped manual campaign discount. Only one eligible campaign applies per order. */
+model Promotion {
+  id                    String                 @id @default(cuid())
+  tenantId              String                 @map("tenant_id")
+  name                  String
+  bannerText            String?                @map("banner_text")
+  type                  PromotionDiscountType
+  /** Percentage points (1–100) or fixed amount in minor currency units. */
+  value                 Int
+  minimumSubtotalMinor  Int?                   @map("minimum_subtotal_minor")
+  startsAt              DateTime?              @map("starts_at")
+  endsAt                DateTime?              @map("ends_at")
+  isActive              Boolean                @default(true) @map("is_active")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, isActive, createdAt])
+  @@map("promotions")
 }

@@ -58,8 +58,9 @@ export type CreateOrderCommand = {
   deliveryFeeMinor: number;
   discountMinor: number;
   totalMinor: number;
-  /** Optional attribution placeholders — no promotion/referral logic yet. */
+  /** Optional attribution — promotionId + name snapshot set at checkout. */
   promotionId?: string;
+  promotionNameSnapshot?: string | null;
   referralCode?: string;
   campaignId?: string;
   items: {
@@ -169,6 +170,7 @@ export async function createOrderInTransaction(
     discountMinor: command.discountMinor,
     totalMinor: command.totalMinor,
     promotionId: command.promotionId,
+    promotionNameSnapshot: command.promotionNameSnapshot,
     referralCode: command.referralCode,
     campaignId: command.campaignId,
     items: command.items,

@@ -150,6 +150,8 @@ export async function getOrderDetailForAdmin(
     deliveryFeeMinor: order.deliveryFeeMinor,
     discountMinor: order.discountMinor,
     totalMinor: order.totalMinor,
+    promotionId: order.promotionId,
+    promotionNameSnapshot: order.promotionNameSnapshot,
     notes: order.notes,
     fulfillmentMethod: order.fulfillmentMethod,
     addressLine: order.addressLine,

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { CircleHelp } from "lucide-react";
 
 import { STOREFRONT_HEADER_INSET_STYLE } from "@/channels/telegram/client/telegram-viewport";
@@ -9,6 +9,7 @@ import { shop } from "@/ui/storefront/shop-classes";
 import { StorefrontAsyncBoundary } from "@/ui/storefront/storefront-chrome";
 import { StorefrontCartCountProvider } from "@/ui/storefront/storefront-cart-count";
 import { StorefrontMain } from "@/ui/storefront/storefront-main";
+import { StorefrontPromotionBanner } from "@/ui/storefront/storefront-promotion-banner";
 
 type StorefrontShellProps = {
   tenantSlug: string;
@@ -64,6 +65,10 @@ export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) 
             </nav>
           </div>
         </header>
+
+        <Suspense fallback={null}>
+          <StorefrontPromotionBanner tenantSlug={tenantSlug} />
+        </Suspense>
 
         <StorefrontMain tenantSlug={tenantSlug}>{children}</StorefrontMain>
 

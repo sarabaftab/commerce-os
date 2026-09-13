@@ -46,7 +46,8 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
   );
 
   const deliveryFeeMinor = fulfillmentMethod === "delivery" ? preview.deliveryFeeMinor : 0;
-  const totalMinor = preview.cart.subtotalMinor + deliveryFeeMinor;
+  const discountMinor = preview.discountMinor ?? 0;
+  const totalMinor = preview.cart.subtotalMinor - discountMinor + deliveryFeeMinor;
 
   const composedName =
     preview.prefillDisplayName ||
@@ -144,6 +145,8 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
           <CheckoutOrderReview
             cart={preview.cart}
             deliveryFeeMinor={preview.deliveryFeeMinor}
+            discountMinor={preview.discountMinor}
+            promotionName={preview.promotionName}
             fulfillmentMethod={fulfillmentMethod}
             freeDeliveryThresholdMinor={preview.freeDeliveryThresholdMinor}
           />

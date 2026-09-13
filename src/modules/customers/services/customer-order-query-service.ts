@@ -170,6 +170,7 @@ export async function getCustomerOrderByNumber(input: {
     subtotalMinor: order.subtotalMinor,
     deliveryFeeMinor: order.deliveryFeeMinor,
     discountMinor: order.discountMinor,
+    promotionNameSnapshot: order.promotionNameSnapshot,
     totalMinor: order.totalMinor,
     delivery:
       order.fulfillmentMethod === "delivery"

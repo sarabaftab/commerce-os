@@ -47,6 +47,7 @@ export function toOrderConfirmation(
     discountMinor: order.discountMinor,
     totalMinor: order.totalMinor,
     promotionId: order.promotionId,
+    promotionNameSnapshot: order.promotionNameSnapshot,
     referralCode: order.referralCode,
     campaignId: order.campaignId,
     fulfillmentMethod: order.fulfillmentMethod,
@@ -160,6 +161,7 @@ export type CreateOrderRecordInput = {
   discountMinor: number;
   totalMinor: number;
   promotionId?: string;
+  promotionNameSnapshot?: string | null;
   referralCode?: string;
   campaignId?: string;
   items: {
@@ -214,6 +216,7 @@ export async function createOrderRecordInTransaction(
       totalMinor: input.totalMinor,
       channel: input.channel,
       promotionId: input.promotionId ?? null,
+      promotionNameSnapshot: input.promotionNameSnapshot ?? null,
       referralCode: input.referralCode ?? null,
       campaignId: input.campaignId ?? null,
       idempotencyKey: input.idempotencyKey ?? null,

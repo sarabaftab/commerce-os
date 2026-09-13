@@ -5,6 +5,8 @@ import { formatMoney } from "@/shared/money/money";
 type CheckoutOrderReviewProps = {
   cart: CartSummary;
   deliveryFeeMinor: number;
+  discountMinor?: number;
+  promotionName?: string | null;
   fulfillmentMethod: "delivery" | "pickup";
   freeDeliveryThresholdMinor?: number | null;
 };
@@ -12,11 +14,14 @@ type CheckoutOrderReviewProps = {
 export function CheckoutOrderReview({
   cart,
   deliveryFeeMinor,
+  discountMinor = 0,
+  promotionName,
   fulfillmentMethod,
   freeDeliveryThresholdMinor,
 }: CheckoutOrderReviewProps) {
   const fee = fulfillmentMethod === "delivery" ? deliveryFeeMinor : 0;
-  const totalMinor = cart.subtotalMinor + fee;
+  const discount = Math.max(0, discountMinor);
+  const totalMinor = cart.subtotalMinor - discount + fee;
 
   return (
     <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
@@ -54,6 +59,14 @@ export function CheckoutOrderReview({
           <span className="text-[color:var(--shop-ink-muted)]">Subtotal</span>
           <span>{formatMoney(cart.subtotalMinor, cart.currency)}</span>
         </div>
+        {discount > 0 ? (
+          <div className="flex justify-between">
+            <span className="text-[color:var(--shop-ink-muted)]">
+              {promotionName?.trim() || "Promotion"}
+            </span>
+            <span>−{formatMoney(discount, cart.currency)}</span>
+          </div>
+        ) : null}
         {fulfillmentMethod === "delivery" ? (
           <div className="flex justify-between">
             <span className="text-[color:var(--shop-ink-muted)]">

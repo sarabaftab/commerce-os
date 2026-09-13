@@ -92,7 +92,7 @@ export function CustomerOrderDetail({ tenantSlug, order }: Props) {
           </div>
           {order.discountMinor > 0 ? (
             <div className="flex justify-between">
-              <dt>Discount</dt>
+              <dt>{order.promotionNameSnapshot?.trim() || "Discount"}</dt>
               <dd>-{formatMoney(order.discountMinor, order.currency)}</dd>
             </div>
           ) : null}

@@ -12,6 +12,7 @@ import {
 } from "@/modules/customers/repositories/customer-repository";
 import { assertCheckoutOptions, getCheckoutSettings } from "@/modules/settings";
 import { notifyOrderPlacedAfterCommit } from "@/modules/notifications/services/notification-service";
+import { resolveCampaignDiscountForCheckout } from "@/modules/promotions";
 import { prisma } from "@/shared/db/prisma";
 import { AppError, isAppError } from "@/shared/errors/app-error";
 import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
@@ -203,6 +204,11 @@ export async function getCheckoutPreview(
         : settings.deliveryFeeMinor
       : 0;
 
+  const campaign = await resolveCampaignDiscountForCheckout({
+    tenantId: context.tenantId,
+    subtotalMinor: summary.subtotalMinor,
+  });
+
   return {
     cart: summary,
     idempotencyKey: randomUUID(),
@@ -210,6 +216,8 @@ export async function getCheckoutPreview(
     deliveryEnabled: settings.deliveryEnabled,
     pickupEnabled: settings.pickupEnabled,
     deliveryFeeMinor: previewDeliveryFee,
+    discountMinor: campaign?.discountMinor ?? 0,
+    promotionName: campaign?.promotionName ?? null,
     freeDeliveryThresholdMinor: settings.freeDeliveryThresholdMinor,
     deliveryNotes: settings.deliveryNotes,
     pickupLocations: settings.activePickupLocations,
@@ -293,7 +301,11 @@ export async function placeGuestOrder(
 
         const { availableLines, subtotalMinor } = computeLineItems(cart);
 
-        const discountMinor = 0;
+        const campaign = await resolveCampaignDiscountForCheckout({
+          tenantId: context.tenantId,
+          subtotalMinor,
+        });
+        const discountMinor = campaign?.discountMinor ?? 0;
         const totalMinor = subtotalMinor - discountMinor + deliveryFeeMinor;
 
         let customer;
@@ -354,6 +366,8 @@ export async function placeGuestOrder(
           deliveryFeeMinor,
           discountMinor,
           totalMinor,
+          promotionId: campaign?.promotionId,
+          promotionNameSnapshot: campaign?.promotionName,
           referralCode: context.referralCode ?? undefined,
           items: availableLines.map((line) => ({
             productId: line.productId,

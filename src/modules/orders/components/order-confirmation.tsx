@@ -158,6 +158,14 @@ export function OrderConfirmationView({
             <span className="text-[color:var(--shop-ink-muted)]">Subtotal</span>
             <span>{formatMoney(order.subtotalMinor, order.currency)}</span>
           </div>
+          {order.discountMinor > 0 ? (
+            <div className="flex justify-between">
+              <span className="text-[color:var(--shop-ink-muted)]">
+                {order.promotionNameSnapshot?.trim() || "Promotion"}
+              </span>
+              <span>−{formatMoney(order.discountMinor, order.currency)}</span>
+            </div>
+          ) : null}
           <div className="flex justify-between">
             <span className="text-[color:var(--shop-ink-muted)]">Delivery</span>
             <span>{formatMoney(order.deliveryFeeMinor, order.currency)}</span>

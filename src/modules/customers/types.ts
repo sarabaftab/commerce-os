@@ -76,6 +76,7 @@ export type CustomerOrderDetailDto = {
   subtotalMinor: number;
   deliveryFeeMinor: number;
   discountMinor: number;
+  promotionNameSnapshot: string | null;
   totalMinor: number;
   delivery: {
     recipientName: string | null;

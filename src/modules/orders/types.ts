@@ -99,6 +99,7 @@ export type OrderConfirmation = {
   discountMinor: number;
   totalMinor: number;
   promotionId: string | null;
+  promotionNameSnapshot: string | null;
   referralCode: string | null;
   campaignId: string | null;
   fulfillmentMethod: FulfillmentMethod;
@@ -130,6 +131,9 @@ export type CheckoutPreview = {
   deliveryEnabled: boolean;
   pickupEnabled: boolean;
   deliveryFeeMinor: number;
+  /** Server-resolved campaign discount for the current cart subtotal. */
+  discountMinor: number;
+  promotionName: string | null;
   freeDeliveryThresholdMinor: number | null;
   deliveryNotes: string | null;
   pickupLocations: { id: string; name: string; address: string; instructions: string | null }[];
@@ -211,6 +215,8 @@ export type AdminOrderDetail = {
   deliveryFeeMinor: number;
   discountMinor: number;
   totalMinor: number;
+  promotionId: string | null;
+  promotionNameSnapshot: string | null;
   notes: string | null;
   fulfillmentMethod: FulfillmentMethod;
   addressLine: string | null;
