@@ -218,6 +218,8 @@ export async function getCheckoutPreview(
     deliveryFeeMinor: previewDeliveryFee,
     discountMinor: campaign?.discountMinor ?? 0,
     promotionName: campaign?.promotionName ?? null,
+    promotionType: campaign?.type ?? null,
+    promotionValue: campaign?.value ?? null,
     freeDeliveryThresholdMinor: settings.freeDeliveryThresholdMinor,
     deliveryNotes: settings.deliveryNotes,
     pickupLocations: settings.activePickupLocations,

@@ -2,6 +2,7 @@ import {
   getStorefrontCategories,
   getStorefrontProducts,
 } from "@/modules/catalog";
+import { getActiveStorefrontCampaign } from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { isAppError } from "@/shared/errors/app-error";
 import { createTimer } from "@/shared/observability/timing";
@@ -29,12 +30,14 @@ export default async function StorefrontProductsPage({
 
   let products;
   let categories;
+  let campaign;
   try {
-    [categories, products] = await Promise.all([
+    [categories, products, campaign] = await Promise.all([
       getStorefrontCategories(tenant.id),
       getStorefrontProducts(tenant.id, {
         categorySlug: categorySlug || undefined,
       }),
+      getActiveStorefrontCampaign(tenant.id),
     ]);
   } catch (error) {
     if (isAppError(error) && error.code === "NOT_FOUND") {
@@ -69,7 +72,7 @@ export default async function StorefrontProductsPage({
         activeSlug={categorySlug ?? null}
       />
 
-      <ProductGrid products={products} basePath={basePath} />
+      <ProductGrid products={products} basePath={basePath} campaign={campaign} />
     </div>
   );
 }

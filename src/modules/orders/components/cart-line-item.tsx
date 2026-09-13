@@ -6,22 +6,31 @@ import { useRouter } from "next/navigation";
 import { Minus, Plus, Trash2 } from "lucide-react";
 
 import type { CartLineView } from "@/modules/orders";
-import { formatPackSizeLine, formatUnitPriceLabel } from "@/modules/catalog/selling-unit";
+import { formatPackSizeLine } from "@/modules/catalog/selling-unit";
 import {
   removeCartItemAction,
   updateCartItemAction,
 } from "@/modules/orders/actions/cart-actions";
+import type { StorefrontCampaignDisplay } from "@/modules/promotions";
+import { computeUnitSalePriceMinor } from "@/modules/promotions";
 import { formatMoney } from "@/shared/money/money";
 import { notifyCartChanged } from "@/ui/storefront/cart-events";
 import { ProductImage } from "@/ui/storefront/product-image";
+import { PromotionalPrice } from "@/ui/storefront/promotional-price";
 
 type CartLineItemProps = {
   tenantSlug: string;
   basePath: string;
   line: CartLineView;
+  campaign?: StorefrontCampaignDisplay | null;
 };
 
-export function CartLineItem({ tenantSlug, basePath, line }: CartLineItemProps) {
+export function CartLineItem({
+  tenantSlug,
+  basePath,
+  line,
+  campaign = null,
+}: CartLineItemProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -74,12 +83,13 @@ export function CartLineItem({ tenantSlug, basePath, line }: CartLineItemProps) 
             >
               {line.name}
             </Link>
-            <p className="mt-1 text-sm font-semibold">
-              {formatUnitPriceLabel(
-                formatMoney(line.unitPriceMinor, line.currency),
-                line.sellingUnit,
-              )}
-            </p>
+            <PromotionalPrice
+              className="mt-1"
+              priceMinor={line.unitPriceMinor}
+              currency={line.currency}
+              sellingUnit={line.sellingUnit}
+              campaign={campaign}
+            />
             {formatPackSizeLine(line.volume, line.sellingUnit) ? (
               <p className="text-xs text-[color:var(--shop-ink-muted)]">
                 {formatPackSizeLine(line.volume, line.sellingUnit)}
@@ -123,9 +133,29 @@ export function CartLineItem({ tenantSlug, basePath, line }: CartLineItemProps) 
                 <Plus className="size-4" />
               </button>
             </div>
-            <p className="text-sm font-semibold">
-              {formatMoney(line.lineTotalMinor, line.currency)}
-            </p>
+            {(() => {
+              const saleLine =
+                campaign != null
+                  ? computeUnitSalePriceMinor(line.lineTotalMinor, campaign)
+                  : null;
+              if (saleLine == null || saleLine >= line.lineTotalMinor) {
+                return (
+                  <p className="text-sm font-semibold">
+                    {formatMoney(line.lineTotalMinor, line.currency)}
+                  </p>
+                );
+              }
+              return (
+                <div className="text-right">
+                  <p className="text-sm font-semibold">
+                    {formatMoney(saleLine, line.currency)}
+                  </p>
+                  <p className="text-xs text-[color:var(--shop-ink-muted)] line-through">
+                    {formatMoney(line.lineTotalMinor, line.currency)}
+                  </p>
+                </div>
+              );
+            })()}
           </div>
         ) : null}
       </div>

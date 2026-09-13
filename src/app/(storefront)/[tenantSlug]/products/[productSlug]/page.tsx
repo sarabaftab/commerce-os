@@ -2,16 +2,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getStorefrontProductBySlug } from "@/modules/catalog";
-import {
-  formatPackSizeLine,
-  formatUnitPriceLabel,
-} from "@/modules/catalog/selling-unit";
+import { formatPackSizeLine } from "@/modules/catalog/selling-unit";
 import { AddToCartButton } from "@/modules/orders/components/add-to-cart-button";
+import { getActiveStorefrontCampaign } from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { isAppError } from "@/shared/errors/app-error";
-import { formatMoney } from "@/shared/money/money";
 import { createTimer } from "@/shared/observability/timing";
 import { ProductImage } from "@/ui/storefront/product-image";
+import {
+  PromotionSaleBadge,
+  PromotionalPrice,
+} from "@/ui/storefront/promotional-price";
 
 /** Public catalog ISR — aligned with catalog data-cache TTL. */
 export const revalidate = 60;
@@ -29,8 +30,12 @@ export default async function StorefrontProductDetailPage({
   timer.mark("tenantMs");
 
   let product;
+  let campaign;
   try {
-    product = await getStorefrontProductBySlug(tenant.id, productSlug);
+    [product, campaign] = await Promise.all([
+      getStorefrontProductBySlug(tenant.id, productSlug),
+      getActiveStorefrontCampaign(tenant.id),
+    ]);
   } catch (error) {
     if (isAppError(error) && error.code === "NOT_FOUND") {
       notFound();
@@ -70,6 +75,7 @@ export default async function StorefrontProductDetailPage({
               </span>
             </div>
           )}
+          {product.isAvailable ? <PromotionSaleBadge campaign={campaign} /> : null}
         </div>
 
         <div className="space-y-4 p-5 md:flex md:flex-col md:justify-center">
@@ -83,12 +89,13 @@ export default async function StorefrontProductDetailPage({
             <h1 className="font-[family-name:var(--font-shop-display)] text-3xl leading-tight tracking-tight break-words">
               {product.name}
             </h1>
-            <p className="text-xl font-semibold">
-              {formatUnitPriceLabel(
-                formatMoney(product.priceMinor, product.currency),
-                product.sellingUnit,
-              )}
-            </p>
+            <PromotionalPrice
+              priceMinor={product.priceMinor}
+              currency={product.currency}
+              sellingUnit={product.sellingUnit}
+              campaign={campaign}
+              size="lg"
+            />
             {formatPackSizeLine(product.volume, product.sellingUnit) ? (
               <p className="text-sm text-[color:var(--shop-ink-muted)]">
                 {formatPackSizeLine(product.volume, product.sellingUnit)}

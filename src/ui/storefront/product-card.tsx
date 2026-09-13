@@ -1,10 +1,14 @@
 import Link from "next/link";
 
 import type { ProductWithRelations } from "@/modules/catalog";
-import { formatPackSizeLine, formatUnitPriceLabel } from "@/modules/catalog/selling-unit";
-import { formatMoney } from "@/shared/money/money";
+import { formatPackSizeLine } from "@/modules/catalog/selling-unit";
+import type { StorefrontCampaignDisplay } from "@/modules/promotions";
 import { cn } from "@/ui/lib/utils";
 import { ProductImage } from "@/ui/storefront/product-image";
+import {
+  PromotionSaleBadge,
+  PromotionalPrice,
+} from "@/ui/storefront/promotional-price";
 import { shop } from "@/ui/storefront/shop-classes";
 
 type ProductCardProps = {
@@ -12,9 +16,16 @@ type ProductCardProps = {
   href: string;
   className?: string;
   priority?: boolean;
+  campaign?: StorefrontCampaignDisplay | null;
 };
 
-export function ProductCard({ product, href, className, priority = false }: ProductCardProps) {
+export function ProductCard({
+  product,
+  href,
+  className,
+  priority = false,
+  campaign = null,
+}: ProductCardProps) {
   const imageUrl = product.media[0]?.url;
   const imageAlt = product.media[0]?.alt ?? product.name;
 
@@ -49,7 +60,9 @@ export function ProductCard({ product, href, className, priority = false }: Prod
           <span className="absolute top-3 left-3 rounded-full bg-[color:var(--shop-ink)]/80 px-2.5 py-1 text-[11px] font-medium tracking-wide text-white uppercase">
             Unavailable
           </span>
-        ) : null}
+        ) : (
+          <PromotionSaleBadge campaign={campaign} />
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3.5">
@@ -66,12 +79,13 @@ export function ProductCard({ product, href, className, priority = false }: Prod
             {product.stockNote}
           </p>
         ) : null}
-        <p className="mt-auto pt-2 text-sm font-semibold text-[color:var(--shop-ink)]">
-          {formatUnitPriceLabel(
-            formatMoney(product.priceMinor, product.currency),
-            product.sellingUnit,
-          )}
-        </p>
+        <PromotionalPrice
+          className="mt-auto pt-2"
+          priceMinor={product.priceMinor}
+          currency={product.currency}
+          sellingUnit={product.sellingUnit}
+          campaign={campaign}
+        />
         {formatPackSizeLine(product.volume, product.sellingUnit) ? (
           <p className="text-xs text-[color:var(--shop-ink-muted)]">
             {formatPackSizeLine(product.volume, product.sellingUnit)}

@@ -106,16 +106,12 @@ export function pickEligibleCampaignDiscount(
   };
 }
 
-/** Banner visibility: active + in date window (ignores minimum subtotal). */
-export function isPromotionVisibleForBanner(
-  promo: Pick<PromotionDiscountInput, "isActive" | "startsAt" | "endsAt" | "bannerText">,
+/** Active + in date window (ignores minimum subtotal — browsing/banner display). */
+export function isPromotionInActiveWindow(
+  promo: Pick<PromotionDiscountInput, "isActive" | "startsAt" | "endsAt">,
   now: Date = new Date(),
 ): boolean {
   if (!promo.isActive) {
-    return false;
-  }
-  const text = promo.bannerText?.trim();
-  if (!text) {
     return false;
   }
   if (promo.startsAt && now < promo.startsAt) {
@@ -125,4 +121,62 @@ export function isPromotionVisibleForBanner(
     return false;
   }
   return true;
+}
+
+/** Banner visibility: active + in date window + non-empty banner text. */
+export function isPromotionVisibleForBanner(
+  promo: Pick<PromotionDiscountInput, "isActive" | "startsAt" | "endsAt" | "bannerText">,
+  now: Date = new Date(),
+): boolean {
+  const text = promo.bannerText?.trim();
+  if (!text) {
+    return false;
+  }
+  return isPromotionInActiveWindow(promo, now);
+}
+
+/**
+ * Display-only unit sale price for percentage campaigns.
+ * Fixed cart-level discounts do not map to honest per-product prices → null.
+ * Catalog/checkout still charge full unit prices; order discount is applied at totals.
+ */
+export function computeUnitSalePriceMinor(
+  priceMinor: number,
+  promo: Pick<PromotionDiscountInput, "type" | "value">,
+): number | null {
+  if (promo.type !== "percentage") {
+    return null;
+  }
+  const discount = computeCampaignDiscountMinor(priceMinor, promo);
+  if (discount <= 0) {
+    return null;
+  }
+  return priceMinor - discount;
+}
+
+export type StorefrontCampaignDisplay = {
+  id: string;
+  name: string;
+  type: PromotionDiscountType;
+  value: number;
+};
+
+/** Newest active-window campaign for storefront sale-price display. */
+export function pickStorefrontCampaignDisplay(
+  promotions: Promotion[],
+  now: Date = new Date(),
+): StorefrontCampaignDisplay | null {
+  const chosen = promotions
+    .filter((promo) => isPromotionInActiveWindow(promo, now))
+    .slice()
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+  if (!chosen) {
+    return null;
+  }
+  return {
+    id: chosen.id,
+    name: chosen.name,
+    type: chosen.type,
+    value: chosen.value,
+  };
 }

@@ -4,6 +4,7 @@ import {
   getFeaturedStorefrontProducts,
   getStorefrontCategories,
 } from "@/modules/catalog";
+import { getActiveStorefrontCampaign } from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { createTimer } from "@/shared/observability/timing";
 import { STOREFRONT_BRAND } from "@/ui/storefront/brand";
@@ -25,9 +26,10 @@ export default async function StorefrontHomePage({ params }: HomePageProps) {
   const { tenant, basePath } = await resolveStorefrontTenant(tenantSlug);
   timer.mark("tenantMs");
 
-  const [categories, featured] = await Promise.all([
+  const [categories, featured, campaign] = await Promise.all([
     getStorefrontCategories(tenant.id),
     getFeaturedStorefrontProducts(tenant.id, 6),
+    getActiveStorefrontCampaign(tenant.id),
   ]);
   timer.mark("catalogMs");
   timer.log({ tenantSlug, categoryCount: categories.length, featuredCount: featured.length });
@@ -72,6 +74,7 @@ export default async function StorefrontHomePage({ params }: HomePageProps) {
         <ProductGrid
           products={featured}
           basePath={basePath}
+          campaign={campaign}
           emptyMessage="No featured products yet. Check back soon."
         />
       </section>

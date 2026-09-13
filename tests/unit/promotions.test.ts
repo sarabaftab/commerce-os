@@ -5,6 +5,7 @@ import type { Promotion } from "@prisma/client";
 
 import {
   computeCampaignDiscountMinor,
+  computeUnitSalePriceMinor,
   isPromotionEligible,
   isPromotionVisibleForBanner,
   pickEligibleCampaignDiscount,
@@ -30,6 +31,18 @@ function promo(overrides: Partial<Promotion> & Pick<Promotion, "id" | "name" | "
     ...overrides,
   };
 }
+
+describe("computeUnitSalePriceMinor", () => {
+  it("returns percentage sale price for display", () => {
+    expect(
+      computeUnitSalePriceMinor(1000, { type: "percentage", value: 10 }),
+    ).toBe(900);
+  });
+
+  it("returns null for fixed campaigns (cart-level only)", () => {
+    expect(computeUnitSalePriceMinor(1000, { type: "fixed", value: 300 })).toBeNull();
+  });
+});
 
 describe("computeCampaignDiscountMinor", () => {
   it("applies percentage with floor integer math", () => {

@@ -1,4 +1,5 @@
 import type { ProductWithRelations } from "@/modules/catalog";
+import type { StorefrontCampaignDisplay } from "@/modules/promotions";
 
 import { ProductCard } from "./product-card";
 
@@ -6,12 +7,14 @@ type ProductGridProps = {
   products: ProductWithRelations[];
   basePath: string;
   emptyMessage?: string;
+  campaign?: StorefrontCampaignDisplay | null;
 };
 
 export function ProductGrid({
   products,
   basePath,
   emptyMessage = "No products available right now.",
+  campaign = null,
 }: ProductGridProps) {
   if (products.length === 0) {
     return (
@@ -28,6 +31,7 @@ export function ProductGrid({
           key={product.id}
           product={product}
           href={`${basePath}/products/${product.slug}`}
+          campaign={campaign}
         />
       ))}
     </div>

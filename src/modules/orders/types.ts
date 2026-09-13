@@ -134,6 +134,9 @@ export type CheckoutPreview = {
   /** Server-resolved campaign discount for the current cart subtotal. */
   discountMinor: number;
   promotionName: string | null;
+  /** For storefront sale-price display when discount applies. */
+  promotionType: "percentage" | "fixed" | null;
+  promotionValue: number | null;
   freeDeliveryThresholdMinor: number | null;
   deliveryNotes: string | null;
   pickupLocations: { id: string; name: string; address: string; instructions: string | null }[];

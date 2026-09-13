@@ -3,7 +3,9 @@ import { AppError } from "@/shared/errors/app-error";
 import {
   isPromotionVisibleForBanner,
   pickEligibleCampaignDiscount,
+  pickStorefrontCampaignDisplay,
   type ResolvedCampaignDiscount,
+  type StorefrontCampaignDisplay,
 } from "../discount";
 import {
   createPromotion,
@@ -100,4 +102,16 @@ export async function getStorefrontPromotionBanner(tenantId: string): Promise<{
     return null;
   }
   return { name: chosen.name, bannerText: chosen.bannerText.trim() };
+}
+
+/**
+ * Active campaign for storefront sale-price display (date window; ignores min subtotal).
+ * Percentage campaigns drive strikethrough unit prices; fixed is badge-only.
+ */
+export async function getActiveStorefrontCampaign(
+  tenantId: string,
+  now?: Date,
+): Promise<StorefrontCampaignDisplay | null> {
+  const promotions = await listActivePromotionsForTenant(tenantId);
+  return pickStorefrontCampaignDisplay(promotions, now ?? new Date());
 }

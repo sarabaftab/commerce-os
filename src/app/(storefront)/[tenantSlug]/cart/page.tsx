@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCartAction } from "@/modules/orders/actions/cart-actions";
 import { CartLineItem } from "@/modules/orders/components/cart-line-item";
 import { CartSummaryPanel } from "@/modules/orders/components/cart-summary";
+import { getActiveStorefrontCampaign } from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { createTimer } from "@/shared/observability/timing";
 
@@ -15,9 +16,12 @@ type CartPageProps = {
 export default async function StorefrontCartPage({ params }: CartPageProps) {
   const timer = createTimer("page.storefront.cart");
   const { tenantSlug } = await params;
-  const { basePath } = await resolveStorefrontTenant(tenantSlug);
+  const { tenant, basePath } = await resolveStorefrontTenant(tenantSlug);
   timer.mark("tenantMs");
-  const summary = await getCartAction(tenantSlug);
+  const [summary, campaign] = await Promise.all([
+    getCartAction(tenantSlug),
+    getActiveStorefrontCampaign(tenant.id),
+  ]);
   timer.mark("cartMs");
   timer.log({ tenantSlug, itemCount: summary.itemCount });
 
@@ -51,6 +55,7 @@ export default async function StorefrontCartPage({ params }: CartPageProps) {
                 tenantSlug={tenantSlug}
                 basePath={basePath}
                 line={line}
+                campaign={campaign}
               />
             ))}
           </div>

@@ -1,12 +1,16 @@
 export {
   computeCampaignDiscountMinor,
+  computeUnitSalePriceMinor,
   isPromotionEligible,
+  isPromotionInActiveWindow,
   isPromotionVisibleForBanner,
   pickEligibleCampaignDiscount,
+  pickStorefrontCampaignDisplay,
 } from "./discount";
-export type { ResolvedCampaignDiscount } from "./discount";
+export type { ResolvedCampaignDiscount, StorefrontCampaignDisplay } from "./discount";
 export {
   createPromotionForTenant,
+  getActiveStorefrontCampaign,
   getAdminPromotions,
   getPromotionForTenant,
   getStorefrontPromotionBanner,
