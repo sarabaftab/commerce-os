@@ -5,14 +5,15 @@ import {
   type OrderCustomerType,
 } from "../customer-type";
 import {
-  dashboardRangeLabel,
-  dashboardRangeStart,
+  dashboardPlacedAtFilter,
+  dashboardWindowFromPreset,
   type DashboardRangeDays,
+  type DashboardWindow,
 } from "../dashboard-range";
 import { findFirstOrdersByCustomerIds } from "../repositories/order-repository";
 import type { AdminOrderListItem } from "../types";
 
-const ACTIVE_ORDER_STATUSES = [
+export const ACTIVE_ORDER_STATUSES = [
   "pending",
   "confirmed",
   "processing",
@@ -21,8 +22,7 @@ const ACTIVE_ORDER_STATUSES = [
 ] as const;
 
 export type DashboardPeriodStats = {
-  rangeDays: DashboardRangeDays;
-  from: Date;
+  window: DashboardWindow;
   ordersInPeriod: number;
   newCustomersInPeriod: number;
   returningCustomersInPeriod: number;
@@ -47,8 +47,11 @@ export type AdminDashboardLiveOrder = {
 };
 
 export type AdminDashboardLiveSnapshot = {
-  rangeDays: DashboardRangeDays;
+  kind: DashboardWindow["kind"];
+  rangeDays: DashboardRangeDays | null;
   rangeLabel: string;
+  fromParam: string | null;
+  toParam: string | null;
   ordersInPeriod: number;
   ordersAllTime: number;
   customersAllTime: number;
@@ -59,17 +62,28 @@ export type AdminDashboardLiveSnapshot = {
   generatedAt: string;
 };
 
+function normalizeWindow(
+  windowOrDays: DashboardWindow | DashboardRangeDays,
+  now: Date,
+): DashboardWindow {
+  if (typeof windowOrDays === "number") {
+    return dashboardWindowFromPreset(windowOrDays, now);
+  }
+  return windowOrDays;
+}
+
 export async function getAdminDashboardLiveSnapshot(
   tenantId: string,
-  rangeDays: DashboardRangeDays,
+  windowOrDays: DashboardWindow | DashboardRangeDays,
   now: Date = new Date(),
 ): Promise<AdminDashboardLiveSnapshot> {
-  const periodFrom = dashboardRangeStart(rangeDays, now);
+  const window = normalizeWindow(windowOrDays, now);
+  const placedAt = dashboardPlacedAtFilter(window);
 
   const [periodStats, recent, ordersAllTime, customersAllTime, activeOrders] =
     await Promise.all([
-      getDashboardPeriodStats(tenantId, rangeDays, now),
-      listRecentOrdersSince(tenantId, periodFrom, 6),
+      getDashboardPeriodStats(tenantId, window, now),
+      listRecentOrdersSince(tenantId, placedAt, 6),
       prisma.order.count({ where: { tenantId } }),
       prisma.customer.count({ where: { tenantId } }),
       prisma.order.count({
@@ -81,8 +95,11 @@ export async function getAdminDashboardLiveSnapshot(
     ]);
 
   return {
-    rangeDays,
-    rangeLabel: dashboardRangeLabel(rangeDays),
+    kind: window.kind,
+    rangeDays: window.rangeDays,
+    rangeLabel: window.label,
+    fromParam: window.fromParam,
+    toParam: window.toParam,
     ordersInPeriod: periodStats.ordersInPeriod,
     ordersAllTime,
     customersAllTime,
@@ -115,17 +132,18 @@ function serializeDashboardOrder(order: AdminOrderListItem): AdminDashboardLiveO
 
 export async function getDashboardPeriodStats(
   tenantId: string,
-  rangeDays: DashboardRangeDays,
+  windowOrDays: DashboardWindow | DashboardRangeDays,
   now: Date = new Date(),
 ): Promise<DashboardPeriodStats> {
-  const from = dashboardRangeStart(rangeDays, now);
+  const window = normalizeWindow(windowOrDays, now);
+  const placedAt = dashboardPlacedAtFilter(window);
 
   const [ordersInPeriod, periodCustomerIds] = await Promise.all([
     prisma.order.count({
-      where: { tenantId, placedAt: { gte: from } },
+      where: { tenantId, placedAt },
     }),
     prisma.order.findMany({
-      where: { tenantId, placedAt: { gte: from } },
+      where: { tenantId, placedAt },
       select: { customerId: true },
       distinct: ["customerId"],
     }),
@@ -142,7 +160,7 @@ export async function getDashboardPeriodStats(
     if (!first) {
       continue;
     }
-    if (first.placedAt.getTime() >= from.getTime()) {
+    if (first.placedAt.getTime() >= window.from.getTime()) {
       newCustomersInPeriod += 1;
     } else {
       returningCustomersInPeriod += 1;
@@ -150,8 +168,7 @@ export async function getDashboardPeriodStats(
   }
 
   return {
-    rangeDays,
-    from,
+    window,
     ordersInPeriod,
     newCustomersInPeriod,
     returningCustomersInPeriod,
@@ -160,11 +177,11 @@ export async function getDashboardPeriodStats(
 
 export async function listRecentOrdersSince(
   tenantId: string,
-  from: Date,
+  placedAt: { gte: Date; lte?: Date },
   take = 6,
 ): Promise<{ items: AdminOrderListItem[] }> {
   const rows = await prisma.order.findMany({
-    where: { tenantId, placedAt: { gte: from } },
+    where: { tenantId, placedAt },
     include: {
       customer: {
         select: {

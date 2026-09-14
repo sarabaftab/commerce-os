@@ -18,10 +18,14 @@ import {
   buildAdminDashboardPollUrl,
   DASHBOARD_POLL_INTERVAL_MS,
 } from "@/modules/orders/dashboard-live";
+import { dashboardWindowFromPreset } from "@/modules/orders/dashboard-range";
 
 const sampleSnapshot = {
+  kind: "preset" as const,
   rangeDays: 7 as const,
   rangeLabel: "Past 7 Days",
+  fromParam: null,
+  toParam: null,
   ordersInPeriod: 2,
   ordersAllTime: 10,
   customersAllTime: 5,
@@ -44,6 +48,13 @@ const sampleSnapshot = {
   ],
   generatedAt: "2026-09-04T12:00:00.000Z",
 };
+
+function expectWindowCall(tenantId: string, matcher: Record<string, unknown>) {
+  expect(getAdminDashboardLiveSnapshot).toHaveBeenCalledWith(
+    tenantId,
+    expect.objectContaining(matcher),
+  );
+}
 
 describe("GET /api/admin/dashboard", () => {
   beforeEach(() => {
@@ -75,7 +86,7 @@ describe("GET /api/admin/dashboard", () => {
     expect(response.headers.get("Pragma")).toBe("no-cache");
     expect(response.headers.get("X-Dashboard-Generated-At")).toBe(sampleSnapshot.generatedAt);
     expect(body.data).toEqual(sampleSnapshot);
-    expect(getAdminDashboardLiveSnapshot).toHaveBeenCalledWith("tenant-a", 7);
+    expectWindowCall("tenant-a", { kind: "preset", rangeDays: 7 });
   });
 
   it("preserves the selected 14 and 28 day ranges", async () => {
@@ -83,10 +94,10 @@ describe("GET /api/admin/dashboard", () => {
     getAdminDashboardLiveSnapshot.mockResolvedValue(sampleSnapshot);
 
     await GET(new Request("http://localhost/api/admin/dashboard?range=14"));
-    expect(getAdminDashboardLiveSnapshot).toHaveBeenLastCalledWith("tenant-a", 14);
+    expectWindowCall("tenant-a", { kind: "preset", rangeDays: 14 });
 
     await GET(new Request("http://localhost/api/admin/dashboard?range=28"));
-    expect(getAdminDashboardLiveSnapshot).toHaveBeenLastCalledWith("tenant-a", 28);
+    expectWindowCall("tenant-a", { kind: "preset", rangeDays: 28 });
   });
 
   it("defaults invalid ranges to 7 days", async () => {
@@ -94,7 +105,30 @@ describe("GET /api/admin/dashboard", () => {
     getAdminDashboardLiveSnapshot.mockResolvedValue(sampleSnapshot);
 
     await GET(new Request("http://localhost/api/admin/dashboard?range=99"));
-    expect(getAdminDashboardLiveSnapshot).toHaveBeenCalledWith("tenant-a", 7);
+    expectWindowCall("tenant-a", { kind: "preset", rangeDays: 7 });
+  });
+
+  it("resolves a custom from/to window", async () => {
+    getAdminSession.mockResolvedValue({ tenantId: "tenant-a", tenantSlug: "shop-a" });
+    getAdminDashboardLiveSnapshot.mockResolvedValue({
+      ...sampleSnapshot,
+      kind: "custom",
+      rangeDays: null,
+      rangeLabel: "2026-09-01 → 2026-09-10",
+      fromParam: "2026-09-01",
+      toParam: "2026-09-10",
+    });
+
+    await GET(
+      new Request("http://localhost/api/admin/dashboard?from=2026-09-01&to=2026-09-10"),
+    );
+
+    expectWindowCall("tenant-a", {
+      kind: "custom",
+      fromParam: "2026-09-01",
+      toParam: "2026-09-10",
+      rangeDays: null,
+    });
   });
 
   it("never accepts a client-supplied tenant id", async () => {
@@ -105,7 +139,7 @@ describe("GET /api/admin/dashboard", () => {
       new Request("http://localhost/api/admin/dashboard?range=7&tenantId=tenant-b"),
     );
 
-    expect(getAdminDashboardLiveSnapshot).toHaveBeenCalledWith("tenant-a", 7);
+    expectWindowCall("tenant-a", { kind: "preset", rangeDays: 7 });
     expect(getAdminDashboardLiveSnapshot).not.toHaveBeenCalledWith(
       "tenant-b",
       expect.anything(),
@@ -133,41 +167,42 @@ describe("GET /api/admin/dashboard", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(getAdminDashboardLiveSnapshot).toHaveBeenCalledWith("tenant-a", 7);
+    expectWindowCall("tenant-a", { kind: "preset", rangeDays: 7 });
     expect(body.data.ordersInPeriod).toBe(3);
     expect(body.data.recent[0].id).toBe("order-new");
   });
 });
 
-describe("dashboard poll helpers", () => {
-  it("polls every 12 seconds", () => {
-    expect(DASHBOARD_POLL_INTERVAL_MS).toBe(12_000);
-  });
-
-  it("builds a range-preserving cache-busted poll URL", () => {
-    expect(buildAdminDashboardPollUrl(14, 1_700_000_000_000)).toBe(
-      "/api/admin/dashboard?range=14&_ts=1700000000000",
+describe("buildAdminDashboardPollUrl", () => {
+  it("includes range and cache-bust for presets", () => {
+    const window = dashboardWindowFromPreset(14);
+    expect(buildAdminDashboardPollUrl(window, 1_700_000_000_000)).toBe(
+      "/api/admin/dashboard?_ts=1700000000000&range=14",
     );
-    expect(buildAdminDashboardPollUrl(7, 42)).toContain("range=7");
-    expect(buildAdminDashboardPollUrl(28, 42)).toContain("range=28");
+    expect(buildAdminDashboardPollUrl(dashboardWindowFromPreset(7), 42)).toContain(
+      "range=7",
+    );
+    expect(buildAdminDashboardPollUrl(dashboardWindowFromPreset(28), 42)).toContain(
+      "range=28",
+    );
   });
-});
 
-describe("dashboard live snapshot merge behavior", () => {
-  it("keeps unique recent orders by id when a newer snapshot arrives", () => {
-    const first = sampleSnapshot.recent;
-    const next = [
+  it("includes from/to for custom windows", () => {
+    const url = buildAdminDashboardPollUrl(
       {
-        ...sampleSnapshot.recent[0],
-        id: "order-b",
-        orderNumber: "ORD-B",
+        kind: "custom",
+        rangeDays: null,
+        fromParam: "2026-09-01",
+        toParam: "2026-09-10",
       },
-      ...sampleSnapshot.recent,
-    ];
+      99,
+    );
+    expect(url).toContain("from=2026-09-01");
+    expect(url).toContain("to=2026-09-10");
+    expect(url).not.toContain("range=");
+  });
 
-    const byId = new Map(next.map((order) => [order.id, order]));
-    expect(byId.size).toBe(2);
-    expect([...byId.keys()]).toEqual(["order-b", "order-a"]);
-    expect(first).toHaveLength(1);
+  it("keeps the quiet poll interval", () => {
+    expect(DASHBOARD_POLL_INTERVAL_MS).toBe(12_000);
   });
 });
