@@ -12,7 +12,11 @@ import {
 } from "@/modules/customers/repositories/customer-repository";
 import { assertCheckoutOptions, getCheckoutSettings } from "@/modules/settings";
 import { notifyOrderPlacedAfterCommit } from "@/modules/notifications/services/notification-service";
-import { resolveCampaignDiscountForCheckout } from "@/modules/promotions";
+import {
+  listActivePromotionsForTenant,
+  pickEligibleCampaignDiscount,
+  resolveCampaignDiscountForCheckout,
+} from "@/modules/promotions";
 import { prisma } from "@/shared/db/prisma";
 import { AppError, isAppError } from "@/shared/errors/app-error";
 import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
@@ -278,15 +282,15 @@ export async function placeGuestOrder(
 
   // Validate settings + fees outside the interactive transaction so we don't
   // hold a pooled connection open during extra reads (avoids P2028 on poolers).
-  const { deliveryFeeMinor, pickup, settings } = await assertCheckoutOptions(
-    context.tenantId,
-    {
+  const [{ deliveryFeeMinor, pickup, settings }, activePromotions] = await Promise.all([
+    assertCheckoutOptions(context.tenantId, {
       fulfillmentMethod: input.fulfillmentMethod,
       paymentMethod: input.paymentMethod,
       pickupLocationKey: input.pickupLocationKey,
       subtotalMinor: preview.subtotalMinor,
-    },
-  );
+    }),
+    listActivePromotionsForTenant(context.tenantId),
+  ]);
 
   try {
     const order = await prisma.$transaction(
@@ -303,8 +307,9 @@ export async function placeGuestOrder(
 
         const { availableLines, subtotalMinor } = computeLineItems(cart);
 
-        const campaign = await resolveCampaignDiscountForCheckout({
-          tenantId: context.tenantId,
+        // Pure in-memory resolve — never query prisma from inside this tx
+        // (nested client calls on poolers expire interactive transactions).
+        const campaign = pickEligibleCampaignDiscount(activePromotions, {
           subtotalMinor,
         });
         const discountMinor = campaign?.discountMinor ?? 0;

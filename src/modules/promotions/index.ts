@@ -17,6 +17,7 @@ export {
   resolveCampaignDiscountForCheckout,
   updatePromotionForTenant,
 } from "./services/promotion-service";
+export { listActivePromotionsForTenant } from "./repositories/promotion-repository";
 export {
   promotionFormDataToObject,
   promotionFormSchema,
