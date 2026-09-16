@@ -494,6 +494,8 @@ model TenantSettings {
   abaCustomerNote            String?  @map("aba_customer_note")
   primaryColor                         String?  @map("primary_color")
   telegramOrderNotificationsEnabled    Boolean  @default(true) @map("telegram_order_notifications_enabled")
+  /** Public Telegram username customers open from FAQ. Bare name, no @. */
+  telegramSupportUsername              String?  @map("telegram_support_username")
   createdAt                  DateTime @default(now()) @map("created_at")
   updatedAt                  DateTime @updatedAt @map("updated_at")
 

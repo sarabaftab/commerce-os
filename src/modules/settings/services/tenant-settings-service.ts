@@ -1,5 +1,6 @@
 import { cache } from "react";
 
+import { parseTelegramSupportUsername } from "@/channels/telegram/support-link";
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
 
@@ -114,6 +115,7 @@ const getStorefrontSettingsCached = cache(
       phone: s.phone,
       email: s.email,
       address: s.address,
+      telegramSupportUsername: parseTelegramSupportUsername(s.telegramSupportUsername),
       businessHours: s.businessHours,
       abaAccountName: s.abaAccountName,
       abaAccountNumber: s.abaAccountNumber,
@@ -244,6 +246,7 @@ export async function updateGeneralSettings(
       address: normalizeOptionalString(parsed.address),
       timezone: parsed.timezone,
       businessHours: normalizeOptionalString(parsed.businessHours),
+      telegramSupportUsername: parsed.telegramSupportUsername,
     });
   });
   invalidateSettingsCache(tenantId);

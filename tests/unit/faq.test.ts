@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { FaqAccordion } from "@/modules/faq/components/faq-accordion";
+import { FaqSupportFallback } from "@/modules/faq/components/faq-support-fallback";
 import {
   FAQ_ANSWER_MAX,
   FAQ_QUESTION_MAX,
@@ -172,5 +173,39 @@ describe("FaqAccordion", () => {
     expect(html).toContain("Do you deliver?");
     expect(html).toContain("Yes, in the city.");
     expect(html).toContain("whitespace-pre-wrap");
+  });
+});
+
+describe("FaqSupportFallback", () => {
+  it("renders Contact Our Team when a support username is configured", () => {
+    const html = renderToStaticMarkup(
+      createElement(FaqSupportFallback, { telegramSupportUsername: "BillionSupport" }),
+    );
+    expect(html).toContain("Still need help?");
+    expect(html).toContain("Contact Our Team");
+    expect(html).toContain('href="https://t.me/BillionSupport"');
+  });
+
+  it("hides the support section when configuration is missing or malformed", () => {
+    expect(
+      renderToStaticMarkup(
+        createElement(FaqSupportFallback, { telegramSupportUsername: null }),
+      ),
+    ).toBe("");
+    expect(
+      renderToStaticMarkup(
+        createElement(FaqSupportFallback, { telegramSupportUsername: "https://evil.test" }),
+      ),
+    ).toBe("");
+  });
+
+  it("does not change FAQ accordion markup", () => {
+    const html = renderToStaticMarkup(
+      createElement(FaqAccordion, {
+        faqs: [{ id: "1", question: "Do you deliver?", answer: "Yes, in the city." }],
+      }),
+    );
+    expect(html).not.toContain("Contact Our Team");
+    expect(html).toContain("Do you deliver?");
   });
 });

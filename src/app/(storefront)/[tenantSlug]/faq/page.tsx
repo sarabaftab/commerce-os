@@ -1,5 +1,7 @@
 import { getStorefrontFaqs } from "@/modules/faq";
 import { FaqAccordion } from "@/modules/faq/components/faq-accordion";
+import { FaqSupportFallback } from "@/modules/faq/components/faq-support-fallback";
+import { getStorefrontSettings } from "@/modules/settings";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 
 /** Public FAQ ISR — aligned with FAQ data-cache TTL. */
@@ -12,7 +14,10 @@ type FaqPageProps = {
 export default async function StorefrontFaqPage({ params }: FaqPageProps) {
   const { tenantSlug } = await params;
   const { tenant } = await resolveStorefrontTenant(tenantSlug);
-  const faqs = await getStorefrontFaqs(tenant.id);
+  const [faqs, settings] = await Promise.all([
+    getStorefrontFaqs(tenant.id),
+    getStorefrontSettings(tenant.id, tenantSlug),
+  ]);
 
   return (
     <div className="space-y-5 pt-4">
@@ -25,6 +30,7 @@ export default async function StorefrontFaqPage({ params }: FaqPageProps) {
         </p>
       </div>
       <FaqAccordion faqs={faqs} />
+      <FaqSupportFallback telegramSupportUsername={settings.telegramSupportUsername} />
     </div>
   );
 }

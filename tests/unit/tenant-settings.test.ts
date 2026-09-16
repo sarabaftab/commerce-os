@@ -4,6 +4,7 @@ import { AppError } from "@/shared/errors/app-error";
 import { computeDeliveryFeeMinor } from "@/modules/settings/services/delivery-fee";
 import {
   deliverySettingsSchema,
+  generalSettingsSchema,
   paymentSettingsSchema,
 } from "@/modules/settings/schemas/settings";
 
@@ -91,5 +92,39 @@ describe("deliverySettingsSchema", () => {
       deliveryNotes: "",
     });
     expect(parsed.freeDeliveryThresholdMinor).toBeNull();
+  });
+});
+
+describe("generalSettingsSchema telegram support username", () => {
+  const base = {
+    displayName: "Billion",
+    phone: "",
+    email: "",
+    address: "",
+    timezone: "Asia/Phnom_Penh",
+    businessHours: "",
+    currency: "USD",
+  };
+
+  it("stores a sanitized username and allows clearing it", () => {
+    const withHandle = generalSettingsSchema.parse({
+      ...base,
+      telegramSupportUsername: "@BillionSupport",
+    });
+    expect(withHandle.telegramSupportUsername).toBe("BillionSupport");
+
+    const cleared = generalSettingsSchema.parse({
+      ...base,
+      telegramSupportUsername: "",
+    });
+    expect(cleared.telegramSupportUsername).toBeNull();
+  });
+
+  it("rejects a malformed support destination", () => {
+    const parsed = generalSettingsSchema.safeParse({
+      ...base,
+      telegramSupportUsername: "https://example.com/not-telegram",
+    });
+    expect(parsed.success).toBe(false);
   });
 });
