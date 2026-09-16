@@ -157,6 +157,8 @@ export async function getOrderDetailForAdmin(
     addressLine: order.addressLine,
     cityOrArea: order.cityOrArea,
     deliveryInstructions: order.deliveryInstructions,
+    deliveryLatitude: order.deliveryLatitude,
+    deliveryLongitude: order.deliveryLongitude,
     pickupLocationKey: order.pickupLocationKey,
     pickupLocationName: order.pickupLocationName,
     pickupLocationAddress: order.pickupLocationAddress,

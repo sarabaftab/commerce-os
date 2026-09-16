@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { parseOptionalLatLng } from "@/modules/locations/coordinates";
 import { isValidPhone, normalizePhone } from "@/shared/phone/normalize-phone";
 
 import { paymentMethodSchema } from "./order-status";
@@ -40,6 +41,8 @@ export const checkoutInputSchema = z
     pickupLocationKey: z.string().trim().max(64).optional().or(z.literal("")),
     paymentMethod: paymentMethodSchema,
     paymentReference: z.string().trim().max(120).optional().or(z.literal("")),
+    deliveryLatitude: z.union([z.literal(""), z.coerce.number()]).optional(),
+    deliveryLongitude: z.union([z.literal(""), z.coerce.number()]).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.fulfillmentMethod === "delivery") {
@@ -71,24 +74,29 @@ export const checkoutInputSchema = z
       });
     }
   })
-  .transform((data) => ({
-    ...data,
-    phone: normalizePhone(data.phone),
-    email: data.email?.trim() ? data.email.trim().toLowerCase() : undefined,
-    firstName: data.firstName?.trim() || undefined,
-    lastName: data.lastName?.trim() || undefined,
-    savedAddressId: data.savedAddressId?.trim() || undefined,
-    addressLine: data.addressLine?.trim() || undefined,
-    addressLine2: data.addressLine2?.trim() || undefined,
-    cityOrArea: data.cityOrArea?.trim() || undefined,
-    provinceOrState: data.provinceOrState?.trim() || undefined,
-    postalCode: data.postalCode?.trim() || undefined,
-    countryCode: data.countryCode?.trim()?.toUpperCase() || undefined,
-    addressLabel: data.addressLabel?.trim() || undefined,
-    deliveryInstructions: data.deliveryInstructions?.trim() || undefined,
-    pickupLocationKey: data.pickupLocationKey?.trim() || undefined,
-    paymentReference: data.paymentReference?.trim() || undefined,
-  }));
+  .transform((data) => {
+    const pin = parseOptionalLatLng(data.deliveryLatitude, data.deliveryLongitude);
+    return {
+      ...data,
+      phone: normalizePhone(data.phone),
+      email: data.email?.trim() ? data.email.trim().toLowerCase() : undefined,
+      firstName: data.firstName?.trim() || undefined,
+      lastName: data.lastName?.trim() || undefined,
+      savedAddressId: data.savedAddressId?.trim() || undefined,
+      addressLine: data.addressLine?.trim() || undefined,
+      addressLine2: data.addressLine2?.trim() || undefined,
+      cityOrArea: data.cityOrArea?.trim() || undefined,
+      provinceOrState: data.provinceOrState?.trim() || undefined,
+      postalCode: data.postalCode?.trim() || undefined,
+      countryCode: data.countryCode?.trim()?.toUpperCase() || undefined,
+      addressLabel: data.addressLabel?.trim() || undefined,
+      deliveryInstructions: data.deliveryInstructions?.trim() || undefined,
+      pickupLocationKey: data.pickupLocationKey?.trim() || undefined,
+      paymentReference: data.paymentReference?.trim() || undefined,
+      deliveryLatitude: pin?.latitude,
+      deliveryLongitude: pin?.longitude,
+    };
+  });
 
 export type CheckoutInput = z.infer<typeof checkoutInputSchema>;
 
@@ -119,5 +127,7 @@ export function checkoutFormDataToObject(formData: FormData) {
     pickupLocationKey: String(formData.get("pickupLocationKey") ?? ""),
     paymentMethod: String(formData.get("paymentMethod") ?? ""),
     paymentReference: String(formData.get("paymentReference") ?? ""),
+    deliveryLatitude: String(formData.get("deliveryLatitude") ?? ""),
+    deliveryLongitude: String(formData.get("deliveryLongitude") ?? ""),
   };
 }

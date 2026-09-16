@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 
+import { DeliveryLocationPicker } from "@/modules/locations/components/delivery-location-picker";
 import { LocationAutocomplete } from "@/modules/locations/components/location-autocomplete";
+import { parseOptionalLatLng, type LatLng } from "@/modules/locations/coordinates";
 import type { LocationSearchResult } from "@/modules/locations/types";
 import { FieldLabel } from "@/ui/components/field-label";
 
@@ -61,10 +63,13 @@ export function CheckoutFulfillmentFields({
     postalCode: "",
     countryCode: "KH",
   });
+  const [pin, setPin] = useState<LatLng | null>(null);
+  const [pinConfirmed, setPinConfirmed] = useState(false);
 
   function applyLocation(location: LocationSearchResult) {
     const addressLine = [location.houseNumber, location.street].filter(Boolean).join(" ");
     const cityOrArea = [location.district, location.city].filter(Boolean).join(" / ");
+    const nextPin = parseOptionalLatLng(location.latitude, location.longitude);
     setNewAddress((current) => ({
       ...current,
       addressLine: addressLine || location.formattedAddress,
@@ -72,6 +77,20 @@ export function CheckoutFulfillmentFields({
       provinceOrState: location.province || current.provinceOrState,
       postalCode: location.postalCode || current.postalCode,
       countryCode: location.countryCode || current.countryCode,
+    }));
+    if (nextPin) {
+      setPin(nextPin);
+      setPinConfirmed(true);
+    }
+  }
+
+  function applyTelegramPin(next: LatLng) {
+    setPin(next);
+    setPinConfirmed(false);
+    setNewAddress((current) => ({
+      ...current,
+      addressLine: current.addressLine.trim() ? current.addressLine : "Pinned delivery location",
+      cityOrArea: current.cityOrArea.trim() ? current.cityOrArea : "Phnom Penh",
     }));
   }
 
@@ -167,7 +186,7 @@ export function CheckoutFulfillmentFields({
             <>
               <div>
                 <FieldLabel htmlFor="addressLine" required>
-                  Delivery address
+                  Delivery location
                 </FieldLabel>
                 <LocationAutocomplete
                   id="addressLine"
@@ -183,9 +202,25 @@ export function CheckoutFulfillmentFields({
                   required={addressMode === "new" || !hasSaved}
                   aria-required={addressMode === "new" || !hasSaved}
                   className={fieldClass}
-                  placeholder="Start typing your address…"
+                  placeholder="Search address/location…"
                 />
               </div>
+              <DeliveryLocationPicker
+                latitude={pin?.latitude ?? null}
+                longitude={pin?.longitude ?? null}
+                confirmed={pinConfirmed}
+                onDraftChange={applyTelegramPin}
+                onConfirm={(next) => {
+                  setPin(next);
+                  setPinConfirmed(true);
+                }}
+              />
+              {pinConfirmed && pin ? (
+                <>
+                  <input type="hidden" name="deliveryLatitude" value={String(pin.latitude)} />
+                  <input type="hidden" name="deliveryLongitude" value={String(pin.longitude)} />
+                </>
+              ) : null}
               <div>
                 <FieldLabel htmlFor="addressLine2">
                   Address line 2{" "}

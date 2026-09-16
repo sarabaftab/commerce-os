@@ -23,6 +23,8 @@ export type CustomerAddressDto = {
   deliveryInstructions: string | null;
   isDefault: boolean;
   isActive: boolean;
+  latitude: number | null;
+  longitude: number | null;
   formattedShort: string;
 };
 

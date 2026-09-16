@@ -1,4 +1,5 @@
 import type { AdminOrderDetail } from "@/modules/orders";
+import { openStreetMapPinUrl, parseOptionalLatLng } from "@/modules/locations/coordinates";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/components/ui/card";
 
 type OrderFulfillmentPanelProps = {
@@ -6,6 +7,8 @@ type OrderFulfillmentPanelProps = {
 };
 
 export function OrderFulfillmentPanel({ order }: OrderFulfillmentPanelProps) {
+  const pin = parseOptionalLatLng(order.deliveryLatitude, order.deliveryLongitude);
+
   return (
     <Card>
       <CardHeader>
@@ -19,6 +22,18 @@ export function OrderFulfillmentPanel({ order }: OrderFulfillmentPanelProps) {
             <p className="text-muted-foreground">{order.cityOrArea}</p>
             {order.deliveryInstructions ? (
               <p className="text-muted-foreground">{order.deliveryInstructions}</p>
+            ) : null}
+            {pin ? (
+              <p className="pt-2">
+                <a
+                  href={openStreetMapPinUrl(pin)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-medium text-[color:var(--admin-ink)] underline decoration-[color:var(--admin-primary)] underline-offset-4"
+                >
+                  View Delivery Location
+                </a>
+              </p>
             ) : null}
           </>
         ) : (

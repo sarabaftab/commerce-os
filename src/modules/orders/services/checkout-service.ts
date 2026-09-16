@@ -10,6 +10,7 @@ import {
   updateCustomerContact,
   upsertCustomerByPhone,
 } from "@/modules/customers/repositories/customer-repository";
+import { parseOptionalLatLng } from "@/modules/locations/coordinates";
 import { assertCheckoutOptions, getCheckoutSettings } from "@/modules/settings";
 import { notifyOrderPlacedAfterCommit } from "@/modules/notifications/services/notification-service";
 import {
@@ -65,6 +66,8 @@ type DeliverySnapshot = {
   addressLabel?: string;
   sourceAddressId?: string;
   deliveryInstructions?: string;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 function computeLineItems(cart: CheckoutCartWithItems) {
@@ -120,6 +123,7 @@ async function resolveDeliverySnapshot(
       context.cartIdentity.customerId,
       input.savedAddressId,
     );
+    const savedPin = parseOptionalLatLng(address.latitude, address.longitude);
     return {
       addressLine: address.addressLine1,
       addressLine2: address.addressLine2 ?? undefined,
@@ -133,6 +137,8 @@ async function resolveDeliverySnapshot(
       addressLabel: address.label,
       sourceAddressId: address.id,
       deliveryInstructions: address.deliveryInstructions ?? undefined,
+      latitude: savedPin?.latitude ?? null,
+      longitude: savedPin?.longitude ?? null,
     };
   }
 
@@ -140,6 +146,7 @@ async function resolveDeliverySnapshot(
     throw new AppError("VALIDATION", "Address is required for delivery");
   }
 
+  const pin = parseOptionalLatLng(input.deliveryLatitude, input.deliveryLongitude);
   const snapshot: DeliverySnapshot = {
     addressLine: input.addressLine,
     addressLine2: input.addressLine2,
@@ -152,6 +159,8 @@ async function resolveDeliverySnapshot(
     recipientPhone: input.phone,
     addressLabel: input.addressLabel,
     deliveryInstructions: input.deliveryInstructions,
+    latitude: pin?.latitude ?? null,
+    longitude: pin?.longitude ?? null,
   };
 
   if (input.saveAddress && context.cartIdentity.customerId) {
@@ -174,6 +183,8 @@ async function resolveDeliverySnapshot(
         countryCode: input.countryCode ?? "KH",
         deliveryInstructions: input.deliveryInstructions,
         isDefault: Boolean(input.setAddressAsDefault),
+        latitude: pin?.latitude ?? null,
+        longitude: pin?.longitude ?? null,
       },
     );
     snapshot.sourceAddressId = saved.id;
@@ -363,6 +374,8 @@ export async function placeGuestOrder(
           addressLabel: delivery?.addressLabel,
           sourceAddressId: delivery?.sourceAddressId,
           deliveryInstructions: delivery?.deliveryInstructions,
+          deliveryLatitude: delivery?.latitude ?? undefined,
+          deliveryLongitude: delivery?.longitude ?? undefined,
           pickupLocationKey: input.fulfillmentMethod === "pickup" ? pickup?.id : undefined,
           pickupLocationName: input.fulfillmentMethod === "pickup" ? pickup?.name : undefined,
           pickupLocationAddress:

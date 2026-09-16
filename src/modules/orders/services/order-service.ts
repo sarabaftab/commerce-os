@@ -48,6 +48,8 @@ export type CreateOrderCommand = {
   addressLabel?: string;
   sourceAddressId?: string;
   deliveryInstructions?: string;
+  deliveryLatitude?: number | null;
+  deliveryLongitude?: number | null;
   pickupLocationKey?: string;
   pickupLocationName?: string;
   pickupLocationAddress?: string;
@@ -159,6 +161,8 @@ export async function createOrderInTransaction(
     addressLabel: command.addressLabel,
     sourceAddressId: command.sourceAddressId,
     deliveryInstructions: command.deliveryInstructions,
+    deliveryLatitude: command.deliveryLatitude,
+    deliveryLongitude: command.deliveryLongitude,
     pickupLocationKey: command.pickupLocationKey,
     pickupLocationName: command.pickupLocationName,
     pickupLocationAddress: command.pickupLocationAddress,

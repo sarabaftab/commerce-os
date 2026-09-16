@@ -247,6 +247,9 @@ model CustomerAddress {
   postalCode           String?  @map("postal_code")
   countryCode          String   @default("KH") @map("country_code") @db.Char(2)
   deliveryInstructions String?  @map("delivery_instructions")
+  /** Confirmed delivery pin; optional so existing text-only addresses remain valid. */
+  latitude             Float?
+  longitude            Float?
   isDefault            Boolean  @default(false) @map("is_default")
   isActive             Boolean  @default(true) @map("is_active")
   createdAt            DateTime @default(now()) @map("created_at")
@@ -316,6 +319,9 @@ model Order {
   addressLabel              String?           @map("address_label")
   sourceAddressId           String?           @map("source_address_id")
   deliveryInstructions      String?           @map("delivery_instructions")
+  /** Snapshot of confirmed delivery pin at order time — never recalculated from saved addresses. */
+  deliveryLatitude          Float?            @map("delivery_latitude")
+  deliveryLongitude         Float?            @map("delivery_longitude")
   pickupLocationKey         String?           @map("pickup_location_key")
   pickupLocationName        String?           @map("pickup_location_name")
   pickupLocationAddress     String?           @map("pickup_location_address")

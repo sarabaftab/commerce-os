@@ -150,6 +150,8 @@ export type CreateOrderRecordInput = {
   addressLabel?: string;
   sourceAddressId?: string;
   deliveryInstructions?: string;
+  deliveryLatitude?: number | null;
+  deliveryLongitude?: number | null;
   pickupLocationKey?: string;
   pickupLocationName?: string;
   pickupLocationAddress?: string;
@@ -203,6 +205,8 @@ export async function createOrderRecordInTransaction(
       addressLabel: input.addressLabel ?? null,
       sourceAddressId: input.sourceAddressId ?? null,
       deliveryInstructions: input.deliveryInstructions ?? null,
+      deliveryLatitude: input.deliveryLatitude ?? null,
+      deliveryLongitude: input.deliveryLongitude ?? null,
       pickupLocationKey: input.pickupLocationKey ?? null,
       pickupLocationName: input.pickupLocationName ?? null,
       pickupLocationAddress: input.pickupLocationAddress ?? null,
