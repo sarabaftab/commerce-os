@@ -10,6 +10,7 @@ export {
 export { localizedContent, localizedValue } from "./localized";
 export {
   buildLocaleCookieHeader,
+  LOCALE_STORAGE_KEY,
   readLocaleFromCookieHeader,
   readLocaleFromDocumentCookie,
   writeLocaleDocumentCookie,

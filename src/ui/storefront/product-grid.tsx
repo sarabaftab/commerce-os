@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import type { ProductWithRelations } from "@/modules/catalog";
 import type { StorefrontCampaignDisplay } from "@/modules/promotions";
 
@@ -6,7 +8,7 @@ import { ProductCard } from "./product-card";
 type ProductGridProps = {
   products: ProductWithRelations[];
   basePath: string;
-  emptyMessage?: string;
+  emptyMessage?: ReactNode;
   campaign?: StorefrontCampaignDisplay | null;
 };
 

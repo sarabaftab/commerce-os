@@ -1,3 +1,5 @@
+"use client";
+
 import type { SellingUnit } from "@prisma/client";
 
 import { formatUnitPriceLabel } from "@/modules/catalog/selling-unit";
@@ -5,6 +7,7 @@ import {
   computeUnitSalePriceMinor,
   type StorefrontCampaignDisplay,
 } from "@/modules/promotions/discount";
+import { useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
 import { cn } from "@/ui/lib/utils";
 
@@ -84,11 +87,12 @@ type SaleBadgeProps = {
 
 /** Corner badge when any active campaign is running. */
 export function PromotionSaleBadge({ campaign, className }: SaleBadgeProps) {
+  const { t } = useLocale();
   if (!campaign) {
     return null;
   }
   const label =
-    campaign.type === "percentage" ? `−${campaign.value}%` : "Sale";
+    campaign.type === "percentage" ? `−${campaign.value}%` : t("sale");
   return (
     <span
       className={cn(
