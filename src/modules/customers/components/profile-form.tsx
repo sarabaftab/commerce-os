@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { useLocale } from "@/shared/i18n";
 import { FieldLabel } from "@/ui/components/field-label";
 import { ProductImage } from "@/ui/storefront/product-image";
 
@@ -22,6 +23,7 @@ type ProfileFormProps = {
 };
 
 export function ProfileForm({ tenantSlug, profile }: ProfileFormProps) {
+  const { t } = useLocale();
   const [state, formAction, pending] = useActionState(
     updateProfileAction.bind(null, tenantSlug),
     initialState,
@@ -54,7 +56,7 @@ export function ProfileForm({ tenantSlug, profile }: ProfileFormProps) {
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <FieldLabel htmlFor="firstName" required>
-            First name
+            {t("firstName")}
           </FieldLabel>
           <input
             id="firstName"
@@ -74,7 +76,7 @@ export function ProfileForm({ tenantSlug, profile }: ProfileFormProps) {
         </div>
         <div>
           <FieldLabel htmlFor="lastName" required>
-            Last name
+            {t("lastName")}
           </FieldLabel>
           <input
             id="lastName"
@@ -92,10 +94,7 @@ export function ProfileForm({ tenantSlug, profile }: ProfileFormProps) {
       </div>
 
       <div>
-        <FieldLabel htmlFor="displayName">
-          Display name{" "}
-          <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-        </FieldLabel>
+<FieldLabel htmlFor="displayName">{t("displayNameOptional")}</FieldLabel>
         <input
           id="displayName"
           name="displayName"
@@ -106,7 +105,7 @@ export function ProfileForm({ tenantSlug, profile }: ProfileFormProps) {
 
       <div>
         <FieldLabel htmlFor="phone" required>
-          Phone
+          {t("phone")}
         </FieldLabel>
         <input
           id="phone"
@@ -124,10 +123,7 @@ export function ProfileForm({ tenantSlug, profile }: ProfileFormProps) {
       </div>
 
       <div>
-        <FieldLabel htmlFor="email">
-          Email{" "}
-          <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-        </FieldLabel>
+        <FieldLabel htmlFor="email">{t("emailOptional")}</FieldLabel>
         <input
           id="email"
           name="email"
@@ -146,7 +142,7 @@ export function ProfileForm({ tenantSlug, profile }: ProfileFormProps) {
         disabled={pending}
         className="h-11 w-full rounded-xl bg-[color:var(--shop-primary)] text-sm font-semibold text-[color:var(--shop-on-primary)] disabled:opacity-60"
       >
-        {pending ? "Saving…" : "Save profile"}
+        {pending ? t("saving") : t("saveProfile")}
       </button>
     </form>
   );

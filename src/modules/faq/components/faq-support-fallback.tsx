@@ -5,6 +5,7 @@ import {
   openTelegramHttpsLink,
   telegramSupportChatUrl,
 } from "@/channels/telegram/support-link";
+import { useLocale } from "@/shared/i18n";
 import { shop } from "@/ui/storefront/shop-classes";
 
 type FaqSupportFallbackProps = {
@@ -13,6 +14,7 @@ type FaqSupportFallbackProps = {
 
 export function FaqSupportFallback({ telegramSupportUsername }: FaqSupportFallbackProps) {
   const haptic = useTelegramHaptics();
+  const { t } = useLocale();
   const url = telegramSupportChatUrl(telegramSupportUsername);
   if (!url) {
     return null;
@@ -20,9 +22,9 @@ export function FaqSupportFallback({ telegramSupportUsername }: FaqSupportFallba
 
   return (
     <section className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-      <h2 className="text-sm font-semibold text-[color:var(--shop-ink)]">Still need help?</h2>
+      <h2 className="text-sm font-semibold text-[color:var(--shop-ink)]">{t("stillNeedHelp")}</h2>
       <p className="mt-1 text-sm leading-relaxed text-[color:var(--shop-ink-muted)]">
-        Can&apos;t find the answer you&apos;re looking for? Chat with our team on Telegram.
+        {t("stillNeedHelpBody")}
       </p>
       <a
         href={url}
@@ -34,7 +36,7 @@ export function FaqSupportFallback({ telegramSupportUsername }: FaqSupportFallba
           openTelegramHttpsLink(url);
         }}
       >
-        Contact Our Team
+        {t("contactOurTeam")}
       </a>
     </section>
   );

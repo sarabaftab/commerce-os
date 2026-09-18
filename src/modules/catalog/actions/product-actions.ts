@@ -23,8 +23,10 @@ export type ActionState = {
 function formDataToObject(formData: FormData) {
   return {
     name: String(formData.get("name") ?? ""),
+    nameKm: String(formData.get("nameKm") ?? ""),
     slug: String(formData.get("slug") ?? ""),
     description: String(formData.get("description") ?? ""),
+    descriptionKm: String(formData.get("descriptionKm") ?? ""),
     brand: String(formData.get("brand") ?? ""),
     volume: String(formData.get("volume") ?? ""),
     sellingUnit: String(formData.get("sellingUnit") ?? "item"),

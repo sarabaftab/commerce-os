@@ -5,6 +5,8 @@ import {
 import { getActiveStorefrontCampaign } from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { isAppError } from "@/shared/errors/app-error";
+import { getRequestLocale } from "@/shared/i18n/get-request-locale";
+import { localizedValue, t } from "@/shared/i18n";
 import { createTimer } from "@/shared/observability/timing";
 import { CategoryChips } from "@/ui/storefront/category-chips";
 import { ProductGrid } from "@/ui/storefront/product-grid";
@@ -25,6 +27,7 @@ export default async function StorefrontProductsPage({
   const timer = createTimer("page.storefront.products");
   const { tenantSlug } = await params;
   const { category: categorySlug } = await searchParams;
+  const locale = await getRequestLocale();
   const { tenant, basePath } = await resolveStorefrontTenant(tenantSlug);
   timer.mark("tenantMs");
 
@@ -52,17 +55,24 @@ export default async function StorefrontProductsPage({
     productCount: products.length,
   });
 
-  const activeCategoryName =
-    categories.find((category) => category.slug === categorySlug)?.name ?? null;
+  const activeCategory = categories.find((category) => category.slug === categorySlug);
+  const activeCategoryName = activeCategory
+    ? localizedValue({
+        locale,
+        en: activeCategory.name,
+        km: activeCategory.nameKm,
+      })
+    : null;
 
   return (
     <div className="space-y-6 pt-5">
       <div>
         <h1 className="font-[family-name:var(--font-shop-display)] text-3xl tracking-tight">
-          {activeCategoryName ?? "All products"}
+          {activeCategoryName ?? t(locale, "allProducts")}
         </h1>
         <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
-          {products.length} {products.length === 1 ? "item" : "items"}
+          {products.length}{" "}
+          {products.length === 1 ? t(locale, "itemCount") : t(locale, "itemsCount")}
         </p>
       </div>
 

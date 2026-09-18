@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 
+import { CUSTOMER_ORDER_STATUS_MESSAGE_KEYS } from "@/modules/customers/types";
+import { useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
 import { ProductImage } from "@/ui/storefront/product-image";
 
@@ -12,18 +16,19 @@ type OrderListProps = {
 };
 
 const FILTERS = [
-  { key: "all", label: "All" },
-  { key: "active", label: "Active" },
-  { key: "completed", label: "Completed" },
-  { key: "cancelled", label: "Cancelled" },
-] as const;
+  { key: "all", labelKey: "all" as const },
+  { key: "active", labelKey: "filterActive" as const },
+  { key: "completed", labelKey: "filterCompleted" as const },
+  { key: "cancelled", labelKey: "filterCancelled" as const },
+];
 
 export function CustomerOrderList({ tenantSlug, result, filter }: OrderListProps) {
+  const { t } = useLocale();
   const base = `/${tenantSlug}/account/orders`;
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-1" role="tablist" aria-label="Order filters">
+      <div className="flex flex-wrap gap-1" role="tablist" aria-label={t("myOrders")}>
         {FILTERS.map((f) => (
           <Link
             key={f.key}
@@ -34,14 +39,14 @@ export function CustomerOrderList({ tenantSlug, result, filter }: OrderListProps
                 : "rounded-full px-3 py-1.5 text-xs text-[color:var(--shop-ink-muted)] ring-1 ring-[color:var(--shop-line)]"
             }
           >
-            {f.label}
+            {t(f.labelKey)}
           </Link>
         ))}
       </div>
 
       {result.items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[color:var(--shop-line)] bg-[color:var(--shop-surface)]/50 px-4 py-12 text-center text-sm text-[color:var(--shop-ink-muted)]">
-          No orders yet.
+          {t("noOrdersYet")}
         </div>
       ) : (
         <ul className="space-y-3">
@@ -54,7 +59,7 @@ export function CustomerOrderList({ tenantSlug, result, filter }: OrderListProps
       {result.totalPages > 1 ? (
         <div className="flex items-center justify-between text-sm">
           <span className="text-[color:var(--shop-ink-muted)]">
-            Page {result.page} of {result.totalPages}
+            {result.page} / {result.totalPages}
           </span>
           <div className="flex gap-2">
             {result.page > 1 ? (
@@ -62,7 +67,7 @@ export function CustomerOrderList({ tenantSlug, result, filter }: OrderListProps
                 href={`${base}?filter=${filter}&page=${result.page - 1}`}
                 className="rounded-full px-3 py-1.5 ring-1 ring-[color:var(--shop-line)]"
               >
-                Previous
+                {t("previous")}
               </Link>
             ) : null}
             {result.page < result.totalPages ? (
@@ -70,7 +75,7 @@ export function CustomerOrderList({ tenantSlug, result, filter }: OrderListProps
                 href={`${base}?filter=${filter}&page=${result.page + 1}`}
                 className="rounded-full px-3 py-1.5 ring-1 ring-[color:var(--shop-line)]"
               >
-                Next
+                {t("next")}
               </Link>
             ) : null}
           </div>
@@ -87,6 +92,10 @@ function OrderCard({
   tenantSlug: string;
   order: CustomerOrderListItemDto;
 }) {
+  const { t } = useLocale();
+  const statusKey = CUSTOMER_ORDER_STATUS_MESSAGE_KEYS[order.status];
+  const statusLabel = statusKey ? t(statusKey) : order.statusLabel;
+
   return (
     <li className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
       <div className="flex gap-3">
@@ -101,7 +110,7 @@ function OrderCard({
           </div>
         ) : (
           <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[color:var(--shop-line)]/40 text-xs text-[color:var(--shop-ink-muted)]">
-            Order
+            {t("orderNumber")}
           </div>
         )}
         <div className="min-w-0 flex-1">
@@ -113,11 +122,12 @@ function OrderCard({
               </p>
             </div>
             <span className="rounded-full bg-black/5 px-2 py-0.5 text-[11px] font-medium">
-              {order.statusLabel}
+              {statusLabel}
             </span>
           </div>
           <p className="mt-1 truncate text-sm text-[color:var(--shop-ink-muted)]">
-            {order.itemSummary || `${order.itemCount} items`}
+            {order.itemSummary ||
+              `${order.itemCount} ${order.itemCount === 1 ? t("itemCount") : t("itemsCount")}`}
           </p>
           <div className="mt-2 flex items-center justify-between">
             <p className="text-sm font-semibold">
@@ -127,7 +137,7 @@ function OrderCard({
               href={`/${tenantSlug}/account/orders/${order.orderNumber}`}
               className="text-sm font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
             >
-              View order
+              {t("viewOrder")}
             </Link>
           </div>
         </div>

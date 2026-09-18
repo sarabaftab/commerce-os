@@ -3,6 +3,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 
+import { useLocale } from "@/shared/i18n";
+
 import type { LocationSearchResult } from "../types";
 
 type LocationAutocompleteProps = {
@@ -30,6 +32,7 @@ export function LocationAutocomplete({
   required,
   "aria-required": ariaRequired,
 }: LocationAutocompleteProps) {
+  const { t } = useLocale();
   const listboxId = useId();
   const [results, setResults] = useState<LocationSearchResult[]>([]);
   const [searchState, setSearchState] = useState<SearchState>("idle");
@@ -165,17 +168,16 @@ export function LocationAutocomplete({
         >
           {searchState === "loading" ? (
             <p className="px-3 py-3 text-sm text-[color:var(--shop-ink-muted)]" aria-live="polite">
-              Loading address suggestions…
+              {t("loadingSuggestions")}
             </p>
           ) : null}
           {searchState === "error" ? (
             <p className="px-3 py-3 text-sm text-[color:var(--shop-ink-muted)]" aria-live="polite">
-              Couldn&apos;t load address suggestions. You can continue entering the address
-              manually.
+              {t("suggestionsFailed")}
             </p>
           ) : null}
           {searchState === "success" && results.length === 0 ? (
-            <p className="px-3 py-3 text-sm text-[color:var(--shop-ink-muted)]">No results found.</p>
+            <p className="px-3 py-3 text-sm text-[color:var(--shop-ink-muted)]">{t("noResults")}</p>
           ) : null}
           {results.map((result, index) => (
             <button

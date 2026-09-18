@@ -6,6 +6,7 @@ import { DeliveryLocationPicker } from "@/modules/locations/components/delivery-
 import { LocationAutocomplete } from "@/modules/locations/components/location-autocomplete";
 import { parseOptionalLatLng, type LatLng } from "@/modules/locations/coordinates";
 import type { LocationSearchResult } from "@/modules/locations/types";
+import { useLocale } from "@/shared/i18n";
 import { FieldLabel } from "@/ui/components/field-label";
 
 type SavedAddress = {
@@ -43,6 +44,7 @@ export function CheckoutFulfillmentFields({
   defaultAddressId = null,
   isAuthenticated = false,
 }: CheckoutFulfillmentFieldsProps) {
+  const { t } = useLocale();
   const methods = [
     ...(deliveryEnabled ? (["delivery"] as const) : []),
     ...(pickupEnabled ? (["pickup"] as const) : []),
@@ -96,7 +98,7 @@ export function CheckoutFulfillmentFields({
 
   return (
     <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-      <h2 className="text-sm font-semibold">Fulfillment</h2>
+      <h2 className="text-sm font-semibold">{t("fulfillmentMethod")}</h2>
 
       {methods.length > 1 ? (
         <div className="grid grid-cols-2 gap-2">
@@ -117,7 +119,7 @@ export function CheckoutFulfillmentFields({
                 onChange={() => onFulfillmentMethodChange(method)}
                 className="sr-only"
               />
-              {method}
+              {method === "delivery" ? t("delivery") : t("pickup")}
             </label>
           ))}
         </div>
@@ -142,7 +144,7 @@ export function CheckoutFulfillmentFields({
                 }`}
                 onClick={() => setAddressMode("saved")}
               >
-                Saved address
+                {t("savedAddress")}
               </button>
               <button
                 type="button"
@@ -153,7 +155,7 @@ export function CheckoutFulfillmentFields({
                 }`}
                 onClick={() => setAddressMode("new")}
               >
-                New address
+                {t("newAddress")}
               </button>
             </div>
           ) : null}
@@ -163,7 +165,7 @@ export function CheckoutFulfillmentFields({
           {hasSaved && addressMode === "saved" ? (
             <div className="space-y-2">
               <FieldLabel htmlFor="savedAddressId" required>
-                Choose address
+                {t("chooseAddress")}
               </FieldLabel>
               <select
                 id="savedAddressId"
@@ -177,7 +179,7 @@ export function CheckoutFulfillmentFields({
                 {savedAddresses.map((address) => (
                   <option key={address.id} value={address.id}>
                     {address.label}
-                    {address.isDefault ? " (Default)" : ""} — {address.formattedShort}
+                    {address.isDefault ? ` ${t("defaultSuffix")}` : ""} — {address.formattedShort}
                   </option>
                 ))}
               </select>
@@ -186,7 +188,7 @@ export function CheckoutFulfillmentFields({
             <>
               <div>
                 <FieldLabel htmlFor="addressLine" required>
-                  Delivery location
+                  {t("deliveryLocation")}
                 </FieldLabel>
                 <LocationAutocomplete
                   id="addressLine"
@@ -202,7 +204,7 @@ export function CheckoutFulfillmentFields({
                   required={addressMode === "new" || !hasSaved}
                   aria-required={addressMode === "new" || !hasSaved}
                   className={fieldClass}
-                  placeholder="Search address/location…"
+                  placeholder={t("locationSearchPlaceholder")}
                 />
               </div>
               <DeliveryLocationPicker
@@ -222,10 +224,7 @@ export function CheckoutFulfillmentFields({
                 </>
               ) : null}
               <div>
-                <FieldLabel htmlFor="addressLine2">
-                  Address line 2{" "}
-                  <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-                </FieldLabel>
+<FieldLabel htmlFor="addressLine2">{t("addressLine2Optional")}</FieldLabel>
                 <input
                   id="addressLine2"
                   name="addressLine2"
@@ -241,7 +240,7 @@ export function CheckoutFulfillmentFields({
               </div>
               <div>
                 <FieldLabel htmlFor="cityOrArea" required>
-                  City or area
+                  {t("cityOrArea")}
                 </FieldLabel>
                 <input
                   id="cityOrArea"
@@ -260,10 +259,7 @@ export function CheckoutFulfillmentFields({
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="provinceOrState">
-                  Province / state{" "}
-                  <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-                </FieldLabel>
+<FieldLabel htmlFor="provinceOrState">{t("provinceOptional")}</FieldLabel>
                 <input
                   id="provinceOrState"
                   name="provinceOrState"
@@ -278,10 +274,7 @@ export function CheckoutFulfillmentFields({
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="deliveryInstructions">
-                  Delivery instructions{" "}
-                  <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-                </FieldLabel>
+<FieldLabel htmlFor="deliveryInstructions">{t("deliveryInstructions")}</FieldLabel>
                 <textarea
                   id="deliveryInstructions"
                   name="deliveryInstructions"
@@ -294,11 +287,11 @@ export function CheckoutFulfillmentFields({
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="saveAddress" value="true" />
-                    Save this address for next time
+                    {t("saveAddressNextTime")}
                   </label>
                   <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="setAddressAsDefault" value="true" />
-                    Set as default
+                    {t("setAsDefault")}
                   </label>
                   <input type="hidden" name="addressLabel" value="Home" />
                 </div>
@@ -313,7 +306,7 @@ export function CheckoutFulfillmentFields({
       {fulfillmentMethod === "pickup" && pickupEnabled ? (
         <div>
           <FieldLabel htmlFor="pickupLocationKey" required>
-            Pickup location
+            {t("pickupLocation")}
           </FieldLabel>
           <select
             id="pickupLocationKey"

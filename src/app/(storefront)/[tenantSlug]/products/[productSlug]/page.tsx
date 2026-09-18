@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getStorefrontProductBySlug } from "@/modules/catalog";
@@ -9,6 +8,11 @@ import { resolveStorefrontTenant } from "@/modules/storefront";
 import { isAppError } from "@/shared/errors/app-error";
 import { createTimer } from "@/shared/observability/timing";
 import { ProductImage } from "@/ui/storefront/product-image";
+import {
+  LocalizedPlaceholderLabel,
+  ProductDetailBackLink,
+  ProductDetailCopy,
+} from "@/ui/storefront/product-detail-copy";
 import {
   PromotionSaleBadge,
   PromotionalPrice,
@@ -50,12 +54,9 @@ export default async function StorefrontProductDetailPage({
 
   return (
     <div className="space-y-5 pt-4">
-      <Link
+      <ProductDetailBackLink
         href={`${basePath}/products${product.category ? `?category=${product.category.slug}` : ""}`}
-        className="inline-flex text-sm font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
-      >
-        ← Back to shop
-      </Link>
+      />
 
       <div className="overflow-hidden rounded-[1.75rem] bg-[color:var(--shop-surface-elevated)] ring-1 ring-[color:var(--shop-line)] md:grid md:grid-cols-2 md:items-stretch">
         <div className="relative aspect-[5/4] bg-[color:var(--shop-surface)] md:aspect-auto md:min-h-[22rem]">
@@ -70,25 +71,26 @@ export default async function StorefrontProductDetailPage({
             </div>
           ) : (
             <div className="flex h-full min-h-[16rem] w-full items-end bg-[radial-gradient(circle_at_30%_20%,#fae588,transparent_55%),linear-gradient(160deg,#fffdf4,#fff1b9)] p-6">
-              <span className="text-sm text-[color:var(--shop-ink-muted)]">
-                {product.category?.name ?? tenant.name}
-              </span>
+              <LocalizedPlaceholderLabel
+                categoryName={product.category?.name}
+                categoryNameKm={product.category?.nameKm}
+                fallback={tenant.name}
+              />
             </div>
           )}
           {product.isAvailable ? <PromotionSaleBadge campaign={campaign} /> : null}
         </div>
 
         <div className="space-y-4 p-5 md:flex md:flex-col md:justify-center">
-          {product.category ? (
-            <p className="text-[11px] font-medium tracking-[0.16em] text-[color:var(--shop-ink-muted)] uppercase">
-              {product.category.name}
-            </p>
-          ) : null}
-
-          <div className="space-y-2">
-            <h1 className="font-[family-name:var(--font-shop-display)] text-3xl leading-tight tracking-tight break-words">
-              {product.name}
-            </h1>
+          <ProductDetailCopy
+            name={product.name}
+            nameKm={product.nameKm}
+            description={product.description}
+            descriptionKm={product.descriptionKm}
+            categoryName={product.category?.name}
+            categoryNameKm={product.category?.nameKm}
+            stockNote={product.stockNote}
+          >
             <PromotionalPrice
               priceMinor={product.priceMinor}
               currency={product.currency}
@@ -101,19 +103,7 @@ export default async function StorefrontProductDetailPage({
                 {formatPackSizeLine(product.volume, product.sellingUnit)}
               </p>
             ) : null}
-          </div>
-
-          {product.description ? (
-            <p className="text-sm leading-relaxed break-words text-[color:var(--shop-ink-muted)]">
-              {product.description}
-            </p>
-          ) : null}
-
-          {product.stockNote ? (
-            <p className="rounded-xl bg-[color:var(--shop-surface)] px-3 py-2 text-sm text-[color:var(--shop-ink)]">
-              {product.stockNote}
-            </p>
-          ) : null}
+          </ProductDetailCopy>
         </div>
       </div>
 

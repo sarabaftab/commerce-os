@@ -101,7 +101,9 @@ describe("selectPublicFaqs", () => {
     expect(publicFaqs[0]).toEqual({
       id: "a",
       question: "Visible",
+      questionKm: null,
       answer: "Use the shop and checkout.",
+      answerKm: null,
     });
   });
 

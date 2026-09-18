@@ -10,6 +10,8 @@ import { CheckoutForm } from "@/modules/orders/components/checkout-form";
 import { getCheckoutPreview } from "@/modules/orders";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { readGuestTokenFromCookies } from "@/shared/cart/cart-cookie";
+import { getRequestLocale } from "@/shared/i18n/get-request-locale";
+import { t } from "@/shared/i18n";
 import { createTimer } from "@/shared/observability/timing";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +23,7 @@ type CheckoutPageProps = {
 export default async function StorefrontCheckoutPage({ params }: CheckoutPageProps) {
   const timer = createTimer("page.storefront.checkout");
   const { tenantSlug } = await params;
+  const locale = await getRequestLocale();
   const { tenant, basePath } = await resolveStorefrontTenant(tenantSlug);
   timer.mark("tenantMs");
   const [guestToken, session, referralCode] = await Promise.all([
@@ -77,13 +80,14 @@ export default async function StorefrontCheckoutPage({ params }: CheckoutPagePro
           href={`${basePath}/cart`}
           className="inline-flex text-sm font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
         >
-          ← Back to cart
+          {t(locale, "backToCart")}
         </Link>
         <h1 className="mt-3 font-[family-name:var(--font-shop-display)] text-3xl tracking-tight">
-          Checkout
+          {t(locale, "checkout")}
         </h1>
         <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
-          {preview.cart.itemCount} {preview.cart.itemCount === 1 ? "item" : "items"}
+          {preview.cart.itemCount}{" "}
+          {preview.cart.itemCount === 1 ? t(locale, "itemCount") : t(locale, "itemsCount")}
         </p>
       </div>
 

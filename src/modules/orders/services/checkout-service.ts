@@ -389,6 +389,7 @@ export async function placeGuestOrder(
           promotionId: campaign?.promotionId,
           promotionNameSnapshot: campaign?.promotionName,
           referralCode: context.referralCode ?? undefined,
+          customerLocale: input.customerLocale ?? null,
           items: availableLines.map((line) => ({
             productId: line.productId,
             nameSnapshot: line.name,

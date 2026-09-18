@@ -4,7 +4,7 @@ import { formatUnitPriceLabel } from "@/modules/catalog/selling-unit";
 import {
   computeUnitSalePriceMinor,
   type StorefrontCampaignDisplay,
-} from "@/modules/promotions";
+} from "@/modules/promotions/discount";
 import { formatMoney } from "@/shared/money/money";
 import { cn } from "@/ui/lib/utils";
 

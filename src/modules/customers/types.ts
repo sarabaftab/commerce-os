@@ -124,6 +124,26 @@ export function customerOrderStatusLabel(status: string): string {
   return CUSTOMER_ORDER_STATUS_LABELS[status] ?? status;
 }
 
+/** Message keys for customer-facing order status (EN UI keys; use with t()). */
+export const CUSTOMER_ORDER_STATUS_MESSAGE_KEYS: Record<
+  string,
+  | "statusPending"
+  | "statusConfirmed"
+  | "statusProcessing"
+  | "statusReadyForPickup"
+  | "statusOutForDelivery"
+  | "statusCompleted"
+  | "statusCancelled"
+> = {
+  pending: "statusPending",
+  confirmed: "statusConfirmed",
+  processing: "statusProcessing",
+  ready_for_pickup: "statusReadyForPickup",
+  out_for_delivery: "statusOutForDelivery",
+  completed: "statusCompleted",
+  cancelled: "statusCancelled",
+};
+
 export function formatAddressShort(input: {
   addressLine1: string;
   cityOrDistrict: string;

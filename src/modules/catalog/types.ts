@@ -8,8 +8,10 @@ export type ProductWithRelations = Product & {
 export type CreateProductInput = {
   tenantId: string;
   name: string;
+  nameKm?: string | null;
   slug: string;
   description?: string | null;
+  descriptionKm?: string | null;
   brand?: string | null;
   volume?: string | null;
   sellingUnit?: SellingUnit;
@@ -26,8 +28,10 @@ export type UpdateProductInput = {
   tenantId: string;
   productId: string;
   name: string;
+  nameKm?: string | null;
   slug: string;
   description?: string | null;
+  descriptionKm?: string | null;
   brand?: string | null;
   volume?: string | null;
   sellingUnit?: SellingUnit;

@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/shared/i18n";
+
 import { AbaPaymentDetails } from "./aba-payment-details";
 import { FieldLabel } from "@/ui/components/field-label";
 
@@ -31,6 +33,7 @@ export function CheckoutPaymentFields({
   abaCustomerNote,
   amountLabel,
 }: CheckoutPaymentFieldsProps) {
+  const { t } = useLocale();
   const methods = [
     ...(codEnabled ? (["cod"] as const) : []),
     ...(abaAvailable ? (["aba_transfer"] as const) : []),
@@ -38,7 +41,7 @@ export function CheckoutPaymentFields({
 
   return (
     <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-      <h2 className="text-sm font-semibold">Payment</h2>
+      <h2 className="text-sm font-semibold">{t("payment")}</h2>
 
       {methods.length > 1 ? (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -58,9 +61,9 @@ export function CheckoutPaymentFields({
                 onChange={() => onPaymentMethodChange("cod")}
                 className="sr-only"
               />
-              <span className="font-medium">Cash on Delivery</span>
+<span className="font-medium">{t("cashOnDelivery")}</span>
               <span className="mt-1 text-xs text-[color:var(--shop-ink-muted)]">
-                Pay when your order arrives
+                {t("cashOnDeliveryHint")}
               </span>
             </label>
           ) : null}
@@ -81,9 +84,9 @@ export function CheckoutPaymentFields({
                 onChange={() => onPaymentMethodChange("aba_transfer")}
                 className="sr-only"
               />
-              <span className="font-medium">ABA Transfer</span>
+<span className="font-medium">{t("abaTransferShort")}</span>
               <span className="mt-1 text-xs text-[color:var(--shop-ink-muted)]">
-                Bank transfer before fulfillment
+                {t("abaTransferHint")}
               </span>
             </label>
           ) : null}
@@ -105,15 +108,12 @@ export function CheckoutPaymentFields({
             showCheckoutSteps
           />
           <div>
-            <FieldLabel htmlFor="paymentReference">
-              Payment reference{" "}
-              <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-            </FieldLabel>
+<FieldLabel htmlFor="paymentReference">{t("paymentReferenceOptional")}</FieldLabel>
             <input
               id="paymentReference"
               name="paymentReference"
               className={fieldClass}
-              placeholder="Transaction ID or reference"
+              placeholder={t("paymentReferencePlaceholder")}
             />
           </div>
         </div>

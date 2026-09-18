@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import type { MessageKey } from "@/shared/i18n";
+import { useLocale } from "@/shared/i18n";
 import { cn } from "@/ui/lib/utils";
 import { shop } from "@/ui/storefront/shop-classes";
 
@@ -10,34 +12,40 @@ type AccountNavProps = {
   tenantSlug: string;
 };
 
-const links = [
-  { key: "home", suffix: "", label: "Account", match: (p: string, base: string) => p === base || p === `${base}/` },
+const links: {
+  key: string;
+  suffix: string;
+  labelKey: MessageKey;
+  match: (p: string, base: string) => boolean;
+}[] = [
+  { key: "home", suffix: "", labelKey: "account", match: (p, base) => p === base || p === `${base}/` },
   {
     key: "profile",
     suffix: "/profile",
-    label: "Profile",
-    match: (p: string, base: string) => p.startsWith(`${base}/profile`),
+    labelKey: "profile",
+    match: (p, base) => p.startsWith(`${base}/profile`),
   },
   {
     key: "addresses",
     suffix: "/addresses",
-    label: "Addresses",
-    match: (p: string, base: string) => p.startsWith(`${base}/addresses`),
+    labelKey: "addresses",
+    match: (p, base) => p.startsWith(`${base}/addresses`),
   },
   {
     key: "orders",
     suffix: "/orders",
-    label: "Orders",
-    match: (p: string, base: string) => p.startsWith(`${base}/orders`),
+    labelKey: "myOrders",
+    match: (p, base) => p.startsWith(`${base}/orders`),
   },
-] as const;
+];
 
 export function AccountNav({ tenantSlug }: AccountNavProps) {
   const pathname = usePathname();
+  const { t } = useLocale();
   const base = `/${tenantSlug}/account`;
 
   return (
-    <nav aria-label="Account" className="flex gap-1 overflow-x-auto pb-1 text-sm">
+    <nav aria-label={t("account")} className="flex gap-1 overflow-x-auto pb-1 text-sm">
       {links.map((link) => {
         const href = `${base}${link.suffix}`;
         const active = link.match(pathname, base);
@@ -51,7 +59,7 @@ export function AccountNav({ tenantSlug }: AccountNavProps) {
             )}
             aria-current={active ? "page" : undefined}
           >
-            {link.label}
+            {t(link.labelKey)}
           </Link>
         );
       })}

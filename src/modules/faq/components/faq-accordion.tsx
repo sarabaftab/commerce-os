@@ -1,14 +1,19 @@
-import type { PublicFaq } from "@/modules/faq";
+"use client";
+
+import type { PublicFaq } from "@/modules/faq/types";
+import { localizedValue, useLocale } from "@/shared/i18n";
 
 type FaqAccordionProps = {
   faqs: PublicFaq[];
 };
 
 export function FaqAccordion({ faqs }: FaqAccordionProps) {
+  const { locale, t } = useLocale();
+
   if (faqs.length === 0) {
     return (
       <p className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-5 text-sm text-[color:var(--shop-ink-muted)] ring-1 ring-[color:var(--shop-line)]">
-        No FAQs are available yet.
+        {t("faqEmpty")}
       </p>
     );
   }
@@ -22,7 +27,13 @@ export function FaqAccordion({ faqs }: FaqAccordionProps) {
         >
           <summary className="cursor-pointer list-none px-4 py-3.5 text-sm font-medium text-[color:var(--shop-ink)] outline-none marker:content-none focus-visible:bg-[color:var(--shop-surface)] [&::-webkit-details-marker]:hidden">
             <span className="flex items-start justify-between gap-3">
-              <span>{faq.question}</span>
+              <span>
+                {localizedValue({
+                  locale,
+                  en: faq.question,
+                  km: faq.questionKm,
+                })}
+              </span>
               <span
                 aria-hidden
                 className="mt-0.5 shrink-0 text-[color:var(--shop-ink-muted)] transition group-open:rotate-45"
@@ -32,7 +43,11 @@ export function FaqAccordion({ faqs }: FaqAccordionProps) {
             </span>
           </summary>
           <div className="whitespace-pre-wrap px-4 pb-4 text-sm leading-relaxed text-[color:var(--shop-ink-muted)]">
-            {faq.answer}
+            {localizedValue({
+              locale,
+              en: faq.answer,
+              km: faq.answerKm,
+            })}
           </div>
         </details>
       ))}

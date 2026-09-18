@@ -5,6 +5,8 @@ import { CartLineItem } from "@/modules/orders/components/cart-line-item";
 import { CartSummaryPanel } from "@/modules/orders/components/cart-summary";
 import { getActiveStorefrontCampaign } from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
+import { getRequestLocale } from "@/shared/i18n/get-request-locale";
+import { t } from "@/shared/i18n";
 import { createTimer } from "@/shared/observability/timing";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +18,7 @@ type CartPageProps = {
 export default async function StorefrontCartPage({ params }: CartPageProps) {
   const timer = createTimer("page.storefront.cart");
   const { tenantSlug } = await params;
+  const locale = await getRequestLocale();
   const { tenant, basePath } = await resolveStorefrontTenant(tenantSlug);
   timer.mark("tenantMs");
   const [summary, campaign] = await Promise.all([
@@ -29,21 +32,24 @@ export default async function StorefrontCartPage({ params }: CartPageProps) {
     <div className="space-y-6 pt-4">
       <div>
         <h1 className="font-[family-name:var(--font-shop-display)] text-3xl tracking-tight">
-          Your cart
+          {t(locale, "yourCart")}
         </h1>
         <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
-          {summary.itemCount} {summary.itemCount === 1 ? "item" : "items"}
+          {summary.itemCount}{" "}
+          {summary.itemCount === 1 ? t(locale, "itemCount") : t(locale, "itemsCount")}
         </p>
       </div>
 
       {summary.items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[color:var(--shop-line)] bg-[color:var(--shop-surface)]/50 px-4 py-12 text-center">
-          <p className="text-sm text-[color:var(--shop-ink-muted)]">Your cart is empty.</p>
+          <p className="text-sm text-[color:var(--shop-ink-muted)]">
+            {t(locale, "emptyCartTitle")}
+          </p>
           <Link
             href={`${basePath}/products`}
             className="mt-4 inline-flex text-sm font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
           >
-            Browse products
+            {t(locale, "browseProducts")}
           </Link>
         </div>
       ) : (

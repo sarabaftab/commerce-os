@@ -18,7 +18,9 @@ export function selectPublicFaqs(faqs: FaqRecord[]): PublicFaq[] {
     .map((faq) => ({
       id: faq.id,
       question: faq.question,
+      questionKm: faq.questionKm ?? null,
       answer: faq.answer,
+      answerKm: faq.answerKm ?? null,
     }));
 }
 

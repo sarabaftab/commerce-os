@@ -23,7 +23,9 @@ export type FaqActionState = {
 function formDataToObject(formData: FormData) {
   return {
     question: String(formData.get("question") ?? ""),
+    questionKm: String(formData.get("questionKm") ?? ""),
     answer: String(formData.get("answer") ?? ""),
+    answerKm: String(formData.get("answerKm") ?? ""),
     sortOrder: String(formData.get("sortOrder") ?? "0"),
     isActive: formData.get("isActive") === "on" || formData.get("isActive") === "true",
   };

@@ -166,6 +166,7 @@ export type CreateOrderRecordInput = {
   promotionNameSnapshot?: string | null;
   referralCode?: string;
   campaignId?: string;
+  customerLocale?: string | null;
   items: {
     productId: string;
     nameSnapshot: string;
@@ -223,6 +224,7 @@ export async function createOrderRecordInTransaction(
       promotionNameSnapshot: input.promotionNameSnapshot ?? null,
       referralCode: input.referralCode ?? null,
       campaignId: input.campaignId ?? null,
+      customerLocale: input.customerLocale ?? null,
       idempotencyKey: input.idempotencyKey ?? null,
       confirmationToken: input.confirmationToken ?? createOrderConfirmationToken(),
       items: {

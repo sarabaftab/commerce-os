@@ -11,8 +11,9 @@ import {
   removeCartItemAction,
   updateCartItemAction,
 } from "@/modules/orders/actions/cart-actions";
-import type { StorefrontCampaignDisplay } from "@/modules/promotions";
-import { computeUnitSalePriceMinor } from "@/modules/promotions";
+import type { StorefrontCampaignDisplay } from "@/modules/promotions/discount";
+import { computeUnitSalePriceMinor } from "@/modules/promotions/discount";
+import { useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
 import { notifyCartChanged } from "@/ui/storefront/cart-events";
 import { ProductImage } from "@/ui/storefront/product-image";
@@ -32,6 +33,7 @@ export function CartLineItem({
   campaign = null,
 }: CartLineItemProps) {
   const router = useRouter();
+  const { t } = useLocale();
   const [pending, startTransition] = useTransition();
 
   const updateQuantity = (quantity: number) => {
@@ -69,7 +71,7 @@ export function CartLineItem({
           </div>
         ) : (
           <div className="flex h-full w-full items-end bg-[radial-gradient(circle_at_30%_20%,#fae588,transparent_55%),linear-gradient(160deg,#fffdf4,#fff1b9)] p-2">
-            <span className="text-[10px] text-[color:var(--shop-ink-muted)]">Product</span>
+            <span className="text-[10px] text-[color:var(--shop-ink-muted)]">{t("product")}</span>
           </div>
         )}
       </Link>
@@ -96,7 +98,7 @@ export function CartLineItem({
               </p>
             ) : null}
             {!line.isAvailable ? (
-              <p className="mt-1 text-xs text-destructive">No longer available</p>
+              <p className="mt-1 text-xs text-destructive">{t("unavailable")}</p>
             ) : null}
           </div>
           <button
@@ -104,7 +106,7 @@ export function CartLineItem({
             disabled={pending}
             onClick={remove}
             className="rounded-full p-2 text-[color:var(--shop-ink-muted)] transition hover:bg-[color:var(--shop-surface)]"
-            aria-label="Remove item"
+            aria-label={t("removeItemAria")}
           >
             <Trash2 className="size-4" />
           </button>
@@ -118,7 +120,7 @@ export function CartLineItem({
                 disabled={pending || line.quantity <= 1}
                 onClick={() => updateQuantity(line.quantity - 1)}
                 className="flex size-8 items-center justify-center rounded-full disabled:opacity-40"
-                aria-label="Decrease quantity"
+                aria-label={t("quantity")}
               >
                 <Minus className="size-4" />
               </button>
@@ -128,7 +130,7 @@ export function CartLineItem({
                 disabled={pending}
                 onClick={() => updateQuantity(line.quantity + 1)}
                 className="flex size-8 items-center justify-center rounded-full disabled:opacity-40"
-                aria-label="Increase quantity"
+                aria-label={t("quantity")}
               >
                 <Plus className="size-4" />
               </button>

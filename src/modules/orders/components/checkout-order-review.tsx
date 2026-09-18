@@ -1,6 +1,9 @@
+"use client";
+
 import type { CartSummary } from "@/modules/orders";
 import { formatPackSizeLine, formatPriceTimesQuantity } from "@/modules/catalog/selling-unit";
-import { computeUnitSalePriceMinor } from "@/modules/promotions";
+import { computeUnitSalePriceMinor } from "@/modules/promotions/discount";
+import { useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
 
 type CheckoutOrderReviewProps = {
@@ -24,6 +27,7 @@ export function CheckoutOrderReview({
   fulfillmentMethod,
   freeDeliveryThresholdMinor,
 }: CheckoutOrderReviewProps) {
+  const { t } = useLocale();
   const fee = fulfillmentMethod === "delivery" ? deliveryFeeMinor : 0;
   const discount = Math.max(0, discountMinor);
   const totalMinor = cart.subtotalMinor - discount + fee;
@@ -36,7 +40,7 @@ export function CheckoutOrderReview({
 
   return (
     <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-      <h2 className="text-sm font-semibold">Order review</h2>
+      <h2 className="text-sm font-semibold">{t("orderReview")}</h2>
 
       <ul className="space-y-3">
         {cart.items
@@ -93,26 +97,27 @@ export function CheckoutOrderReview({
 
       <div className="space-y-2 border-t border-[color:var(--shop-line)] pt-3 text-sm">
         <div className="flex justify-between">
-          <span className="text-[color:var(--shop-ink-muted)]">Subtotal</span>
+          <span className="text-[color:var(--shop-ink-muted)]">{t("subtotal")}</span>
           <span>{formatMoney(cart.subtotalMinor, cart.currency)}</span>
         </div>
         {discount > 0 ? (
           <div className="flex justify-between rounded-xl bg-[color:var(--shop-accent-soft)]/70 px-3 py-2 font-semibold text-[color:var(--shop-on-primary)]">
-            <span>{promotionName?.trim() || "Promotion"}</span>
+            <span>{promotionName?.trim() || t("promotion")}</span>
             <span>−{formatMoney(discount, cart.currency)}</span>
           </div>
         ) : null}
         {fulfillmentMethod === "delivery" ? (
           <div className="flex justify-between">
             <span className="text-[color:var(--shop-ink-muted)]">
-              Delivery
-              {freeDeliveryThresholdMinor != null && fee === 0 ? " (free)" : ""}
+              {freeDeliveryThresholdMinor != null && fee === 0
+                ? t("deliveryFree")
+                : t("delivery")}
             </span>
             <span>{formatMoney(fee, cart.currency)}</span>
           </div>
         ) : null}
         <div className="flex justify-between font-semibold">
-          <span>Total</span>
+          <span>{t("total")}</span>
           <span>{formatMoney(totalMinor, cart.currency)}</span>
         </div>
       </div>

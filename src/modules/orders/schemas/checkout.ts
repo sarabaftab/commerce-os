@@ -43,6 +43,10 @@ export const checkoutInputSchema = z
     paymentReference: z.string().trim().max(120).optional().or(z.literal("")),
     deliveryLatitude: z.union([z.literal(""), z.coerce.number()]).optional(),
     deliveryLongitude: z.union([z.literal(""), z.coerce.number()]).optional(),
+    customerLocale: z
+      .union([z.enum(["en", "km"]), z.literal("")])
+      .optional()
+      .transform((value) => (value === "" || value == null ? undefined : value)),
   })
   .superRefine((data, ctx) => {
     if (data.fulfillmentMethod === "delivery") {
@@ -95,6 +99,7 @@ export const checkoutInputSchema = z
       paymentReference: data.paymentReference?.trim() || undefined,
       deliveryLatitude: pin?.latitude,
       deliveryLongitude: pin?.longitude,
+      customerLocale: data.customerLocale,
     };
   });
 
@@ -129,5 +134,6 @@ export function checkoutFormDataToObject(formData: FormData) {
     paymentReference: String(formData.get("paymentReference") ?? ""),
     deliveryLatitude: String(formData.get("deliveryLatitude") ?? ""),
     deliveryLongitude: String(formData.get("deliveryLongitude") ?? ""),
+    customerLocale: String(formData.get("customerLocale") ?? ""),
   };
 }

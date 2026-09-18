@@ -4,6 +4,7 @@ import { toMinor } from "@/shared/money/money";
 
 export const productFormSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
+  nameKm: z.union([z.literal(""), z.string().trim().max(120)]).optional(),
   slug: z
     .string()
     .trim()
@@ -11,6 +12,7 @@ export const productFormSchema = z.object({
     .max(140)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase kebab-case"),
   description: z.union([z.literal(""), z.string().trim().max(2000)]).optional(),
+  descriptionKm: z.union([z.literal(""), z.string().trim().max(2000)]).optional(),
   brand: z.union([z.literal(""), z.string().trim().max(80)]).optional(),
   volume: z.union([z.literal(""), z.string().trim().max(40)]).optional(),
   sellingUnit: z.enum(["item", "pack", "case"]).default("item"),
@@ -36,8 +38,10 @@ export function productFormToCreateInput(
   return {
     tenantId,
     name: values.name,
+    nameKm: values.nameKm || null,
     slug: values.slug,
     description: values.description || null,
+    descriptionKm: values.descriptionKm || null,
     brand: values.brand || null,
     volume: values.volume || null,
     sellingUnit: values.sellingUnit,

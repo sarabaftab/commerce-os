@@ -1,4 +1,7 @@
+"use client";
+
 import { ProductImage } from "@/ui/storefront/product-image";
+import { useLocale } from "@/shared/i18n";
 
 type AbaPaymentDetailsProps = {
   qrImageUrl?: string | null;
@@ -23,24 +26,19 @@ export function AbaPaymentDetails({
   showProofNote = false,
   showCheckoutSteps = false,
 }: AbaPaymentDetailsProps) {
+  const { t } = useLocale();
+
   return (
     <div className="space-y-3">
-      <p className="font-medium">Pay with ABA</p>
+      <p className="font-medium">{t("payWithAba")}</p>
 
       {showCheckoutSteps ? (
         <ol className="space-y-3 text-sm">
           <li className="space-y-1">
-            <p className="font-medium">1. Scan the QR code</p>
-            <p className="text-[color:var(--shop-ink-muted)]">
-              Scan the ABA QR code with your banking app and complete the payment.
-            </p>
+            <p className="font-medium">{t("abaStepScan")}</p>
           </li>
           <li className="space-y-1">
-            <p className="font-medium">2. Upload your payment confirmation</p>
-            <p className="text-[color:var(--shop-ink-muted)]">
-              After payment, upload a screenshot or photo showing that the transfer was
-              successful. You can do this after placing your order.
-            </p>
+            <p className="font-medium">{t("abaStepUpload")}</p>
           </li>
         </ol>
       ) : null}
@@ -49,30 +47,27 @@ export function AbaPaymentDetails({
         <div className="relative mx-auto aspect-square w-full max-w-[14rem] overflow-hidden rounded-xl bg-white sm:max-w-[16rem]">
           <ProductImage
             src={qrImageUrl}
-            alt="ABA payment QR code"
+            alt={t("payWithAba")}
             sizes="(max-width: 640px) 224px, 256px"
             className="object-contain"
           />
         </div>
       ) : null}
-      {qrImageUrl && !showCheckoutSteps ? (
-        <p className="text-sm">Scan the QR code with your banking app to pay.</p>
-      ) : null}
       {accountName ? (
         <p className="text-sm">
-          <span className="text-[color:var(--shop-ink-muted)]">Account name:</span>{" "}
+          <span className="text-[color:var(--shop-ink-muted)]">{t("accountName")}:</span>{" "}
           {accountName}
         </p>
       ) : null}
       {accountNumber ? (
         <p className="text-sm">
-          <span className="text-[color:var(--shop-ink-muted)]">Account number:</span>{" "}
+          <span className="text-[color:var(--shop-ink-muted)]">{t("accountNumber")}:</span>{" "}
           {accountNumber}
         </p>
       ) : null}
       {amountLabel ? (
         <p className="text-sm font-semibold">
-          <span className="font-normal text-[color:var(--shop-ink-muted)]">Amount:</span>{" "}
+          <span className="font-normal text-[color:var(--shop-ink-muted)]">{t("amount")}:</span>{" "}
           {amountLabel}
         </p>
       ) : null}
@@ -87,10 +82,7 @@ export function AbaPaymentDetails({
         </p>
       ) : null}
       {showProofNote ? (
-        <p className="text-sm text-[color:var(--shop-ink-muted)]">
-          You can upload your payment confirmation later from your order details if you
-          don&apos;t have it ready now.
-        </p>
+        <p className="text-sm text-[color:var(--shop-ink-muted)]">{t("uploadLaterNote")}</p>
       ) : null}
     </div>
   );

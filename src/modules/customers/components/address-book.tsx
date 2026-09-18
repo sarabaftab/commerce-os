@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "@/shared/i18n";
 
 import { useActionState, useState } from "react";
 
@@ -28,6 +29,7 @@ function AddressFields({
   address?: CustomerAddressDto;
   fieldErrors?: Record<string, string>;
 }) {
+  const { t } = useLocale();
   const [values, setValues] = useState({
     addressLine1: address?.addressLine1 ?? "",
     cityOrDistrict: address?.cityOrDistrict ?? "",
@@ -251,7 +253,7 @@ function AddressFields({
           value="true"
           defaultChecked={address?.isDefault ?? false}
         />
-        Set as default address
+        {t("setAsDefaultAddress")}
       </label>
     </div>
   );
@@ -263,6 +265,7 @@ type AddressBookProps = {
 };
 
 export function AddressBook({ tenantSlug, addresses }: AddressBookProps) {
+  const { t } = useLocale();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(addresses.length === 0);
   const [createState, createAction, createPending] = useActionState(
@@ -274,7 +277,7 @@ export function AddressBook({ tenantSlug, addresses }: AddressBookProps) {
     <div className="space-y-4">
       {addresses.length === 0 && !showNew ? (
         <p className="text-sm text-[color:var(--shop-ink-muted)]">
-          No saved addresses yet.
+          {t("noSavedAddresses")}
         </p>
       ) : null}
 
@@ -298,7 +301,7 @@ export function AddressBook({ tenantSlug, addresses }: AddressBookProps) {
                       {address.label}
                       {address.isDefault ? (
                         <span className="ml-2 rounded-full bg-[color:var(--shop-primary)]/30 px-2 py-0.5 text-[11px] font-medium text-[color:var(--shop-ink)]">
-                          Default
+                          {t("defaultSuffix")}
                         </span>
                       ) : null}
                     </p>
@@ -316,7 +319,7 @@ export function AddressBook({ tenantSlug, addresses }: AddressBookProps) {
                     className="rounded-full px-3 py-1.5 text-xs font-medium ring-1 ring-[color:var(--shop-line)]"
                     onClick={() => setEditingId(address.id)}
                   >
-                    Edit
+                    {t("edit")}
                   </button>
                   {!address.isDefault ? (
                     <button
@@ -324,7 +327,7 @@ export function AddressBook({ tenantSlug, addresses }: AddressBookProps) {
                       className="rounded-full px-3 py-1.5 text-xs font-medium ring-1 ring-[color:var(--shop-line)]"
                       onClick={() => setDefaultAddressAction(tenantSlug, address.id)}
                     >
-                      Set as default
+                      {t("setAsDefault")}
                     </button>
                   ) : null}
                   <button
@@ -340,7 +343,7 @@ export function AddressBook({ tenantSlug, addresses }: AddressBookProps) {
                       }
                     }}
                   >
-                    Delete
+                    {t("delete")}
                   </button>
                 </div>
               </div>
@@ -354,7 +357,7 @@ export function AddressBook({ tenantSlug, addresses }: AddressBookProps) {
           action={createAction}
           className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]"
         >
-          <h2 className="text-sm font-semibold">New address</h2>
+          <h2 className="text-sm font-semibold">{t("newAddressTitle")}</h2>
           {createState.error ? (
             <p role="alert" className="text-sm text-destructive">
               {createState.error}
@@ -372,7 +375,7 @@ export function AddressBook({ tenantSlug, addresses }: AddressBookProps) {
               disabled={createPending}
               className="h-11 flex-1 rounded-xl bg-[color:var(--shop-primary)] text-sm font-semibold text-[color:var(--shop-on-primary)] disabled:opacity-60"
             >
-              {createPending ? "Saving…" : "Save address"}
+              {createPending ? t("saving") : t("saveAddress")}
             </button>
             {addresses.length > 0 ? (
               <button
@@ -380,7 +383,7 @@ export function AddressBook({ tenantSlug, addresses }: AddressBookProps) {
                 className="h-11 rounded-xl px-4 text-sm ring-1 ring-[color:var(--shop-line)]"
                 onClick={() => setShowNew(false)}
               >
-                Cancel
+                {t("cancel")}
               </button>
             ) : null}
           </div>
@@ -391,7 +394,7 @@ export function AddressBook({ tenantSlug, addresses }: AddressBookProps) {
           onClick={() => setShowNew(true)}
           className="h-11 w-full rounded-xl text-sm font-semibold ring-1 ring-[color:var(--shop-line)]"
         >
-          Add address
+          {t("addAddress")}
         </button>
       )}
     </div>
@@ -407,6 +410,7 @@ function EditAddressForm({
   address: CustomerAddressDto;
   onDone: () => void;
 }) {
+  const { t } = useLocale();
   const [state, formAction, pending] = useActionState(
     updateAddressAction.bind(null, tenantSlug, address.id),
     initialState,
@@ -431,14 +435,14 @@ function EditAddressForm({
           disabled={pending}
           className="h-11 flex-1 rounded-xl bg-[color:var(--shop-primary)] text-sm font-semibold text-[color:var(--shop-on-primary)] disabled:opacity-60"
         >
-          {pending ? "Saving…" : "Update"}
+          {pending ? t("saving") : t("update")}
         </button>
         <button
           type="button"
           onClick={onDone}
           className="h-11 rounded-xl px-4 text-sm ring-1 ring-[color:var(--shop-line)]"
         >
-          Cancel
+          {t("cancel")}
         </button>
       </div>
     </form>

@@ -6,6 +6,8 @@ import {
 } from "@/modules/catalog";
 import { getActiveStorefrontCampaign } from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
+import { getRequestLocale } from "@/shared/i18n/get-request-locale";
+import { t } from "@/shared/i18n";
 import { createTimer } from "@/shared/observability/timing";
 import { STOREFRONT_BRAND } from "@/ui/storefront/brand";
 import { CategoryChips } from "@/ui/storefront/category-chips";
@@ -23,6 +25,7 @@ type HomePageProps = {
 export default async function StorefrontHomePage({ params }: HomePageProps) {
   const timer = createTimer("page.storefront.home");
   const { tenantSlug } = await params;
+  const locale = await getRequestLocale();
   const { tenant, basePath } = await resolveStorefrontTenant(tenantSlug);
   timer.mark("tenantMs");
 
@@ -50,32 +53,31 @@ export default async function StorefrontHomePage({ params }: HomePageProps) {
             {STOREFRONT_BRAND.name}
           </p>
           <h1 className="max-w-[16ch] font-[family-name:var(--font-shop-display)] text-[2.2rem] leading-[1.08] tracking-tight">
-            Premium commerce, simply delivered.
+            {t(locale, "heroTitle")}
           </h1>
           <p className="max-w-[30ch] text-sm leading-relaxed text-white/70">
-            Browse {tenant.name} and checkout in a few taps — built for mobile
-            and Telegram.
+            {t(locale, "heroBody")}
           </p>
           <Link href={`${basePath}/products`} prefetch={false} className={shop.btnPrimary}>
-            Shop products
+            {t(locale, "shopProducts")}
           </Link>
         </div>
       </section>
 
       {categories.length > 0 ? (
         <section>
-          <SectionHeader title="Categories" href={`${basePath}/products`} />
+          <SectionHeader title={t(locale, "categories")} href={`${basePath}/products`} />
           <CategoryChips categories={categories} basePath={basePath} />
         </section>
       ) : null}
 
       <section>
-        <SectionHeader title="Featured" href={`${basePath}/products`} />
+        <SectionHeader title={t(locale, "featured")} href={`${basePath}/products`} />
         <ProductGrid
           products={featured}
           basePath={basePath}
           campaign={campaign}
-          emptyMessage="No featured products yet. Check back soon."
+          emptyMessage={t(locale, "noFeaturedProducts")}
         />
       </section>
     </div>

@@ -11,12 +11,11 @@ import {
 import {
   customerCanUploadPaymentProof,
   customerPaymentConfirmationCopy,
-  customerPaymentConfirmationUploadLabel,
   isPaymentProofFileTooLarge,
   PAYMENT_PROOF_ACCEPT,
-  PAYMENT_PROOF_REQUIREMENTS_LABEL,
   PAYMENT_PROOF_TOO_LARGE_MESSAGE,
 } from "@/modules/orders/payment-proof";
+import { useLocale } from "@/shared/i18n";
 
 type AbaProofUploadProps = {
   tenantSlug: string;
@@ -48,6 +47,7 @@ export function AbaProofUpload({
   paymentProofRejectionReason,
   showLaterNote = false,
 }: AbaProofUploadProps) {
+  const { t } = useLocale();
   const inputId = useId();
   const [selectedFile, setSelectedFile] = useState<{ name: string; size: number } | null>(
     null,
@@ -67,9 +67,26 @@ export function AbaProofUpload({
     paymentMethod,
     paymentProofStatus: effectiveStatus,
   });
-  const copy = customerPaymentConfirmationCopy(effectiveStatus);
+  const copy = (() => {
+    switch (effectiveStatus) {
+      case "awaiting_proof":
+        return { title: t("paymentConfirmationNeeded"), body: t("paymentConfirmationNeededBody") };
+      case "submitted":
+        return { title: t("paymentConfirmationSubmitted"), body: t("paymentConfirmationSubmittedBody") };
+      case "verified":
+        return { title: t("paymentVerified"), body: t("paymentVerifiedBody") };
+      case "rejected":
+        return { title: t("paymentNeedsAttention"), body: t("paymentNeedsAttentionBody") };
+      default:
+        return customerPaymentConfirmationCopy(effectiveStatus);
+    }
+  })();
+  const uploadLabel =
+    effectiveStatus === "rejected"
+      ? t("uploadNewPaymentConfirmation")
+      : t("uploadPaymentConfirmation");
   const fileTooLarge = selectedFile ? isPaymentProofFileTooLarge(selectedFile.size) : false;
-  const displayError = clientError ?? (fileTooLarge ? PAYMENT_PROOF_TOO_LARGE_MESSAGE : null) ?? state.error;
+  const displayError = clientError ?? (fileTooLarge ? t("imageTooLarge") : null) ?? state.error;
   const submitDisabled = pending || !selectedFile || fileTooLarge;
 
   return (
@@ -89,7 +106,7 @@ export function AbaProofUpload({
 
       {state.success ? (
         <p className="text-sm text-emerald-700" role="status">
-          Payment confirmation uploaded successfully.
+          {t("uploadSuccess")}
         </p>
       ) : null}
 
@@ -100,7 +117,7 @@ export function AbaProofUpload({
           onSubmit={(event) => {
             if (!selectedFile) {
               event.preventDefault();
-              setClientError("Please choose a payment confirmation file to upload.");
+              setClientError(t("choosePaymentFile"));
               return;
             }
             if (isPaymentProofFileTooLarge(selectedFile.size)) {
@@ -111,12 +128,9 @@ export function AbaProofUpload({
         >
           <div className="space-y-1.5">
             <label htmlFor={inputId} className="block text-sm font-medium">
-              {customerPaymentConfirmationUploadLabel(effectiveStatus)}
+              {uploadLabel}
             </label>
-            <p className="text-xs text-[color:var(--shop-ink-muted)]">
-              After making your ABA payment, upload a screenshot or photo of the successful
-              transfer confirmation.
-            </p>
+<p className="text-xs text-[color:var(--shop-ink-muted)]">{t("uploadProofHint")}</p>
             <input
               id={inputId}
               name="proof"
@@ -139,11 +153,11 @@ export function AbaProofUpload({
               }}
             />
             <p className="text-xs text-[color:var(--shop-ink-muted)]">
-              {PAYMENT_PROOF_REQUIREMENTS_LABEL}
+              {t("paymentProofRequirements")}
             </p>
             {selectedFile ? (
               <p className="truncate text-sm" role="status">
-                Selected: {selectedFile.name}
+                {t("selectedFile")}: {selectedFile.name}
                 <span className="text-[color:var(--shop-ink-muted)]">
                   {" "}
                   · {formatFileSize(selectedFile.size)}
@@ -153,10 +167,7 @@ export function AbaProofUpload({
           </div>
 
           {showLaterNote && effectiveStatus === "awaiting_proof" ? (
-            <p className="text-xs leading-relaxed text-[color:var(--shop-ink-muted)]">
-              You can also upload your payment confirmation later from your order details if you
-              don&apos;t have it ready now.
-            </p>
+<p className="text-xs leading-relaxed text-[color:var(--shop-ink-muted)]">{t("uploadLaterNote")}</p>
           ) : null}
 
           {displayError ? (
@@ -170,9 +181,7 @@ export function AbaProofUpload({
             disabled={submitDisabled}
             className="flex h-11 w-full items-center justify-center rounded-full bg-[color:var(--shop-primary)] text-sm font-semibold text-[color:var(--shop-on-primary)] disabled:opacity-60"
           >
-            {pending
-              ? "Uploading…"
-              : customerPaymentConfirmationUploadLabel(effectiveStatus)}
+{pending ? t("uploading") : uploadLabel}
           </button>
         </form>
       ) : null}

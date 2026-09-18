@@ -16,6 +16,16 @@ import {
   sameLatLng,
   type LatLng,
 } from "@/modules/locations/coordinates";
+import { useLocale } from "@/shared/i18n";
+
+function MapLoadingFallback() {
+  const { t } = useLocale();
+  return (
+    <div className="flex h-52 items-center justify-center bg-[color:var(--shop-surface)] text-sm text-[color:var(--shop-ink-muted)]">
+      {t("loadingMap")}
+    </div>
+  );
+}
 
 const DeliveryLocationMap = dynamic(
   () =>
@@ -24,11 +34,7 @@ const DeliveryLocationMap = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-52 items-center justify-center bg-[color:var(--shop-surface)] text-sm text-[color:var(--shop-ink-muted)]">
-        Loading map…
-      </div>
-    ),
+    loading: () => <MapLoadingFallback />,
   },
 );
 
@@ -39,12 +45,6 @@ type DeliveryLocationPickerProps = {
   onDraftChange: (point: LatLng) => void;
   onConfirm: (point: LatLng) => void;
 };
-
-const UNSUPPORTED_MESSAGE =
-  "Current location is not supported by this Telegram version. Please search for your delivery location manually.";
-
-const DENIED_MESSAGE =
-  "Location access is needed to use your current location. You can enable it in Telegram settings or search for your address manually.";
 
 function readTelegramWebApp(): TelegramWebAppLocationHost | undefined {
   if (typeof window === "undefined") {
@@ -61,6 +61,7 @@ export function DeliveryLocationPicker({
   onConfirm,
 }: DeliveryLocationPickerProps) {
   const haptic = useTelegramHaptics();
+  const { t } = useLocale();
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -71,7 +72,7 @@ export function DeliveryLocationPicker({
     const webApp = readTelegramWebApp();
     if (!isTelegramLocationManagerSupported(webApp)) {
       setShowSettings(false);
-      setStatusMessage(UNSUPPORTED_MESSAGE);
+      setStatusMessage(t("locationUnsupported"));
       return;
     }
 
@@ -86,29 +87,27 @@ export function DeliveryLocationPicker({
           latitude: result.latitude,
           longitude: result.longitude,
         });
-        setStatusMessage("Move the pin to your exact delivery location.");
+        setStatusMessage(t("movePinHint"));
         return;
       }
       if (result.status === "denied") {
         setShowSettings(result.canOpenSettings);
-        setStatusMessage(DENIED_MESSAGE);
+        setStatusMessage(t("locationDenied"));
         return;
       }
       if (result.status === "unsupported") {
-        setStatusMessage(UNSUPPORTED_MESSAGE);
+        setStatusMessage(t("locationUnsupported"));
         return;
       }
       if (result.status === "unavailable") {
-        setStatusMessage(
-          "Telegram could not read your current location. Search for your address instead.",
-        );
+        setStatusMessage(t("locationUnavailable"));
         return;
       }
       setStatusMessage(result.message);
     } finally {
       setBusy(false);
     }
-  }, [haptic, onDraftChange]);
+  }, [haptic, onDraftChange, t]);
 
   const handleConfirm = () => {
     if (!draft) {
@@ -116,7 +115,7 @@ export function DeliveryLocationPicker({
     }
     haptic("light");
     onConfirm(draft);
-    setStatusMessage("Delivery location confirmed.");
+    setStatusMessage(t("locationConfirmedStatus"));
   };
 
   const needsConfirm = Boolean(draft && !confirmed);
@@ -129,7 +128,7 @@ export function DeliveryLocationPicker({
         onClick={() => void handleCurrentLocation()}
         className="flex h-11 w-full items-center justify-center rounded-xl border border-[color:var(--shop-line)] bg-[color:var(--shop-surface)] px-3 text-sm font-medium text-[color:var(--shop-ink)] disabled:opacity-60"
       >
-        {busy ? "Getting location…" : "📍 Use My Current Location"}
+        {busy ? t("gettingLocation") : t("useMyCurrentLocation")}
       </button>
 
       {statusMessage ? (
@@ -146,7 +145,7 @@ export function DeliveryLocationPicker({
             openTelegramLocationSettings(getTelegramLocationManager(readTelegramWebApp()));
           }}
         >
-          Open Location Settings
+          {t("openLocationSettings")}
         </button>
       ) : null}
 
@@ -159,7 +158,7 @@ export function DeliveryLocationPicker({
                 return;
               }
               onDraftChange(next);
-              setStatusMessage("Move the pin to your exact delivery location.");
+              setStatusMessage(t("movePinHint"));
             }}
           />
         </div>
@@ -167,7 +166,7 @@ export function DeliveryLocationPicker({
 
       {draft ? (
         <p className="text-xs text-[color:var(--shop-ink-muted)]">
-          Move the pin to your exact delivery location.
+          {t("movePinHint")}
         </p>
       ) : null}
 
@@ -177,7 +176,7 @@ export function DeliveryLocationPicker({
           onClick={handleConfirm}
           className="flex h-11 w-full items-center justify-center rounded-xl bg-[color:var(--shop-primary)] px-3 text-sm font-semibold text-[color:var(--shop-on-primary)]"
         >
-          {needsConfirm ? "Confirm Location" : "Location confirmed"}
+          {needsConfirm ? t("confirmLocation") : t("locationConfirmed")}
         </button>
       ) : null}
     </div>
