@@ -40,6 +40,7 @@ export type CartLineView = {
   productId: string;
   slug: string;
   name: string;
+  nameKm?: string | null;
   quantity: number;
   unitPriceMinor: number;
   lineTotalMinor: number;
@@ -69,6 +70,7 @@ export type CartWithItems = Cart & {
       id: string;
       slug: string;
       name: string;
+      nameKm?: string | null;
       priceMinor: number;
       currency: string;
       isAvailable: boolean;

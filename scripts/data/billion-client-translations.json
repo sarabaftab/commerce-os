@@ -1,0 +1,146 @@
+{
+  "source": "Billion_co_translation.pdf",
+  "tenantSlug": "kin-a2",
+  "ui": {
+    "shop": "ធ្វើការទិញទំនិញ",
+    "all": "ទំនិញទំាងអស់",
+    "allProducts": "ទំនិញទំាងអស់",
+    "seeAll": "មើលទំនិញទាំងអស់"
+  },
+  "categories": [
+    {
+      "matchNameExact": "Single",
+      "nameKm": "លក់រាយ"
+    },
+    {
+      "matchNameExact": "By Case",
+      "nameKm": "លក់ជាកេស",
+      "note": "DOCX label 'By case' → DB 'By Case'"
+    }
+  ],
+  "faqs": [
+    {
+      "matchQuestionExact": "Is COD(Cash on Delivery) available?",
+      "questionKm": "តើមានសេវាបង់ប្រាក់ផ្ទាល់ជាមួយអ្នកដឹកជញ្ជូន (COD) ដែរឬទេ?",
+      "answerKm": "បាន! អ្នកអាចបង់ប្រាក់ផ្ទាល់ជាមួយអ្នកដឹកជញ្ជូនបាន"
+    },
+    {
+      "matchQuestionExact": "Can I return the product within 7 days?",
+      "questionKm": "តើខ្ញុំអាចប្តូរ ឬប្រគល់ផលិតផលត្រឡប់វិញក្នុងរយៈពេល ៧ ថ្ងៃបានទេ?",
+      "answerKm": "ទេ យើងផ្តល់ជូនតែផលិតផលថ្មីៗទេ។ ដូច្នេះ យើងមិនមានគោលការណ៍ប្រគល់ទំនិញត្រឡប់ វិញក្នុងរយៈពេល ៧ ថ្ងៃនោះទេ។ អ្នកអាចជ្រើសរើសលុបចោលការបញ្ជាទិញនៅពេលទទួល ទំនិញបាន។"
+    }
+  ],
+  "promotion": {
+    "matchType": "buy_one_get_one",
+    "clientLabelEn": "1+1 Promotion",
+    "clientLabelKm": "ប្រូម៉ូសិន 1 ថែម 1",
+    "note": "No bannerTextKm DB field; applied via messages.bogoBadge + banner client island"
+  },
+  "products": [
+    {
+      "clientKey": "Gaffney's sterilized milk",
+      "nameKm": "ទឹកដោះគោឆៅ Gaffney’s",
+      "descriptionKm": "Gaffney's Sterilised Milk គឺជាទឹកដោះគោឆៅដែលបានសម្លាប់ មេរោគរួចរាល់ អាចទទួលទានបានភ្លាមៗសម្បូរទៅដោយប្រូតេអ៊ីន និងកាល់ស្យូម ដែលអ្នកអាចយក តាមខ្លួនបានគ្រប់ពេលវេលានិងគ្រប់ទីកន្លែង!",
+      "matchNameContainsAll": [
+        "gaffney",
+        "steril"
+      ],
+      "confidence": "high",
+      "note": "Applies to both single and case pack variants sharing Gaffney sterilized milk base name"
+    },
+    {
+      "clientKey": "KIN A2 fresh milk",
+      "nameKm": "ទឹកដោះគោស្រស់ KIN A2",
+      "descriptionKm": "ជាទឹកដោះគោស្រស់ដែលខុសពីទឹកដោះគោស្រស់ទូទៅ ភាគច្រើនដែលមាន លក់នៅលើទីផ្សារ ទឹកដោះគោស្រស់ KIN A2 100% ផលិតចេញពីគោ A2 ដែល ផ្ទុកតែប្រូតេអ៊ីន A2 បេតា-កាស៊ីន(beta-casein) តាមបែបធម្មជាតិតែប៉ុណ្ណោះ។ ហេតុនេះហើយទើបធ្វើឲ្យ ទឹកដោះគោស្រស់ KIN A2 គឺជាជម្រើសដ៏ល្អមួយសម្រាប់អ្នកដែលមានប្រព័ន្ធរំលាយអាហារមិនសូវ ល្អក្រោយទទួលទានទឹកដោះគោធម្មតា(A1)។ អាចទទួលទានបានចាប់ពីអាយុ ១ ឆ្នាំឡើងទៅ!",
+      "matchNameContainsAll": [
+        "kin a2",
+        "fresh milk"
+      ],
+      "confidence": "high"
+    },
+    {
+      "clientKey": "KIN A2 Yogurt SLURP Original",
+      "nameKm": "យ៉ាអ៊ួរបឺត KIN A2 Yogurt SLURP ជាមួយគ្រាប់ konjac - រសជាតិដើម",
+      "descriptionKm": "ផលិតដោយប្រើប្រាស់មេ បាក់តេរី MB-11 Lactobacillus d. Bulgaricus ដែលនាំចូលពីប្រទេសប៊ុលហ្គារី ព្រមទាំងមាន វីតាមីន និងជាតិកាល់ស្យូមពីទឹកដោះគោស្រស់ KIN Yogurt SLURP បង្កើតបានជាអាហារសម្រន់ ដ៏ស័ក្តិសមសម្រាប់កុមារដែលសកម្ម និងចូលចិត្តក្នុងការស្វែងយល់ និងសាកល្បងអ្វីថ្មីៗ។",
+      "matchNameContainsAll": [
+        "yogurt slurp",
+        "original"
+      ],
+      "confidence": "high"
+    },
+    {
+      "clientKey": "KIN A2 Yogurt SLURP Blueberry",
+      "nameKm": "យ៉ាអ៊ួរបឺត KIN A2 Yogurt SLURP ជាមួយគ្រាប់ konjac - រសជាតិប៊្លូបឺរី",
+      "descriptionKm": "ផលិតដោយប្រើប្រាស់មេ បាក់តេរី MB-11 Lactobacillus d. Bulgaricus ដែលនាំចូលពីប្រទេសប៊ុលហ្គារី ព្រមទាំងមាន វីតាមីន និងជាតិកាល់ស្យូមពីទឹកដោះគោស្រស់ KIN Yogurt SLURP បង្កើតបានជាអាហារសម្រន់ ដ៏ស័ក្តិសមសម្រាប់កុមារដែលសកម្ម និងចូលចិត្តការក្នុងការស្វែងយល់ និងសាកល្បងអ្វីថ្មីៗ។",
+      "matchNameContainsAll": [
+        "yogurt slurp",
+        "blueberry"
+      ],
+      "confidence": "high",
+      "note": "Client Blueberry SLURP description has 'ចូលចិត្តការក្នុង' — preserved exactly from DOCX"
+    },
+    {
+      "clientKey": "KIN A2 Bulgarian Original",
+      "nameKm": "យ៉ាអ៊ួរទឹក(ទឹកដោះគោជូរ) KIN A2 Bulgarian style yogurt - រសជាតិដើម",
+      "descriptionKm": "សូមទទួលយកបទពិសោធន៍ថ្មីមួយ ជាមួយយ៉ាអ៊ួរ ទឹក(ទឹកដោះគោជូរ) ដែលមានរសជាតិឈ្ងុយឆ្ងាញ់ និងមានភាពខាប់ទន់ ផលិតពីមេបាក់តេរី Lactobacillus Bulgaricus ដើម ដែលដាំដុះនៅប្រទេសប៊ុលហ្គារី។ រូបមន្តប្រពៃណីដ៏ពិសេសនេះ នាំមកនូវរសជាតិដ៏សម្បូរបែប និងផ្តល់ភាពស្រស់ស្រាយពីទឹកដោះគោ ដែលអាចទទួលទានបានយ៉ាង ងាយស្រួលគ្រប់ពេលវេលានិងគ្រប់ទីកន្លែង។",
+      "matchNameContainsAll": [
+        "bulgarian",
+        "original"
+      ],
+      "confidence": "high"
+    },
+    {
+      "clientKey": "KIN A2 Bulgarian So Tasty Berry",
+      "nameKm": "យ៉ាអ៊ួរ ទឹក(ទឹកដោះគោជូរ) KIN A2 Bulgarian style yogurt - រសជាតិស្ត្របឺរី",
+      "descriptionKm": "ផ្លែស្ត្របឺរីជាផ្លែឈើមួយដ៏ ពេញនិយមបំផុត ដែលត្រូវបានលាយបញ្ចូលជាមួយនឹងយ៉ាអ៊ួរ ដើម្បីផ្តល់ជូននូវបទពិសោធន៍ដ៏ល្អបំផុត នៃយ៉ាអ៊ួរសជាតិស្ត្របឺរី យើងបានជ្រើសរើសផ្លែស្ត្របឺរីយ៉ាងយកចិត្តទុកដាក់ ដើម្បីទទួលបាន គុណភាពដ៏ល្អឥតខ្ចោះរវាងរសជាតិផ្អែម និងជូរ ខណៈពេលដែលនៅតែរក្សាបាននូវរសជាតិប៊ុលហ្គារី ពិតប្រាកដ។",
+      "matchNameContainsAll": [
+        "bulgarian",
+        "so tasty berry"
+      ],
+      "confidence": "high",
+      "note": "DOCX 'So Tasty Berry Strawberry' → DB 'So Tasty Berry' (only strawberry variant)"
+    },
+    {
+      "clientKey": "KIN A2 Bulgarian Be You Berry",
+      "nameKm": "យ៉ាអ៊ួរ ទឹក(ទឹកដោះគោជូរ) KIN A2 Bulgarian style yogurt - រសជាតិប៊្លូបឺរី",
+      "descriptionKm": "ជាប្រភេទផ្លែឈើដែល សម្បូរទៅដោយសារធាតុប្រឆាំងអុកស៊ីតកម្មខ្ពស់ បានមកដល់ហើយ! ផ្លែប៊្លូបឺរីដែលមានរសជាតិផ្អែម និងស្រស់ស្រាយ ត្រូវបានផ្សំជាមួយយ៉ាអ៊ួរ KIN A2 ដែលមានរសជាតិឈ្ងុយឆ្ងាញ់ សាច់ទន់ល្មើយ ខាប់ទន់ បង្កើតបានជាអាហារសម្រន់ដ៏ល្អឥតខ្ចោះមួយនេះ។",
+      "matchNameContainsAll": [
+        "bulgarian",
+        "be you berry"
+      ],
+      "confidence": "high"
+    },
+    {
+      "clientKey": "KIN A2 Bulgarian Black Fruit",
+      "nameKm": "យ៉ាអ៊ួរទឹក(ទឹកដោះគោជូរ) KIN A2 Bulgarian style yogurt - រសជាតិផ្លែប៊ឺរីចម្រុះ",
+      "descriptionKm": "KIN Yogurt Black Fruit ផលិតពីមេ បាក់តេរី MB-11 ដោយបន្ថែមនូវសារធាតុកាបូនធម្មជាតិពីបន្លែ(Natural Vegetable Carbon) ដែលជាគ្រឿងផ្សំធម្មជាតិដែលអាចជួយបន្សាបជាតិពុលនៅក្នុងរាងកាយ។ មានរសជាតិប៊ឺរីចម្រុះ និង មានសាច់យ៉ាអ៊ួរខាប់ទន់ ដើម្បីផ្តល់នូវអត្ថប្រយោជន៍ពីយ៉ាអ៊ួរបានយ៉ាងពេញលេញ។",
+      "matchNameContainsAll": [
+        "bulgarian",
+        "black"
+      ],
+      "confidence": "high",
+      "note": "DOCX 'Black Fruit' → DB 'Black' (sole Black yogurt; description matches)"
+    },
+    {
+      "clientKey": "Vigor Extra Cool",
+      "nameKm": "ភេសជ្ជៈប៉ូវកម្លាំង Vigor (ប្រភេទ Extra Cool)",
+      "descriptionKm": "Vigor Power Ice Extra Cool គឺជាជម្រើសដ៏ស័ក្តិសមសម្រាប់ការ បំពេញថាមពលយ៉ាងឆាប់រហ័ស ជាមួយនឹងរសជាតិម៉ុងតុលត្រជាក់ស្រស់ស្រាយ។ ផលិតផលនេះមាន ផ្ទុកវីតាមីន B3, B5, B6 និង B12។",
+      "matchNameContainsAll": [
+        "vigor extra cool"
+      ],
+      "confidence": "high",
+      "note": "Name section is 'Vigor Extra Cool'; description header says 'Vigor Ice Extra Cool' — mapped to Extra Cool SKUs only (DB names/descriptions already Ice Extra Cool)"
+    },
+    {
+      "clientKey": "Vigor Sugar free",
+      "nameKm": "ភេសជ្ជៈប៉ូវកម្លាំង Vigor Sugar-free (ប្រភេទគ្មានជាតិស្ករ)",
+      "descriptionKm": "Vigor Power Ice Sugar Free គឺជាជម្រើសដ៏ស័ក្តិសមសម្រាប់ការបំពេញ ថាមពលយ៉ាងឆាប់រហ័ស ជាមួយនឹងរសជាតិម៉ុងតុលត្រជាក់ស្រស់ស្រាយ និងគ្មានជាតិស្ករ 0% ក្រាម! ផលិតផលនេះមានផ្ទុកវីតាមីន B3, B5, B6 និង B12។",
+      "matchNameContainsAll": [
+        "vigor sugar free"
+      ],
+      "confidence": "high"
+    }
+  ],
+  "unmatched": [],
+  "ambiguous": []
+}

@@ -104,6 +104,7 @@ function buildCartSummary(
         productId: item.productId,
         slug: item.product.slug,
         name: item.product.name,
+        nameKm: item.product.nameKm ?? null,
         quantity: item.quantity,
         unitPriceMinor,
         lineTotalMinor: resolved.lineTotalMinor,

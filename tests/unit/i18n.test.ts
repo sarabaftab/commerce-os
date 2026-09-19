@@ -45,6 +45,16 @@ describe("t()", () => {
     expect(t("km", "account")).toBe("គណនី");
     expect(t("en", "account")).toBe("Account");
   });
+
+  it("uses exact client-provided Khmer for Shop / All / All products / See all / 1+1", () => {
+    expect(t("km", "shop")).toBe("ធ្វើការទិញទំនិញ");
+    expect(t("km", "all")).toBe("ទំនិញទំាងអស់");
+    expect(t("km", "allProducts")).toBe("ទំនិញទំាងអស់");
+    expect(t("km", "seeAll")).toBe("មើលទំនិញទាំងអស់");
+    expect(t("km", "bogoBadge")).toBe("ប្រូម៉ូសិន 1 ថែម 1");
+    expect(t("en", "shop")).toBe("Shop");
+    expect(t("en", "bogoBadge")).toBe("1+1 Promotion");
+  });
 });
 
 describe("localizedValue", () => {
@@ -54,6 +64,22 @@ describe("localizedValue", () => {
     ).toBe("សួស្តី");
     expect(localizedValue({ locale: "km", en: "Hello", km: null })).toBe("Hello");
     expect(localizedValue({ locale: "km", en: "Hello", km: "  " })).toBe("Hello");
+    expect(localizedValue({ locale: "km", en: "Hello", km: undefined })).toBe("Hello");
     expect(localizedValue({ locale: "en", en: "Hello", km: "សួស្តី" })).toBe("Hello");
+  });
+
+  it("allows independent name vs description fallback", () => {
+    const name = localizedValue({
+      locale: "km",
+      en: "Vigor Extra Cool",
+      km: "ភេសជ្ជៈប៉ូវកម្លាំង Vigor (ប្រភេទ Extra Cool)",
+    });
+    const description = localizedValue({
+      locale: "km",
+      en: "English description",
+      km: null,
+    });
+    expect(name).toContain("Vigor");
+    expect(description).toBe("English description");
   });
 });

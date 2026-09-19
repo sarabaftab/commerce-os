@@ -17,6 +17,7 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "db:import-client-translations": "tsx scripts/import-client-translations.ts",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"
   },

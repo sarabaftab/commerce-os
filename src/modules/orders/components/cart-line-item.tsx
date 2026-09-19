@@ -14,7 +14,7 @@ import {
 import { BogoLineCallout } from "@/modules/orders/components/bogo-line-callout";
 import type { StorefrontCampaignDisplay } from "@/modules/promotions/discount";
 import { computeUnitSalePriceMinor } from "@/modules/promotions/discount";
-import { useLocale } from "@/shared/i18n";
+import { localizedValue, useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
 import { notifyCartChanged } from "@/ui/storefront/cart-events";
 import { ProductImage } from "@/ui/storefront/product-image";
@@ -34,8 +34,13 @@ export function CartLineItem({
   campaign = null,
 }: CartLineItemProps) {
   const router = useRouter();
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [pending, startTransition] = useTransition();
+  const displayName = localizedValue({
+    locale,
+    en: line.name,
+    km: line.nameKm,
+  });
 
   const updateQuantity = (quantity: number) => {
     startTransition(async () => {
@@ -65,7 +70,7 @@ export function CartLineItem({
           <div className="absolute inset-1.5">
             <ProductImage
               src={line.imageUrl}
-              alt={line.name}
+              alt={displayName}
               sizes="80px"
               className="h-full w-full"
             />
@@ -84,7 +89,7 @@ export function CartLineItem({
               href={`${basePath}/products/${line.slug}`}
               className="line-clamp-2 font-medium leading-snug text-[color:var(--shop-ink)]"
             >
-              {line.name}
+              {displayName}
             </Link>
             {line.isBuyOneGetOne ? (
               <BogoLineCallout

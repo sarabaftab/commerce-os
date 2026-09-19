@@ -131,6 +131,7 @@ export async function resolveCampaignDiscountForCheckout(input: {
 export async function getStorefrontPromotionBanner(tenantId: string): Promise<{
   name: string;
   bannerText: string;
+  type: string;
 } | null> {
   const promotions = await listActivePromotionsForTenant(tenantId);
   const now = new Date();
@@ -141,7 +142,11 @@ export async function getStorefrontPromotionBanner(tenantId: string): Promise<{
   if (!chosen?.bannerText?.trim()) {
     return null;
   }
-  return { name: chosen.name, bannerText: chosen.bannerText.trim() };
+  return {
+    name: chosen.name,
+    bannerText: chosen.bannerText.trim(),
+    type: chosen.type,
+  };
 }
 
 /**

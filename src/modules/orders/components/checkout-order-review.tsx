@@ -4,7 +4,7 @@ import type { CartSummary } from "@/modules/orders";
 import { formatPackSizeLine, formatPriceTimesQuantity } from "@/modules/catalog/selling-unit";
 import { BogoCartBanner, BogoLineCallout } from "@/modules/orders/components/bogo-line-callout";
 import { computeUnitSalePriceMinor } from "@/modules/promotions/discount";
-import { useLocale } from "@/shared/i18n";
+import { localizedValue, useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
 
 type CheckoutOrderReviewProps = {
@@ -28,7 +28,7 @@ export function CheckoutOrderReview({
   fulfillmentMethod,
   freeDeliveryThresholdMinor,
 }: CheckoutOrderReviewProps) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const fee = fulfillmentMethod === "delivery" ? deliveryFeeMinor : 0;
   const discount = Math.max(0, discountMinor);
   const totalMinor = cart.subtotalMinor - discount + fee;
@@ -65,7 +65,9 @@ export function CheckoutOrderReview({
             return (
               <li key={item.id} className="flex items-start justify-between gap-3 text-sm">
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium">{item.name}</p>
+                  <p className="font-medium">
+                    {localizedValue({ locale, en: item.name, km: item.nameKm })}
+                  </p>
                   <p className="text-[color:var(--shop-ink-muted)]">
                     {formatPriceTimesQuantity(
                       formatMoney(

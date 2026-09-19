@@ -259,7 +259,8 @@ const en = {
 export type MessageKey = keyof typeof en;
 
 const km: Record<MessageKey, string> = {
-  shop: "ហាង",
+  // Client-authoritative terms from Billion translation doc (copy exactly)
+  shop: "ធ្វើការទិញទំនិញ",
   faq: "សំណួរគេសួរញឹកញាប់",
   cart: "រទេះ",
   account: "គណនី",
@@ -276,12 +277,12 @@ const km: Record<MessageKey, string> = {
   errorGeneric: "មានបញ្ហា។ សូមព្យាយាមម្តងទៀត។",
   noResults: "គ្មានលទ្ធផល",
   required: "ចាំបាច់",
-  all: "ទាំងអស់",
+  all: "ទំនិញទំាងអស់",
   unavailable: "មិនមាន",
   product: "ផលិតផល",
-  seeAll: "មើលទាំងអស់",
+  seeAll: "មើលទំនិញទាំងអស់",
   sale: "បញ្ចុះតម្លៃ",
-  bogoBadge: "ប្រូម៉ូសិន ១+១",
+  bogoBadge: "ប្រូម៉ូសិន 1 ថែម 1",
   bogoBuyReceive: "ទិញ ១ ទទួល ២",
   bogoYouReceivePrefix: "អ្នកទទួល",
   bogoPaidSets: "ឈុតប្រូម៉ូសិន",
@@ -304,7 +305,7 @@ const km: Record<MessageKey, string> = {
   pricePerCase: "តម្លៃក្នុងមួយកេស",
   categories: "ប្រភេទ",
   featured: "ពិសេស",
-  allProducts: "ផលិតផលទាំងអស់",
+  allProducts: "ទំនិញទំាងអស់",
   shopProducts: "ទិញផលិតផល",
   noProducts: "មិនទាន់មានផលិតផលទេ។",
   noFeaturedProducts: "មិនទាន់មានផលិតផលពិសេសទេ។ សូមពិនិត្យម្តងទៀតនៅពេលក្រោយ។",
