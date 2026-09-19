@@ -11,6 +11,7 @@ import { AppError } from "@/shared/errors/app-error";
 
 import {
   buildLocalizedOrderPlacedMessage,
+  buildLocalizedOrderStatusMessage,
   buildLocalizedPaymentRejectedMessage,
   buildLocalizedPaymentVerifiedMessage,
   localizedFulfillmentLabel,
@@ -21,7 +22,6 @@ import { formatMoney } from "@/shared/money/money";
 
 import {
   buildAccountOrderWebAppUrl,
-  buildOrderStatusTelegramMessage,
   shouldNotifyOrderStatus,
   type NotifiableOrderStatus,
 } from "../templates/order-status";
@@ -256,11 +256,11 @@ export async function deliverOrderStatusNotification(input: {
           (order.paymentProofStatus === "awaiting_proof" ||
             order.paymentProofStatus === "rejected"),
       })
-    : buildOrderStatusTelegramMessage({
+    : buildLocalizedOrderStatusMessage({
+        locale: order.customerLocale,
         orderNumber: order.orderNumber,
-        storeName: settings?.displayName?.trim() || tenant.name,
         toStatus: input.toStatus as NotifiableOrderStatus,
-        fulfillmentMethod: order.fulfillmentMethod,
+        fulfillmentMethod: order.fulfillmentMethod === "pickup" ? "pickup" : "delivery",
         pickupLocationName: order.pickupLocationName,
         pickupLocationAddress: order.pickupLocationAddress,
       });

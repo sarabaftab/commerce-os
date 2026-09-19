@@ -20,6 +20,7 @@ export { LocaleProvider, useLocale } from "./locale-context";
 export { LanguageSwitcher } from "./language-switcher";
 export {
   buildLocalizedOrderPlacedMessage,
+  buildLocalizedOrderStatusMessage,
   buildLocalizedPaymentRejectedMessage,
   buildLocalizedPaymentVerifiedMessage,
   localizedFulfillmentLabel,

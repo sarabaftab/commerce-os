@@ -136,3 +136,118 @@ export function localizedPaymentLabel(
 ): string {
   return method === "aba_transfer" ? t(locale, "abaTransfer") : t(locale, "cashOnDelivery");
 }
+
+export type NotifiableOrderStatusForCopy =
+  | "confirmed"
+  | "processing"
+  | "ready_for_pickup"
+  | "out_for_delivery"
+  | "completed"
+  | "cancelled";
+
+/**
+ * Customer Telegram copy for admin-triggered order status changes.
+ * Locale must come from order.customerLocale (via resolveLocale).
+ */
+export function buildLocalizedOrderStatusMessage(input: {
+  locale?: string | null;
+  orderNumber: string;
+  toStatus: NotifiableOrderStatusForCopy;
+  fulfillmentMethod: "delivery" | "pickup";
+  pickupLocationName?: string | null;
+  pickupLocationAddress?: string | null;
+}): NotificationCopy {
+  const locale = resolveLocale(input.locale);
+  const n = input.orderNumber;
+  const buttonText = t(locale, "viewOrder");
+
+  const pickupSuffix = (() => {
+    if (input.fulfillmentMethod !== "pickup") {
+      return "";
+    }
+    const bits = [input.pickupLocationName, input.pickupLocationAddress].filter(
+      (value): value is string => Boolean(value?.trim()),
+    );
+    if (bits.length === 0) {
+      return "";
+    }
+    const label = locale === "km" ? "ទទួលដោយខ្លួនឯង" : "Pickup";
+    return `\n\n${label}: ${bits.join(" — ")}`;
+  })();
+
+  if (locale === "km") {
+    switch (input.toStatus) {
+      case "confirmed":
+        return {
+          text: `ការបញ្ជាទិញ #${n} ត្រូវបានបញ្ជាក់\n\nការបញ្ជាទិញរបស់អ្នកត្រូវបានបញ្ជាក់ ហើយកំពុងត្រូវបានរៀបចំ។`,
+          buttonText,
+        };
+      case "processing":
+        return {
+          text: `ការបញ្ជាទិញ #${n} កំពុងត្រូវបានរៀបចំ\n\nយើងកំពុងរៀបចំការបញ្ជាទិញរបស់អ្នក។`,
+          buttonText,
+        };
+      case "ready_for_pickup":
+        return {
+          text: `ការបញ្ជាទិញ #${n} រួចរាល់សម្រាប់ទទួល\n\nការបញ្ជាទិញរបស់អ្នករួចរាល់នៅទីតាំងទទួលដែលអ្នកបានជ្រើសរើស។${pickupSuffix}`,
+          buttonText,
+        };
+      case "out_for_delivery":
+        return {
+          text: `ការបញ្ជាទិញ #${n} កំពុងដឹកជញ្ជូន\n\nការបញ្ជាទិញរបស់អ្នកកំពុងមកដល់។`,
+          buttonText,
+        };
+      case "completed":
+        return {
+          text: `ការបញ្ជាទិញ #${n} បានបញ្ចប់\n\nការបញ្ជាទិញរបស់អ្នកបានបញ្ចប់។ អរគុណសម្រាប់ការបញ្ជាទិញ។`,
+          buttonText,
+        };
+      case "cancelled":
+        return {
+          text: `ការបញ្ជាទិញ #${n} បានលុបចោល\n\nការបញ្ជាទិញរបស់អ្នកត្រូវបានលុបចោល។`,
+          buttonText,
+        };
+      default: {
+        const _never: never = input.toStatus;
+        return _never;
+      }
+    }
+  }
+
+  switch (input.toStatus) {
+    case "confirmed":
+      return {
+        text: `Order #${n} confirmed\n\nYour order has been confirmed and is now being prepared.`,
+        buttonText,
+      };
+    case "processing":
+      return {
+        text: `Order #${n} is being prepared\n\nWe are currently preparing your order.`,
+        buttonText,
+      };
+    case "ready_for_pickup":
+      return {
+        text: `Order #${n} is ready for pickup\n\nYour order is ready at your selected pickup location.${pickupSuffix}`,
+        buttonText,
+      };
+    case "out_for_delivery":
+      return {
+        text: `Order #${n} is out for delivery\n\nYour order is on the way.`,
+        buttonText,
+      };
+    case "completed":
+      return {
+        text: `Order #${n} completed\n\nYour order has been completed. Thank you for ordering with us.`,
+        buttonText,
+      };
+    case "cancelled":
+      return {
+        text: `Order #${n} cancelled\n\nYour order has been cancelled.`,
+        buttonText,
+      };
+    default: {
+      const _never: never = input.toStatus;
+      return _never;
+    }
+  }
+}

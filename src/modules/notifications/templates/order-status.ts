@@ -5,6 +5,7 @@ import type {
   PaymentProofStatus,
 } from "@prisma/client";
 
+import { buildLocalizedOrderStatusMessage } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
 
 export const ORDER_STATUS_NOTIFICATION_STATUSES = [
@@ -41,6 +42,8 @@ export type OrderStatusMessageInput = {
   fulfillmentMethod: FulfillmentMethod;
   pickupLocationName: string | null;
   pickupLocationAddress: string | null;
+  /** Authoritative order.customerLocale when available. Defaults to English. */
+  locale?: string | null;
 };
 
 export type OrderPlacedMessageInput = {
@@ -56,19 +59,6 @@ export type OrderStatusTelegramMessage = {
   text: string;
   buttonText: string;
 };
-
-function pickupLines(input: OrderStatusMessageInput): string {
-  if (input.fulfillmentMethod !== "pickup") {
-    return "";
-  }
-  const bits = [input.pickupLocationName, input.pickupLocationAddress].filter(
-    (value): value is string => Boolean(value?.trim()),
-  );
-  if (bits.length === 0) {
-    return "";
-  }
-  return `\n\nPickup: ${bits.join(" — ")}`;
-}
 
 /** Customer Telegram copy for successful order creation (`toStatus: pending`). */
 export function buildOrderPlacedTelegramMessage(
@@ -103,46 +93,21 @@ export function buildOrderPlacedTelegramMessage(
   };
 }
 
+/**
+ * Status-change Telegram copy. Prefer passing order.customerLocale.
+ * English remains the fallback for null/invalid locales.
+ */
 export function buildOrderStatusTelegramMessage(
   input: OrderStatusMessageInput,
 ): OrderStatusTelegramMessage {
-  const n = input.orderNumber;
-  switch (input.toStatus) {
-    case "confirmed":
-      return {
-        text: `Order #${n} confirmed\n\nYour order has been confirmed and is now being prepared.`,
-        buttonText: "View Order",
-      };
-    case "processing":
-      return {
-        text: `Order #${n} is being prepared\n\nWe are currently preparing your order.`,
-        buttonText: "View Order",
-      };
-    case "ready_for_pickup":
-      return {
-        text: `Order #${n} is ready for pickup\n\nYour order is ready at your selected pickup location.${pickupLines(input)}`,
-        buttonText: "View Order",
-      };
-    case "out_for_delivery":
-      return {
-        text: `Order #${n} is out for delivery\n\nYour order is on the way.`,
-        buttonText: "View Order",
-      };
-    case "completed":
-      return {
-        text: `Order #${n} completed\n\nYour order has been completed. Thank you for ordering with us.`,
-        buttonText: "View Order",
-      };
-    case "cancelled":
-      return {
-        text: `Order #${n} cancelled\n\nYour order has been cancelled.`,
-        buttonText: "View Order",
-      };
-    default: {
-      const _never: never = input.toStatus;
-      return _never;
-    }
-  }
+  return buildLocalizedOrderStatusMessage({
+    locale: input.locale,
+    orderNumber: input.orderNumber,
+    toStatus: input.toStatus,
+    fulfillmentMethod: input.fulfillmentMethod === "pickup" ? "pickup" : "delivery",
+    pickupLocationName: input.pickupLocationName,
+    pickupLocationAddress: input.pickupLocationAddress,
+  });
 }
 
 export function buildAccountOrderWebAppUrl(input: {
