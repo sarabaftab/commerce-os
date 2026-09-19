@@ -19,6 +19,7 @@ export type CreateProductInput = {
   currency: string;
   categoryId?: string | null;
   isAvailable: boolean;
+  isFeatured?: boolean;
   stockNote?: string | null;
   stockQuantity?: number | null;
   sortOrder?: number;
@@ -40,6 +41,7 @@ export type UpdateProductInput = {
   currency: string;
   categoryId?: string | null;
   isAvailable: boolean;
+  isFeatured?: boolean;
   stockNote?: string | null;
   stockQuantity?: number | null;
   sortOrder?: number;

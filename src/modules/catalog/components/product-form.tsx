@@ -215,17 +215,38 @@ export function ProductForm({
             type="number"
             defaultValue={String(product?.sortOrder ?? 0)}
           />
+          <p className="text-xs text-muted-foreground">
+            Lower numbers appear first. Homepage shows up to 6 featured products.
+          </p>
         </div>
-        <div className="flex items-end gap-2 pb-2">
-          <input
-            id="isAvailable"
-            name="isAvailable"
-            type="checkbox"
-            value="true"
-            defaultChecked={product?.isAvailable ?? true}
-            className="size-4 rounded border"
-          />
-          <Label htmlFor="isAvailable">Available for sale</Label>
+        <div className="flex flex-col justify-end gap-3 pb-2">
+          <div className="flex items-center gap-2">
+            <input
+              id="isAvailable"
+              name="isAvailable"
+              type="checkbox"
+              value="true"
+              defaultChecked={product?.isAvailable ?? true}
+              className="size-4 rounded border"
+            />
+            <Label htmlFor="isAvailable">Available for sale</Label>
+          </div>
+          <div className="flex items-start gap-2">
+            <input
+              id="isFeatured"
+              name="isFeatured"
+              type="checkbox"
+              value="true"
+              defaultChecked={product?.isFeatured ?? false}
+              className="mt-0.5 size-4 rounded border"
+            />
+            <div>
+              <Label htmlFor="isFeatured">Featured product</Label>
+              <p className="text-xs text-muted-foreground">
+                Show this product in the Featured section on the storefront homepage.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -34,6 +34,7 @@ function formDataToObject(formData: FormData) {
     currency: String(formData.get("currency") ?? ""),
     categoryId: String(formData.get("categoryId") ?? ""),
     isAvailable: formData.get("isAvailable") === "on" || formData.get("isAvailable") === "true",
+    isFeatured: formData.get("isFeatured") === "on" || formData.get("isFeatured") === "true",
     stockNote: String(formData.get("stockNote") ?? ""),
     stockQuantity: String(formData.get("stockQuantity") ?? ""),
     sortOrder: String(formData.get("sortOrder") ?? "0"),

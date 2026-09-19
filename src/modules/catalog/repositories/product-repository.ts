@@ -27,6 +27,7 @@ export async function listAdminProductSummaries(
     priceMinor: number;
     currency: string;
     isAvailable: boolean;
+    isFeatured: boolean;
     category: { id: string; name: string } | null;
   }[];
   total: number;
@@ -46,6 +47,7 @@ export async function listAdminProductSummaries(
         priceMinor: true,
         currency: true,
         isAvailable: true,
+        isFeatured: true,
         category: { select: { id: true, name: true } },
       },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -75,13 +77,14 @@ export async function countProductsForTenant(tenantId: string): Promise<{
 
 export async function listAvailableProducts(
   tenantId: string,
-  options?: { categoryId?: string; limit?: number },
+  options?: { categoryId?: string; limit?: number; featuredOnly?: boolean },
 ): Promise<ProductWithRelations[]> {
   return prisma.product.findMany({
     where: {
       tenantId,
       deletedAt: null,
       isAvailable: true,
+      ...(options?.featuredOnly ? { isFeatured: true } : {}),
       ...(options?.categoryId ? { categoryId: options.categoryId } : {}),
     },
     include: {

@@ -21,6 +21,7 @@ export type AdminProductListRow = {
   priceMinor: number;
   currency: string;
   isAvailable: boolean;
+  isFeatured: boolean;
   category: { id: string; name: string } | null;
 };
 
@@ -46,6 +47,7 @@ export function ProductTable({ products }: ProductTableProps) {
             <TableHead>Category</TableHead>
             <TableHead>Price</TableHead>
             <TableHead>Availability</TableHead>
+            <TableHead>Featured</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -64,6 +66,13 @@ export function ProductTable({ products }: ProductTableProps) {
                 <Badge variant={product.isAvailable ? "default" : "secondary"}>
                   {product.isAvailable ? "Available" : "Unavailable"}
                 </Badge>
+              </TableCell>
+              <TableCell>
+                {product.isFeatured ? (
+                  <Badge variant="outline">Featured</Badge>
+                ) : (
+                  <span className="text-xs text-muted-foreground">—</span>
+                )}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">

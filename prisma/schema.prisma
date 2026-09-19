@@ -181,6 +181,8 @@ model Product {
   priceMinor  Int       @map("price_minor")
   currency    String    @db.Char(3)
   isAvailable Boolean   @default(true) @map("is_available")
+  /** Explicit homepage Featured eligibility (storefront also requires isAvailable). */
+  isFeatured  Boolean   @default(false) @map("is_featured")
   /**
    * On-hand units for fulfillment. Null = legacy unlimited (isAvailable only).
    * Required for buy_one_get_one eligibility checks (floor(stock/2) sets).

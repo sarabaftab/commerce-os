@@ -24,6 +24,7 @@ export const productFormSchema = z.object({
     .transform((value) => value.toUpperCase()),
   categoryId: z.union([z.literal(""), z.string().min(1)]).optional(),
   isAvailable: z.boolean(),
+  isFeatured: z.boolean(),
   stockNote: z.union([z.literal(""), z.string().trim().max(240)]).optional(),
   stockQuantity: z.preprocess(
     (value) => (value === "" || value == null ? null : value),
@@ -53,6 +54,7 @@ export function productFormToCreateInput(
     currency: values.currency,
     categoryId: values.categoryId || null,
     isAvailable: values.isAvailable,
+    isFeatured: values.isFeatured,
     stockNote: values.stockNote || null,
     stockQuantity: values.stockQuantity ?? null,
     sortOrder: values.sortOrder,
