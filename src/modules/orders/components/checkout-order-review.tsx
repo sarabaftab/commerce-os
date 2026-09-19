@@ -2,6 +2,7 @@
 
 import type { CartSummary } from "@/modules/orders";
 import { formatPackSizeLine, formatPriceTimesQuantity } from "@/modules/catalog/selling-unit";
+import { BogoCartBanner, BogoLineCallout } from "@/modules/orders/components/bogo-line-callout";
 import { computeUnitSalePriceMinor } from "@/modules/promotions/discount";
 import { useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
@@ -37,27 +38,33 @@ export function CheckoutOrderReview({
     promotionValue > 0
       ? { type: "percentage" as const, value: promotionValue }
       : null;
+  const availableItems = cart.items.filter((item) => item.isAvailable);
+  const hasBogo = availableItems.some(
+    (item) => item.isBuyOneGetOne || (item.freeQuantity ?? 0) > 0,
+  );
 
   return (
     <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
       <h2 className="text-sm font-semibold">{t("orderReview")}</h2>
 
+      {hasBogo ? <BogoCartBanner /> : null}
+
       <ul className="space-y-3">
-        {cart.items
-          .filter((item) => item.isAvailable)
-          .map((item) => {
+        {availableItems.map((item) => {
+            const isBogo = Boolean(item.isBuyOneGetOne || (item.freeQuantity ?? 0) > 0);
+            const receiveCount = item.fulfillmentQuantity ?? item.quantity * (isBogo ? 2 : 1);
             const saleUnit =
-              percentCampaign != null
+              !isBogo && percentCampaign != null
                 ? computeUnitSalePriceMinor(item.unitPriceMinor, percentCampaign)
                 : null;
             const saleLine =
-              percentCampaign != null
+              !isBogo && percentCampaign != null
                 ? computeUnitSalePriceMinor(item.lineTotalMinor, percentCampaign)
                 : null;
 
             return (
               <li key={item.id} className="flex items-start justify-between gap-3 text-sm">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="font-medium">{item.name}</p>
                   <p className="text-[color:var(--shop-ink-muted)]">
                     {formatPriceTimesQuantity(
@@ -74,16 +81,28 @@ export function CheckoutOrderReview({
                       {formatMoney(item.unitPriceMinor, item.currency)}
                     </p>
                   ) : null}
+                  {isBogo ? (
+                    <BogoLineCallout
+                      compact
+                      paidQuantity={item.quantity}
+                      fulfillmentQuantity={receiveCount}
+                    />
+                  ) : null}
                   {formatPackSizeLine(item.volume, item.sellingUnit) ? (
-                    <p className="text-xs text-[color:var(--shop-ink-muted)]">
+                    <p className="mt-1 text-xs text-[color:var(--shop-ink-muted)]">
                       {formatPackSizeLine(item.volume, item.sellingUnit)}
                     </p>
                   ) : null}
                 </div>
-                <div className="text-right">
+                <div className="shrink-0 text-right">
                   <span className="font-medium">
                     {formatMoney(saleLine ?? item.lineTotalMinor, item.currency)}
                   </span>
+                  {isBogo ? (
+                    <p className="mt-0.5 text-[11px] font-medium text-[color:var(--shop-ink-muted)]">
+                      {t("bogoPayFor")} {item.quantity}
+                    </p>
+                  ) : null}
                   {saleLine != null && saleLine < item.lineTotalMinor ? (
                     <p className="text-xs text-[color:var(--shop-ink-muted)] line-through">
                       {formatMoney(item.lineTotalMinor, item.currency)}

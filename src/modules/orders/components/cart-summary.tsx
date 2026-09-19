@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import type { CartSummary } from "@/modules/orders";
 import { clearCartAction } from "@/modules/orders/actions/cart-actions";
+import { BogoCartBanner } from "@/modules/orders/components/bogo-line-callout";
 import { useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
 import { notifyCartChanged } from "@/ui/storefront/cart-events";
@@ -21,9 +22,14 @@ export function CartSummaryPanel({ tenantSlug, summary }: CartSummaryPanelProps)
   const [pending, startTransition] = useTransition();
 
   const hasAvailableItems = summary.items.some((item) => item.isAvailable);
+  const hasBogo = summary.items.some(
+    (item) => item.isAvailable && (item.isBuyOneGetOne || (item.freeQuantity ?? 0) > 0),
+  );
 
   return (
     <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
+      {hasBogo ? <BogoCartBanner /> : null}
+
       <div className="flex items-center justify-between text-sm">
         <span className="text-[color:var(--shop-ink-muted)]">{t("subtotal")}</span>
         <span className="font-semibold">

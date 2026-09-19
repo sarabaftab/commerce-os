@@ -104,6 +104,9 @@ export type CustomerOrderDetailDto = {
     imageUrl: string | null;
     volume: string | null;
     sellingUnit: import("@prisma/client").SellingUnit;
+    freeQuantity?: number;
+    fulfillmentQuantity?: number;
+    isBuyOneGetOne?: boolean;
   }[];
   timeline: CustomerOrderTimelineEntryDto[];
   supportPhone: string | null;

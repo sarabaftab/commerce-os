@@ -11,6 +11,7 @@ import {
   removeCartItemAction,
   updateCartItemAction,
 } from "@/modules/orders/actions/cart-actions";
+import { BogoLineCallout } from "@/modules/orders/components/bogo-line-callout";
 import type { StorefrontCampaignDisplay } from "@/modules/promotions/discount";
 import { computeUnitSalePriceMinor } from "@/modules/promotions/discount";
 import { useLocale } from "@/shared/i18n";
@@ -86,9 +87,10 @@ export function CartLineItem({
               {line.name}
             </Link>
             {line.isBuyOneGetOne ? (
-              <p className="mt-1 text-xs font-semibold text-[color:var(--shop-primary)]">
-                {t("bogoBadge")}
-              </p>
+              <BogoLineCallout
+                paidQuantity={line.quantity}
+                fulfillmentQuantity={line.fulfillmentQuantity ?? line.quantity * 2}
+              />
             ) : null}
             <PromotionalPrice
               className="mt-1"
@@ -97,12 +99,6 @@ export function CartLineItem({
               sellingUnit={line.sellingUnit}
               campaign={line.isBuyOneGetOne ? null : campaign}
             />
-            {line.isBuyOneGetOne ? (
-              <p className="text-xs text-[color:var(--shop-ink-muted)]">
-                {t("bogoYouReceivePrefix")}{" "}
-                {line.fulfillmentQuantity ?? line.quantity * 2}
-              </p>
-            ) : null}
             {formatPackSizeLine(line.volume, line.sellingUnit) ? (
               <p className="text-xs text-[color:var(--shop-ink-muted)]">
                 {formatPackSizeLine(line.volume, line.sellingUnit)}
@@ -148,14 +144,21 @@ export function CartLineItem({
             </div>
             {(() => {
               const saleLine =
-                campaign != null
+                campaign != null && !line.isBuyOneGetOne
                   ? computeUnitSalePriceMinor(line.lineTotalMinor, campaign)
                   : null;
               if (saleLine == null || saleLine >= line.lineTotalMinor) {
                 return (
-                  <p className="text-sm font-semibold">
-                    {formatMoney(line.lineTotalMinor, line.currency)}
-                  </p>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold">
+                      {formatMoney(line.lineTotalMinor, line.currency)}
+                    </p>
+                    {line.isBuyOneGetOne ? (
+                      <p className="text-[11px] font-medium text-[color:var(--shop-ink-muted)]">
+                        {t("bogoPayFor")} {line.quantity}
+                      </p>
+                    ) : null}
+                  </div>
                 );
               }
               return (

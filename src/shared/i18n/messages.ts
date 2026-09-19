@@ -27,8 +27,12 @@ const en = {
   sale: "Sale",
   bogoBadge: "1+1 Promotion",
   bogoBuyReceive: "Buy 1, receive 2",
-  bogoYouReceivePrefix: "You receive:",
+  bogoYouReceivePrefix: "You receive",
   bogoPaidSets: "promotional sets",
+  bogoPayFor: "Pay for",
+  bogoPriceOfOne: "Charged for paid qty only — free units included",
+  bogoBannerTitle: "1+1 offers in your cart",
+  bogoBannerBody: "You pay for fewer units than you receive. Free units are the same product.",
 
   // Catalog
   addToCart: "Add to Cart",
@@ -279,8 +283,12 @@ const km: Record<MessageKey, string> = {
   sale: "បញ្ចុះតម្លៃ",
   bogoBadge: "ប្រូម៉ូសិន ១+១",
   bogoBuyReceive: "ទិញ ១ ទទួល ២",
-  bogoYouReceivePrefix: "អ្នកទទួល:",
+  bogoYouReceivePrefix: "អ្នកទទួល",
   bogoPaidSets: "ឈុតប្រូម៉ូសិន",
+  bogoPayFor: "បង់សម្រាប់",
+  bogoPriceOfOne: "គិតតែចំនួនដែលបង់ — រួមទាំងឥតគិតថ្លៃ",
+  bogoBannerTitle: "មានប្រូម៉ូសិន ១+១ ក្នុងរទេះ",
+  bogoBannerBody: "អ្នកបង់តិចជាងចំនួនទទួល។ ឥតគិតថ្លៃជាផលិតផលដូចគ្នា។",
 
   addToCart: "បញ្ចូលទៅរទេះ",
   addingToCart: "កំពុងបញ្ចូល…",

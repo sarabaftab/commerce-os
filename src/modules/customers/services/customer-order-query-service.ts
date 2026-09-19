@@ -194,15 +194,23 @@ export async function getCustomerOrderByNumber(input: {
             address: order.pickupLocationAddress,
           }
         : null,
-    items: order.items.map((item) => ({
-      name: item.nameSnapshot,
-      quantity: item.quantity,
-      unitPriceMinor: item.unitPriceMinor,
-      lineTotalMinor: item.lineTotalMinor,
-      imageUrl: item.product?.media[0]?.url ?? null,
-      volume: item.volumeSnapshot,
-      sellingUnit: item.sellingUnitSnapshot ?? "item",
-    })),
+    items: order.items.map((item) => {
+      const freeQuantity = item.freeQuantity ?? 0;
+      const isBuyOneGetOne =
+        item.promotionTypeSnapshot === "buy_one_get_one" || freeQuantity > 0;
+      return {
+        name: item.nameSnapshot,
+        quantity: item.quantity,
+        unitPriceMinor: item.unitPriceMinor,
+        lineTotalMinor: item.lineTotalMinor,
+        imageUrl: item.product?.media[0]?.url ?? null,
+        volume: item.volumeSnapshot,
+        sellingUnit: item.sellingUnitSnapshot ?? "item",
+        freeQuantity,
+        fulfillmentQuantity: item.fulfillmentQuantity ?? item.quantity,
+        isBuyOneGetOne,
+      };
+    }),
     timeline: order.statusHistory.map((entry) => ({
       status: entry.toStatus,
       statusLabel: customerOrderStatusLabel(entry.toStatus),

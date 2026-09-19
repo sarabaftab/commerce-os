@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { AbaPaymentDetails } from "@/modules/orders/components/aba-payment-details";
 import { AbaProofUpload } from "@/modules/orders/components/aba-proof-upload";
+import { BogoCartBanner, BogoLineCallout } from "@/modules/orders/components/bogo-line-callout";
 import { CUSTOMER_ORDER_STATUS_MESSAGE_KEYS } from "@/modules/customers/types";
 import { useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
@@ -60,37 +61,61 @@ export function CustomerOrderDetail({ tenantSlug, order }: Props) {
       </section>
 
       <section className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-<h2 className="text-sm font-semibold">{t("items")}</h2>
+        <h2 className="text-sm font-semibold">{t("items")}</h2>
+        {order.items.some((item) => item.isBuyOneGetOne || (item.freeQuantity ?? 0) > 0) ? (
+          <div className="mt-3">
+            <BogoCartBanner />
+          </div>
+        ) : null}
         <ul className="mt-3 space-y-3">
-          {order.items.map((item, index) => (
-            <li key={`${item.name}-${index}`} className="flex gap-3">
-              {item.imageUrl ? (
-                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg">
-                  <ProductImage src={item.imageUrl} alt="" sizes="48px" className="h-full w-full" />
-                </div>
-              ) : (
-                <div className="h-12 w-12 rounded-lg bg-[color:var(--shop-line)]/40" />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">{item.name}</p>
-                <p className="text-xs text-[color:var(--shop-ink-muted)]">
-                  {formatPriceTimesQuantity(
-                    formatMoney(item.unitPriceMinor, order.currency),
-                    item.quantity,
-                    item.sellingUnit,
-                  )}
-                </p>
-                {formatPackSizeLine(item.volume, item.sellingUnit) ? (
+          {order.items.map((item, index) => {
+            const isBogo = Boolean(item.isBuyOneGetOne || (item.freeQuantity ?? 0) > 0);
+            const receiveCount =
+              item.fulfillmentQuantity ?? item.quantity * (isBogo ? 2 : 1);
+            return (
+              <li key={`${item.name}-${index}`} className="flex gap-3">
+                {item.imageUrl ? (
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg">
+                    <ProductImage src={item.imageUrl} alt="" sizes="48px" className="h-full w-full" />
+                  </div>
+                ) : (
+                  <div className="h-12 w-12 rounded-lg bg-[color:var(--shop-line)]/40" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{item.name}</p>
                   <p className="text-xs text-[color:var(--shop-ink-muted)]">
-                    {formatPackSizeLine(item.volume, item.sellingUnit)}
+                    {formatPriceTimesQuantity(
+                      formatMoney(item.unitPriceMinor, order.currency),
+                      item.quantity,
+                      item.sellingUnit,
+                    )}
                   </p>
-                ) : null}
-              </div>
-              <p className="text-sm font-medium">
-                {formatMoney(item.lineTotalMinor, order.currency)}
-              </p>
-            </li>
-          ))}
+                  {isBogo ? (
+                    <BogoLineCallout
+                      compact
+                      paidQuantity={item.quantity}
+                      fulfillmentQuantity={receiveCount}
+                    />
+                  ) : null}
+                  {formatPackSizeLine(item.volume, item.sellingUnit) ? (
+                    <p className="mt-1 text-xs text-[color:var(--shop-ink-muted)]">
+                      {formatPackSizeLine(item.volume, item.sellingUnit)}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-sm font-medium">
+                    {formatMoney(item.lineTotalMinor, order.currency)}
+                  </p>
+                  {isBogo ? (
+                    <p className="text-[11px] font-medium text-[color:var(--shop-ink-muted)]">
+                      {t("bogoPayFor")} {item.quantity}
+                    </p>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </section>
 

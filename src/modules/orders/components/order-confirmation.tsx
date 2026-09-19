@@ -3,6 +3,7 @@
 import type { OrderConfirmation } from "@/modules/orders";
 import { AbaPaymentDetails } from "@/modules/orders/components/aba-payment-details";
 import { AbaProofUpload } from "@/modules/orders/components/aba-proof-upload";
+import { BogoCartBanner, BogoLineCallout } from "@/modules/orders/components/bogo-line-callout";
 import { formatPackSizeLine, formatPriceTimesQuantity } from "@/modules/catalog/selling-unit";
 import { useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
@@ -128,42 +129,48 @@ export function OrderConfirmationView({
       </div>
 
       <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-<h2 className="text-sm font-semibold">{t("items")}</h2>
+        <h2 className="text-sm font-semibold">{t("items")}</h2>
+        {order.items.some((item) => item.isBuyOneGetOne || (item.freeQuantity ?? 0) > 0) ? (
+          <BogoCartBanner />
+        ) : null}
         <ul className="space-y-3">
           {order.items.map((item) => {
             const isBogo = item.isBuyOneGetOne || (item.freeQuantity ?? 0) > 0;
-            const receiveCount = item.fulfillmentQuantity ?? item.quantity;
+            const receiveCount = item.fulfillmentQuantity ?? item.quantity * (isBogo ? 2 : 1);
             return (
               <li key={item.id} className="flex items-start justify-between gap-3 text-sm">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="font-medium">{item.name}</p>
-                  {isBogo ? (
-                    <p className="text-xs font-semibold text-[color:var(--shop-primary)]">
-                      {t("bogoBadge")}
-                    </p>
-                  ) : null}
                   <p className="text-[color:var(--shop-ink-muted)]">
                     {formatPriceTimesQuantity(
                       formatMoney(item.unitPriceMinor, order.currency),
                       item.quantity,
                       item.sellingUnit,
                     )}
-                    {isBogo ? ` · ${item.quantity} ${t("bogoPaidSets")}` : ""}
                   </p>
                   {isBogo ? (
-                    <p className="text-xs text-[color:var(--shop-ink-muted)]">
-                      {t("bogoYouReceivePrefix")} {receiveCount}
-                    </p>
+                    <BogoLineCallout
+                      compact
+                      paidQuantity={item.quantity}
+                      fulfillmentQuantity={receiveCount}
+                    />
                   ) : null}
                   {formatPackSizeLine(item.volume, item.sellingUnit) ? (
-                    <p className="text-xs text-[color:var(--shop-ink-muted)]">
+                    <p className="mt-1 text-xs text-[color:var(--shop-ink-muted)]">
                       {formatPackSizeLine(item.volume, item.sellingUnit)}
                     </p>
                   ) : null}
                 </div>
-                <span className="font-medium">
-                  {formatMoney(item.lineTotalMinor, order.currency)}
-                </span>
+                <div className="shrink-0 text-right">
+                  <span className="font-medium">
+                    {formatMoney(item.lineTotalMinor, order.currency)}
+                  </span>
+                  {isBogo ? (
+                    <p className="mt-0.5 text-[11px] font-medium text-[color:var(--shop-ink-muted)]">
+                      {t("bogoPayFor")} {item.quantity}
+                    </p>
+                  ) : null}
+                </div>
               </li>
             );
           })}
