@@ -1,9 +1,19 @@
 import { Prisma } from "@prisma/client";
 
 import { findProductAvailability } from "@/modules/catalog/repositories/product-repository";
+import {
+  buildActiveBuyOneGetOneByProductId,
+  type ActiveBuyOneGetOne,
+} from "@/modules/promotions/discount";
+import { listActivePromotionsForTenant } from "@/modules/promotions/repositories/promotion-repository";
 import { AppError } from "@/shared/errors/app-error";
 import { createGuestToken } from "@/shared/cart/cart-cookie";
 
+import {
+  isProductPurchasable,
+  maxPurchasableQuantity,
+  resolveLinePromotionQuantities,
+} from "../line-promotion";
 import {
   clearCartItems,
   createCustomerCart,
@@ -50,13 +60,44 @@ function assertCartLineOwnedByIdentity(
   throw new AppError("NOT_FOUND", "Cart item not found");
 }
 
-function buildCartSummary(cart: CartWithItems, tenantCurrency: string): CartSummary {
+async function loadBogoMap(tenantId: string): Promise<Map<string, ActiveBuyOneGetOne>> {
+  const promotions = await listActivePromotionsForTenant(tenantId);
+  return buildActiveBuyOneGetOneByProductId(promotions);
+}
+
+function buildCartSummary(
+  cart: CartWithItems,
+  tenantCurrency: string,
+  bogoByProductId: Map<string, ActiveBuyOneGetOne>,
+): CartSummary {
   const items = cart.items
     .filter((item) => item.product && !item.product.deletedAt)
     .map((item) => {
-      const available = item.product.isAvailable;
+      const bogo = bogoByProductId.get(item.productId) ?? null;
+      const available = isProductPurchasable(
+        {
+          isAvailable: item.product.isAvailable,
+          deletedAt: item.product.deletedAt,
+          stockQuantity: item.product.stockQuantity,
+        },
+        bogo,
+      );
       const unitPriceMinor = item.product.priceMinor;
-      const lineTotalMinor = available ? unitPriceMinor * item.quantity : 0;
+      const resolved = available
+        ? resolveLinePromotionQuantities({
+            paidQuantity: item.quantity,
+            unitPriceMinor,
+            bogo,
+          })
+        : {
+            paidQuantity: item.quantity,
+            freeQuantity: 0,
+            fulfillmentQuantity: item.quantity,
+            promotionIdSnapshot: null,
+            promotionNameSnapshot: null,
+            promotionTypeSnapshot: null,
+            lineTotalMinor: 0,
+          };
 
       return {
         id: item.id,
@@ -65,12 +106,17 @@ function buildCartSummary(cart: CartWithItems, tenantCurrency: string): CartSumm
         name: item.product.name,
         quantity: item.quantity,
         unitPriceMinor,
-        lineTotalMinor,
+        lineTotalMinor: resolved.lineTotalMinor,
         currency: item.product.currency,
         imageUrl: item.product.media[0]?.url ?? null,
         isAvailable: available,
         volume: item.product.volume,
         sellingUnit: item.product.sellingUnit,
+        freeQuantity: resolved.freeQuantity,
+        fulfillmentQuantity: resolved.fulfillmentQuantity,
+        promotionNameSnapshot: resolved.promotionNameSnapshot,
+        promotionTypeSnapshot: resolved.promotionTypeSnapshot,
+        isBuyOneGetOne: Boolean(bogo && available),
       };
     });
 
@@ -139,8 +185,9 @@ export async function getOrCreateCart(
     newGuestToken = created.guestToken;
   }
 
+  const bogoMap = await loadBogoMap(identity.tenantId);
   return {
-    summary: buildCartSummary(cart, tenantCurrency),
+    summary: buildCartSummary(cart, tenantCurrency, bogoMap),
     cart,
     guestToken: newGuestToken,
   };
@@ -164,7 +211,8 @@ export async function getCartSummary(
     return null;
   }
 
-  return buildCartSummary(cart, tenantCurrency);
+  const bogoMap = await loadBogoMap(identity.tenantId);
+  return buildCartSummary(cart, tenantCurrency, bogoMap);
 }
 
 /** Header badge only — avoids loading product/media graphs on every page. */
@@ -179,15 +227,30 @@ export async function getCartItemCount(identity: CartIdentity): Promise<number> 
   });
 }
 
-async function assertProductCanBeAdded(tenantId: string, productId: string) {
+async function assertProductCanBeAdded(
+  tenantId: string,
+  productId: string,
+  bogoMap?: Map<string, ActiveBuyOneGetOne>,
+) {
   const product = await findProductAvailability(tenantId, productId);
   if (!product || product.deletedAt) {
     throw new AppError("NOT_FOUND", "Product not found");
   }
-  if (!product.isAvailable) {
+  const map = bogoMap ?? (await loadBogoMap(tenantId));
+  const bogo = map.get(productId) ?? null;
+  if (
+    !isProductPurchasable(
+      {
+        isAvailable: product.isAvailable,
+        deletedAt: product.deletedAt,
+        stockQuantity: product.stockQuantity,
+      },
+      bogo,
+    )
+  ) {
     throw new AppError("VALIDATION", "Product is not available");
   }
-  return product;
+  return { product, bogo };
 }
 
 export async function addItemToCart(
@@ -196,17 +259,33 @@ export async function addItemToCart(
   input: { productId: string; quantity: number },
 ): Promise<{ summary: CartSummary; guestToken?: string }> {
   const parsed = addCartItemSchema.parse(input);
-  const [, openCart] = await Promise.all([
-    assertProductCanBeAdded(identity.tenantId, parsed.productId),
+  const bogoMap = await loadBogoMap(identity.tenantId);
+  const [{ product, bogo }, openCart] = await Promise.all([
+    assertProductCanBeAdded(identity.tenantId, parsed.productId, bogoMap),
     getOrCreateCart(identity, tenantCurrency),
   ]);
 
   const cart = openCart.cart;
   const existing = cart.items.find((item) => item.productId === parsed.productId);
-  const nextQuantity = Math.min(
-    (existing?.quantity ?? 0) + parsed.quantity,
+  const maxQty = maxPurchasableQuantity(
+    {
+      isAvailable: product.isAvailable,
+      deletedAt: product.deletedAt,
+      stockQuantity: product.stockQuantity,
+    },
+    bogo,
     MAX_CART_QUANTITY,
   );
+  const nextQuantity = Math.min(
+    (existing?.quantity ?? 0) + parsed.quantity,
+    maxQty,
+  );
+  if (nextQuantity < 1) {
+    throw new AppError("VALIDATION", "Product is out of stock");
+  }
+  if (nextQuantity === existing?.quantity) {
+    throw new AppError("VALIDATION", "Not enough stock for that quantity");
+  }
 
   await Promise.all([
     upsertCartItem({
@@ -225,7 +304,7 @@ export async function addItemToCart(
   }
 
   return {
-    summary: buildCartSummary(refreshed, tenantCurrency),
+    summary: buildCartSummary(refreshed, tenantCurrency, bogoMap),
     guestToken: openCart.guestToken,
   };
 }
@@ -242,7 +321,24 @@ export async function updateCartItemQty(
   }
   assertCartLineOwnedByIdentity(identity, line.cart);
 
-  await assertProductCanBeAdded(identity.tenantId, line.productId);
+  const bogoMap = await loadBogoMap(identity.tenantId);
+  const { product, bogo } = await assertProductCanBeAdded(
+    identity.tenantId,
+    line.productId,
+    bogoMap,
+  );
+  const maxQty = maxPurchasableQuantity(
+    {
+      isAvailable: product.isAvailable,
+      deletedAt: product.deletedAt,
+      stockQuantity: product.stockQuantity,
+    },
+    bogo,
+    MAX_CART_QUANTITY,
+  );
+  if (quantity > maxQty) {
+    throw new AppError("VALIDATION", "Not enough stock for that quantity");
+  }
 
   const [result] = await Promise.all([
     updateCartItemQuantity(identity.tenantId, itemId, quantity),
@@ -258,7 +354,7 @@ export async function updateCartItemQty(
   }
 
   return {
-    summary: buildCartSummary(refreshed, tenantCurrency),
+    summary: buildCartSummary(refreshed, tenantCurrency, bogoMap),
     guestToken: undefined,
   };
 }
@@ -284,8 +380,9 @@ export async function removeCartItem(
     throw new AppError("NOT_FOUND", "Cart not found");
   }
 
+  const bogoMap = await loadBogoMap(identity.tenantId);
   return {
-    summary: buildCartSummary(refreshed, tenantCurrency),
+    summary: buildCartSummary(refreshed, tenantCurrency, bogoMap),
     guestToken: undefined,
   };
 }
@@ -301,7 +398,7 @@ export async function clearCart(
   ]);
 
   return {
-    summary: buildCartSummary({ ...cart, items: [] }, tenantCurrency),
+    summary: buildCartSummary({ ...cart, items: [] }, tenantCurrency, new Map()),
     guestToken,
   };
 }

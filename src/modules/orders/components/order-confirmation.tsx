@@ -130,28 +130,43 @@ export function OrderConfirmationView({
       <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
 <h2 className="text-sm font-semibold">{t("items")}</h2>
         <ul className="space-y-3">
-          {order.items.map((item) => (
-            <li key={item.id} className="flex items-start justify-between gap-3 text-sm">
-              <div>
-                <p className="font-medium">{item.name}</p>
-                <p className="text-[color:var(--shop-ink-muted)]">
-                  {formatPriceTimesQuantity(
-                    formatMoney(item.unitPriceMinor, order.currency),
-                    item.quantity,
-                    item.sellingUnit,
-                  )}
-                </p>
-                {formatPackSizeLine(item.volume, item.sellingUnit) ? (
-                  <p className="text-xs text-[color:var(--shop-ink-muted)]">
-                    {formatPackSizeLine(item.volume, item.sellingUnit)}
+          {order.items.map((item) => {
+            const isBogo = item.isBuyOneGetOne || (item.freeQuantity ?? 0) > 0;
+            const receiveCount = item.fulfillmentQuantity ?? item.quantity;
+            return (
+              <li key={item.id} className="flex items-start justify-between gap-3 text-sm">
+                <div>
+                  <p className="font-medium">{item.name}</p>
+                  {isBogo ? (
+                    <p className="text-xs font-semibold text-[color:var(--shop-primary)]">
+                      {t("bogoBadge")}
+                    </p>
+                  ) : null}
+                  <p className="text-[color:var(--shop-ink-muted)]">
+                    {formatPriceTimesQuantity(
+                      formatMoney(item.unitPriceMinor, order.currency),
+                      item.quantity,
+                      item.sellingUnit,
+                    )}
+                    {isBogo ? ` · ${item.quantity} ${t("bogoPaidSets")}` : ""}
                   </p>
-                ) : null}
-              </div>
-              <span className="font-medium">
-                {formatMoney(item.lineTotalMinor, order.currency)}
-              </span>
-            </li>
-          ))}
+                  {isBogo ? (
+                    <p className="text-xs text-[color:var(--shop-ink-muted)]">
+                      {t("bogoYouReceivePrefix")} {receiveCount}
+                    </p>
+                  ) : null}
+                  {formatPackSizeLine(item.volume, item.sellingUnit) ? (
+                    <p className="text-xs text-[color:var(--shop-ink-muted)]">
+                      {formatPackSizeLine(item.volume, item.sellingUnit)}
+                    </p>
+                  ) : null}
+                </div>
+                <span className="font-medium">
+                  {formatMoney(item.lineTotalMinor, order.currency)}
+                </span>
+              </li>
+            );
+          })}
         </ul>
 
         <div className="space-y-2 border-t border-[color:var(--shop-line)] pt-3 text-sm">

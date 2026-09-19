@@ -96,10 +96,15 @@ export async function listAvailableProducts(
 export async function findProductAvailability(
   tenantId: string,
   productId: string,
-): Promise<{ id: string; isAvailable: boolean; deletedAt: Date | null } | null> {
+): Promise<{
+  id: string;
+  isAvailable: boolean;
+  deletedAt: Date | null;
+  stockQuantity: number | null;
+} | null> {
   return prisma.product.findFirst({
     where: { id: productId, tenantId },
-    select: { id: true, isAvailable: true, deletedAt: true },
+    select: { id: true, isAvailable: true, deletedAt: true, stockQuantity: true },
   });
 }
 

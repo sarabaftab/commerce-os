@@ -3,10 +3,15 @@ import { notFound } from "next/navigation";
 import { getStorefrontProductBySlug } from "@/modules/catalog";
 import { formatPackSizeLine } from "@/modules/catalog/selling-unit";
 import { AddToCartButton } from "@/modules/orders/components/add-to-cart-button";
-import { getActiveStorefrontCampaign } from "@/modules/promotions";
+import { isProductPurchasable } from "@/modules/orders/line-promotion";
+import {
+  getActiveBuyOneGetOneMap,
+  getActiveStorefrontCampaign,
+} from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { isAppError } from "@/shared/errors/app-error";
 import { createTimer } from "@/shared/observability/timing";
+import { LocalizedText } from "@/ui/storefront/localized-text";
 import { ProductImage } from "@/ui/storefront/product-image";
 import {
   LocalizedPlaceholderLabel,
@@ -14,6 +19,7 @@ import {
   ProductDetailCopy,
 } from "@/ui/storefront/product-detail-copy";
 import {
+  BogoBadge,
   PromotionSaleBadge,
   PromotionalPrice,
 } from "@/ui/storefront/promotional-price";
@@ -35,10 +41,12 @@ export default async function StorefrontProductDetailPage({
 
   let product;
   let campaign;
+  let bogoMap;
   try {
-    [product, campaign] = await Promise.all([
+    [product, campaign, bogoMap] = await Promise.all([
       getStorefrontProductBySlug(tenant.id, productSlug),
       getActiveStorefrontCampaign(tenant.id),
+      getActiveBuyOneGetOneMap(tenant.id),
     ]);
   } catch (error) {
     if (isAppError(error) && error.code === "NOT_FOUND") {
@@ -51,6 +59,14 @@ export default async function StorefrontProductDetailPage({
 
   const imageUrl = product.media[0]?.url;
   const imageAlt = product.media[0]?.alt ?? product.name;
+  const bogo = bogoMap.get(product.id) ?? null;
+  const purchasable = isProductPurchasable(
+    {
+      isAvailable: product.isAvailable,
+      stockQuantity: product.stockQuantity,
+    },
+    bogo,
+  );
 
   return (
     <div className="space-y-5 pt-4">
@@ -78,7 +94,13 @@ export default async function StorefrontProductDetailPage({
               />
             </div>
           )}
-          {product.isAvailable ? <PromotionSaleBadge campaign={campaign} /> : null}
+          {purchasable ? (
+            bogo ? <BogoBadge /> : <PromotionSaleBadge campaign={campaign} />
+          ) : (
+            <span className="absolute top-3 left-3 rounded-full bg-[color:var(--shop-ink)]/80 px-2.5 py-1 text-[11px] font-medium tracking-wide text-white uppercase">
+              <LocalizedText messageKey="outOfStock" />
+            </span>
+          )}
         </div>
 
         <div className="space-y-4 p-5 md:flex md:flex-col md:justify-center">
@@ -95,9 +117,16 @@ export default async function StorefrontProductDetailPage({
               priceMinor={product.priceMinor}
               currency={product.currency}
               sellingUnit={product.sellingUnit}
-              campaign={campaign}
+              campaign={bogo && purchasable ? null : campaign}
               size="lg"
             />
+            {bogo && purchasable ? (
+              <LocalizedText
+                as="p"
+                messageKey="bogoBuyReceive"
+                className="text-sm font-medium text-[color:var(--shop-ink-muted)]"
+              />
+            ) : null}
             {formatPackSizeLine(product.volume, product.sellingUnit) ? (
               <p className="text-sm text-[color:var(--shop-ink-muted)]">
                 {formatPackSizeLine(product.volume, product.sellingUnit)}
@@ -114,12 +143,18 @@ export default async function StorefrontProductDetailPage({
             "max(0.75rem, var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))",
         }}
       >
-        <AddToCartButton
-          tenantSlug={tenantSlug}
-          productId={product.id}
-          showQuantity
-          navigateToCatalogOnSuccess
-        />
+        {purchasable ? (
+          <AddToCartButton
+            tenantSlug={tenantSlug}
+            productId={product.id}
+            showQuantity
+            navigateToCatalogOnSuccess
+          />
+        ) : (
+          <p className="py-3 text-center text-sm font-medium text-[color:var(--shop-ink-muted)]">
+            <LocalizedText messageKey="outOfStock" />
+          </p>
+        )}
       </div>
     </div>
   );

@@ -25,16 +25,26 @@ export function toOrderConfirmation(
   order: OrderWithRelations,
   options?: { includeConfirmationToken?: boolean },
 ): OrderConfirmation {
-  const items: OrderLineView[] = order.items.map((item) => ({
-    id: item.id,
-    productId: item.productId,
-    name: item.nameSnapshot,
-    quantity: item.quantity,
-    unitPriceMinor: item.unitPriceMinor,
-    lineTotalMinor: item.lineTotalMinor,
-    volume: item.volumeSnapshot,
-    sellingUnit: item.sellingUnitSnapshot ?? "item",
-  }));
+  const items: OrderLineView[] = order.items.map((item) => {
+    const freeQuantity = item.freeQuantity ?? 0;
+    const isBuyOneGetOne =
+      item.promotionTypeSnapshot === "buy_one_get_one" || freeQuantity > 0;
+    return {
+      id: item.id,
+      productId: item.productId,
+      name: item.nameSnapshot,
+      quantity: item.quantity,
+      unitPriceMinor: item.unitPriceMinor,
+      lineTotalMinor: item.lineTotalMinor,
+      volume: item.volumeSnapshot,
+      sellingUnit: item.sellingUnitSnapshot ?? "item",
+      freeQuantity,
+      fulfillmentQuantity: item.fulfillmentQuantity ?? item.quantity,
+      promotionNameSnapshot: item.promotionNameSnapshot,
+      promotionTypeSnapshot: item.promotionTypeSnapshot,
+      isBuyOneGetOne,
+    };
+  });
 
   return {
     id: order.id,
@@ -175,6 +185,11 @@ export type CreateOrderRecordInput = {
     unitPriceMinor: number;
     quantity: number;
     lineTotalMinor: number;
+    freeQuantity?: number;
+    fulfillmentQuantity?: number;
+    promotionIdSnapshot?: string | null;
+    promotionNameSnapshot?: string | null;
+    promotionTypeSnapshot?: string | null;
   }[];
   confirmationToken?: string;
 };
@@ -236,7 +251,12 @@ export async function createOrderRecordInTransaction(
           sellingUnitSnapshot: item.sellingUnitSnapshot ?? null,
           unitPriceMinor: item.unitPriceMinor,
           quantity: item.quantity,
+          freeQuantity: item.freeQuantity ?? 0,
+          fulfillmentQuantity: item.fulfillmentQuantity ?? item.quantity,
           lineTotalMinor: item.lineTotalMinor,
+          promotionIdSnapshot: item.promotionIdSnapshot ?? null,
+          promotionNameSnapshot: item.promotionNameSnapshot ?? null,
+          promotionTypeSnapshot: item.promotionTypeSnapshot ?? null,
         })),
       },
     },

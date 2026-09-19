@@ -25,6 +25,10 @@ const en = {
   product: "Product",
   seeAll: "See all",
   sale: "Sale",
+  bogoBadge: "1+1 Promotion",
+  bogoBuyReceive: "Buy 1, receive 2",
+  bogoYouReceivePrefix: "You receive:",
+  bogoPaidSets: "promotional sets",
 
   // Catalog
   addToCart: "Add to Cart",
@@ -273,6 +277,10 @@ const km: Record<MessageKey, string> = {
   product: "ផលិតផល",
   seeAll: "មើលទាំងអស់",
   sale: "បញ្ចុះតម្លៃ",
+  bogoBadge: "ប្រូម៉ូសិន ១+១",
+  bogoBuyReceive: "ទិញ ១ ទទួល ២",
+  bogoYouReceivePrefix: "អ្នកទទួល:",
+  bogoPaidSets: "ឈុតប្រូម៉ូសិន",
 
   addToCart: "បញ្ចូលទៅរទេះ",
   addingToCart: "កំពុងបញ្ចូល…",

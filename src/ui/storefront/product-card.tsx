@@ -4,11 +4,13 @@ import Link from "next/link";
 
 import type { ProductWithRelations } from "@/modules/catalog/types";
 import { formatPackSizeLine } from "@/modules/catalog/selling-unit";
+import { isProductPurchasable } from "@/modules/orders/line-promotion";
 import type { StorefrontCampaignDisplay } from "@/modules/promotions/discount";
 import { localizedValue, useLocale } from "@/shared/i18n";
 import { cn } from "@/ui/lib/utils";
 import { ProductImage } from "@/ui/storefront/product-image";
 import {
+  BogoBadge,
   PromotionSaleBadge,
   PromotionalPrice,
 } from "@/ui/storefront/promotional-price";
@@ -20,6 +22,7 @@ type ProductCardProps = {
   className?: string;
   priority?: boolean;
   campaign?: StorefrontCampaignDisplay | null;
+  bogo?: { promotionName: string } | null;
 };
 
 export function ProductCard({
@@ -28,6 +31,7 @@ export function ProductCard({
   className,
   priority = false,
   campaign = null,
+  bogo = null,
 }: ProductCardProps) {
   const { locale, t } = useLocale();
   const name = localizedValue({
@@ -44,6 +48,14 @@ export function ProductCard({
     : null;
   const imageUrl = product.media[0]?.url;
   const imageAlt = product.media[0]?.alt ?? name;
+  const purchasable = isProductPurchasable(
+    {
+      isAvailable: product.isAvailable,
+      stockQuantity: product.stockQuantity,
+    },
+    bogo,
+  );
+  const showBogo = Boolean(bogo && purchasable);
 
   return (
     <Link
@@ -72,10 +84,12 @@ export function ProductCard({
             </span>
           </div>
         )}
-        {!product.isAvailable ? (
+        {!purchasable ? (
           <span className="absolute top-3 left-3 rounded-full bg-[color:var(--shop-ink)]/80 px-2.5 py-1 text-[11px] font-medium tracking-wide text-white uppercase">
-            {t("unavailable")}
+            {t("outOfStock")}
           </span>
+        ) : showBogo ? (
+          <BogoBadge />
         ) : (
           <PromotionSaleBadge campaign={campaign} />
         )}
@@ -90,6 +104,11 @@ export function ProductCard({
         <h3 className="font-[family-name:var(--font-shop-display)] text-[1.05rem] leading-snug text-[color:var(--shop-ink)]">
           {name}
         </h3>
+        {showBogo ? (
+          <p className="text-xs font-medium text-[color:var(--shop-ink-muted)]">
+            {t("bogoBuyReceive")}
+          </p>
+        ) : null}
         {product.stockNote ? (
           <p className="line-clamp-1 text-xs text-[color:var(--shop-ink-muted)]">
             {product.stockNote}
@@ -100,7 +119,7 @@ export function ProductCard({
           priceMinor={product.priceMinor}
           currency={product.currency}
           sellingUnit={product.sellingUnit}
-          campaign={campaign}
+          campaign={showBogo ? null : campaign}
         />
         {formatPackSizeLine(product.volume, product.sellingUnit) ? (
           <p className="text-xs text-[color:var(--shop-ink-muted)]">

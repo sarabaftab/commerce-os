@@ -1,5 +1,10 @@
 import type { Promotion, PromotionDiscountType } from "@prisma/client";
 
+import {
+  BUY_ONE_GET_ONE,
+  isBuyOneGetOneType,
+} from "./buy-one-get-one";
+
 export type PromotionDiscountInput = {
   type: PromotionDiscountType;
   value: number;
@@ -22,6 +27,12 @@ export type ResolvedCampaignDiscount = {
   discountMinor: number;
 };
 
+export function isMoneyDiscountType(
+  type: PromotionDiscountType | string,
+): type is "percentage" | "fixed" {
+  return type === "percentage" || type === "fixed";
+}
+
 /** Pure eligibility for date/active/minimum — no tenant check (caller scopes query). */
 export function isPromotionEligible(
   promo: PromotionDiscountInput,
@@ -37,6 +48,10 @@ export function isPromotionEligible(
   if (promo.endsAt && now > promo.endsAt) {
     return false;
   }
+  // buy_one_get_one is product-scoped — never a cart-level money discount.
+  if (isBuyOneGetOneType(promo.type)) {
+    return false;
+  }
   if (
     promo.minimumSubtotalMinor != null &&
     input.subtotalMinor < promo.minimumSubtotalMinor
@@ -49,11 +64,15 @@ export function isPromotionEligible(
 /**
  * Discount in minor units. Clamped to [0, subtotal].
  * Percentage uses integer math: floor(subtotal * pct / 100).
+ * buy_one_get_one never contributes a money discount (free units instead).
  */
 export function computeCampaignDiscountMinor(
   subtotalMinor: number,
   promo: Pick<PromotionDiscountInput, "type" | "value">,
 ): number {
+  if (isBuyOneGetOneType(promo.type)) {
+    return 0;
+  }
   if (!Number.isInteger(subtotalMinor) || subtotalMinor <= 0) {
     return 0;
   }
@@ -75,13 +94,15 @@ export function computeCampaignDiscountMinor(
 }
 
 /**
- * Among eligible promotions, apply exactly one: most recently created.
+ * Among eligible money promotions, apply exactly one: most recently created.
+ * buy_one_get_one is excluded (resolved per product).
  */
 export function pickEligibleCampaignDiscount(
   promotions: Promotion[],
   input: { subtotalMinor: number; now?: Date },
 ): ResolvedCampaignDiscount | null {
   const eligible = promotions
+    .filter((promo) => isMoneyDiscountType(promo.type))
     .filter((promo) => isPromotionEligible(promo, input))
     .slice()
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -137,7 +158,7 @@ export function isPromotionVisibleForBanner(
 
 /**
  * Display-only unit sale price for percentage campaigns.
- * Fixed cart-level discounts do not map to honest per-product prices → null.
+ * Fixed / buy_one_get_one do not map to honest per-product sale prices → null.
  * Catalog/checkout still charge full unit prices; order discount is applied at totals.
  */
 export function computeUnitSalePriceMinor(
@@ -161,12 +182,13 @@ export type StorefrontCampaignDisplay = {
   value: number;
 };
 
-/** Newest active-window campaign for storefront sale-price display. */
+/** Newest active-window money campaign for storefront sale-price display. */
 export function pickStorefrontCampaignDisplay(
   promotions: Promotion[],
   now: Date = new Date(),
 ): StorefrontCampaignDisplay | null {
   const chosen = promotions
+    .filter((promo) => isMoneyDiscountType(promo.type))
     .filter((promo) => isPromotionInActiveWindow(promo, now))
     .slice()
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
@@ -180,3 +202,45 @@ export function pickStorefrontCampaignDisplay(
     value: chosen.value,
   };
 }
+
+export type PromotionWithProducts = Promotion & {
+  products: { productId: string }[];
+};
+
+export type ActiveBuyOneGetOne = {
+  promotionId: string;
+  promotionName: string;
+  bannerText: string | null;
+};
+
+/**
+ * Map productId → active buy_one_get_one campaign (newest wins per SKU).
+ * Same-SKU only: eligibility is per product row on the promotion.
+ */
+export function buildActiveBuyOneGetOneByProductId(
+  promotions: PromotionWithProducts[],
+  now: Date = new Date(),
+): Map<string, ActiveBuyOneGetOne> {
+  const map = new Map<string, ActiveBuyOneGetOne>();
+  const sorted = promotions
+    .filter((promo) => isBuyOneGetOneType(promo.type))
+    .filter((promo) => isPromotionInActiveWindow(promo, now))
+    .slice()
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+  for (const promo of sorted) {
+    const entry: ActiveBuyOneGetOne = {
+      promotionId: promo.id,
+      promotionName: promo.name,
+      bannerText: promo.bannerText,
+    };
+    for (const row of promo.products) {
+      if (!map.has(row.productId)) {
+        map.set(row.productId, entry);
+      }
+    }
+  }
+  return map;
+}
+
+export { BUY_ONE_GET_ONE, isBuyOneGetOneType };

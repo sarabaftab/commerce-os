@@ -1,9 +1,11 @@
+import { getProductsForTenant } from "@/modules/catalog";
 import { createPromotionAction } from "@/modules/promotions/actions/promotion-actions";
 import { PromotionForm } from "@/modules/promotions/components/promotion-form";
 import { requireAdminSession } from "@/shared/auth/admin-session";
 
 export default async function NewPromotionPage() {
   const session = await requireAdminSession();
+  const products = await getProductsForTenant(session.tenantId);
 
   return (
     <div className="space-y-6">
@@ -15,6 +17,7 @@ export default async function NewPromotionPage() {
       </div>
       <PromotionForm
         currency={session.tenantCurrency}
+        products={products.map((product) => ({ id: product.id, name: product.name }))}
         action={createPromotionAction}
         submitLabel="Create promotion"
       />

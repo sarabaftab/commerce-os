@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { getProductsForTenant } from "@/modules/catalog";
 import { getPromotionForTenant } from "@/modules/promotions";
 import { updatePromotionAction } from "@/modules/promotions/actions/promotion-actions";
 import { PromotionForm } from "@/modules/promotions/components/promotion-form";
@@ -24,6 +25,8 @@ export default async function EditPromotionPage({ params }: Props) {
     throw error;
   }
 
+  const products = await getProductsForTenant(session.tenantId);
+
   return (
     <div className="space-y-6">
       <div>
@@ -32,6 +35,7 @@ export default async function EditPromotionPage({ params }: Props) {
       </div>
       <PromotionForm
         currency={session.tenantCurrency}
+        products={products.map((product) => ({ id: product.id, name: product.name }))}
         promotion={promotion}
         action={updatePromotionAction.bind(null, promotion.id)}
         submitLabel="Save promotion"

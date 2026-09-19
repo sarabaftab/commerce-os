@@ -104,3 +104,22 @@ export function PromotionSaleBadge({ campaign, className }: SaleBadgeProps) {
     </span>
   );
 }
+
+type BogoBadgeProps = {
+  className?: string;
+};
+
+/** Corner badge for active buy-one-get-one on a product. */
+export function BogoBadge({ className }: BogoBadgeProps) {
+  const { t } = useLocale();
+  return (
+    <span
+      className={cn(
+        "absolute top-3 right-3 rounded-full bg-[color:var(--shop-primary)] px-2.5 py-1 text-[11px] font-semibold tracking-wide text-[color:var(--shop-on-primary)] shadow-sm",
+        className,
+      )}
+    >
+      {t("bogoBadge")}
+    </span>
+  );
+}

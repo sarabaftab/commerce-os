@@ -20,6 +20,7 @@ export type CreateProductInput = {
   categoryId?: string | null;
   isAvailable: boolean;
   stockNote?: string | null;
+  stockQuantity?: number | null;
   sortOrder?: number;
   mediaUrl?: string | null;
 };
@@ -40,6 +41,7 @@ export type UpdateProductInput = {
   categoryId?: string | null;
   isAvailable: boolean;
   stockNote?: string | null;
+  stockQuantity?: number | null;
   sortOrder?: number;
   mediaUrl?: string | null;
 };

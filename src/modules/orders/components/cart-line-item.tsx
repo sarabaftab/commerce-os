@@ -85,13 +85,24 @@ export function CartLineItem({
             >
               {line.name}
             </Link>
+            {line.isBuyOneGetOne ? (
+              <p className="mt-1 text-xs font-semibold text-[color:var(--shop-primary)]">
+                {t("bogoBadge")}
+              </p>
+            ) : null}
             <PromotionalPrice
               className="mt-1"
               priceMinor={line.unitPriceMinor}
               currency={line.currency}
               sellingUnit={line.sellingUnit}
-              campaign={campaign}
+              campaign={line.isBuyOneGetOne ? null : campaign}
             />
+            {line.isBuyOneGetOne ? (
+              <p className="text-xs text-[color:var(--shop-ink-muted)]">
+                {t("bogoYouReceivePrefix")}{" "}
+                {line.fulfillmentQuantity ?? line.quantity * 2}
+              </p>
+            ) : null}
             {formatPackSizeLine(line.volume, line.sellingUnit) ? (
               <p className="text-xs text-[color:var(--shop-ink-muted)]">
                 {formatPackSizeLine(line.volume, line.sellingUnit)}

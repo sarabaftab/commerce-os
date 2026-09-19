@@ -75,6 +75,11 @@ export type CreateOrderCommand = {
     unitPriceMinor: number;
     quantity: number;
     lineTotalMinor: number;
+    freeQuantity?: number;
+    fulfillmentQuantity?: number;
+    promotionIdSnapshot?: string | null;
+    promotionNameSnapshot?: string | null;
+    promotionTypeSnapshot?: string | null;
   }[];
 };
 

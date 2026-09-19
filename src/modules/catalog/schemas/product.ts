@@ -25,6 +25,10 @@ export const productFormSchema = z.object({
   categoryId: z.union([z.literal(""), z.string().min(1)]).optional(),
   isAvailable: z.boolean(),
   stockNote: z.union([z.literal(""), z.string().trim().max(240)]).optional(),
+  stockQuantity: z.preprocess(
+    (value) => (value === "" || value == null ? null : value),
+    z.union([z.null(), z.coerce.number().int().nonnegative()]),
+  ),
   sortOrder: z.coerce.number().int().default(0),
   mediaUrl: z.union([z.literal(""), z.string().trim().url("Media URL must be valid")]).optional(),
 });
@@ -50,6 +54,7 @@ export function productFormToCreateInput(
     categoryId: values.categoryId || null,
     isAvailable: values.isAvailable,
     stockNote: values.stockNote || null,
+    stockQuantity: values.stockQuantity ?? null,
     sortOrder: values.sortOrder,
     mediaUrl: values.mediaUrl || null,
   };

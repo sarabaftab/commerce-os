@@ -2,7 +2,10 @@ import {
   getStorefrontCategories,
   getStorefrontProducts,
 } from "@/modules/catalog";
-import { getActiveStorefrontCampaign } from "@/modules/promotions";
+import {
+  getActiveBuyOneGetOneMap,
+  getActiveStorefrontCampaign,
+} from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { isAppError } from "@/shared/errors/app-error";
 import { createTimer } from "@/shared/observability/timing";
@@ -19,6 +22,16 @@ type ProductsPageProps = {
   searchParams: Promise<{ category?: string }>;
 };
 
+function bogoRecordFromMap(
+  map: Awaited<ReturnType<typeof getActiveBuyOneGetOneMap>>,
+): Record<string, { promotionName: string }> {
+  const record: Record<string, { promotionName: string }> = {};
+  for (const [productId, entry] of map) {
+    record[productId] = { promotionName: entry.promotionName };
+  }
+  return record;
+}
+
 export default async function StorefrontProductsPage({
   params,
   searchParams,
@@ -32,13 +45,15 @@ export default async function StorefrontProductsPage({
   let products;
   let categories;
   let campaign;
+  let bogoMap;
   try {
-    [categories, products, campaign] = await Promise.all([
+    [categories, products, campaign, bogoMap] = await Promise.all([
       getStorefrontCategories(tenant.id),
       getStorefrontProducts(tenant.id, {
         categorySlug: categorySlug || undefined,
       }),
       getActiveStorefrontCampaign(tenant.id),
+      getActiveBuyOneGetOneMap(tenant.id),
     ]);
   } catch (error) {
     if (isAppError(error) && error.code === "NOT_FOUND") {
@@ -54,6 +69,7 @@ export default async function StorefrontProductsPage({
   });
 
   const activeCategory = categories.find((category) => category.slug === categorySlug);
+  const bogoByProductId = bogoRecordFromMap(bogoMap);
 
   return (
     <div className="space-y-6 pt-5">
@@ -77,6 +93,7 @@ export default async function StorefrontProductsPage({
         products={products}
         basePath={basePath}
         campaign={campaign}
+        bogoByProductId={bogoByProductId}
         emptyMessage={<LocalizedText messageKey="noProducts" />}
       />
     </div>

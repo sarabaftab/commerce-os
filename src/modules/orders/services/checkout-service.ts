@@ -17,11 +17,19 @@ import {
   listActivePromotionsForTenant,
   pickEligibleCampaignDiscount,
   resolveCampaignDiscountForCheckout,
+  buildActiveBuyOneGetOneByProductId,
+  type ActiveBuyOneGetOne,
 } from "@/modules/promotions";
+import { deductProductStockInTransaction } from "@/modules/promotions/repositories/promotion-repository";
 import { prisma } from "@/shared/db/prisma";
 import { AppError, isAppError } from "@/shared/errors/app-error";
 import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
 
+import {
+  isProductPurchasable,
+  maxPurchasableQuantity,
+  resolveLinePromotionQuantities,
+} from "../line-promotion";
 import {
   findOpenCheckoutCartInTransaction,
   type CheckoutCartWithItems,
@@ -35,6 +43,7 @@ import {
 } from "../repositories/order-repository";
 import type { CheckoutInput } from "../schemas/checkout";
 import type { CheckoutPreview, OrderConfirmation } from "../types";
+import { MAX_CART_QUANTITY } from "../types";
 import type { CartIdentity } from "./cart-service";
 import { getCartSummary } from "./cart-service";
 import { createOrderInTransaction } from "./order-service";
@@ -70,24 +79,71 @@ type DeliverySnapshot = {
   longitude?: number | null;
 };
 
-function computeLineItems(cart: CheckoutCartWithItems) {
+function computeLineItems(
+  cart: CheckoutCartWithItems,
+  bogoByProductId: Map<string, ActiveBuyOneGetOne>,
+) {
   const lines = cart.items
     .filter((item) => item.product && !item.product.deletedAt)
     .map((item) => {
-      const available = item.product.isAvailable;
+      const bogo = bogoByProductId.get(item.productId) ?? null;
+      const available = isProductPurchasable(
+        {
+          isAvailable: item.product.isAvailable,
+          deletedAt: item.product.deletedAt,
+          stockQuantity: item.product.stockQuantity,
+        },
+        bogo,
+      );
+      const maxQty = maxPurchasableQuantity(
+        {
+          isAvailable: item.product.isAvailable,
+          deletedAt: item.product.deletedAt,
+          stockQuantity: item.product.stockQuantity,
+        },
+        bogo,
+        MAX_CART_QUANTITY,
+      );
+      if (available && item.quantity > maxQty) {
+        throw new AppError(
+          "VALIDATION",
+          `Not enough stock for ${item.product.name}`,
+        );
+      }
+
       const unitPriceMinor = item.product.priceMinor;
-      const lineTotalMinor = available ? unitPriceMinor * item.quantity : 0;
+      const resolved = available
+        ? resolveLinePromotionQuantities({
+            paidQuantity: item.quantity,
+            unitPriceMinor,
+            bogo,
+          })
+        : {
+            paidQuantity: item.quantity,
+            freeQuantity: 0,
+            fulfillmentQuantity: item.quantity,
+            promotionIdSnapshot: null as string | null,
+            promotionNameSnapshot: null as string | null,
+            promotionTypeSnapshot: null as string | null,
+            lineTotalMinor: 0,
+          };
 
       return {
         cartItemId: item.id,
         productId: item.productId,
         name: item.product.name,
-        quantity: item.quantity,
+        quantity: resolved.paidQuantity,
+        freeQuantity: resolved.freeQuantity,
+        fulfillmentQuantity: resolved.fulfillmentQuantity,
+        promotionIdSnapshot: resolved.promotionIdSnapshot,
+        promotionNameSnapshot: resolved.promotionNameSnapshot,
+        promotionTypeSnapshot: resolved.promotionTypeSnapshot,
         unitPriceMinor,
-        lineTotalMinor,
+        lineTotalMinor: resolved.lineTotalMinor,
         isAvailable: available,
         volumeSnapshot: item.product.volume,
         sellingUnitSnapshot: item.product.sellingUnit,
+        stockQuantity: item.product.stockQuantity,
       };
     });
 
@@ -233,7 +289,10 @@ export async function getCheckoutPreview(
     deliveryFeeMinor: previewDeliveryFee,
     discountMinor: campaign?.discountMinor ?? 0,
     promotionName: campaign?.promotionName ?? null,
-    promotionType: campaign?.type ?? null,
+    promotionType:
+      campaign?.type === "percentage" || campaign?.type === "fixed"
+        ? campaign.type
+        : null,
     promotionValue: campaign?.value ?? null,
     freeDeliveryThresholdMinor: settings.freeDeliveryThresholdMinor,
     deliveryNotes: settings.deliveryNotes,
@@ -316,7 +375,8 @@ export async function placeGuestOrder(
           throw new AppError("VALIDATION", "Cart is empty");
         }
 
-        const { availableLines, subtotalMinor } = computeLineItems(cart);
+        const bogoByProductId = buildActiveBuyOneGetOneByProductId(activePromotions);
+        const { availableLines, subtotalMinor } = computeLineItems(cart, bogoByProductId);
 
         // Pure in-memory resolve — never query prisma from inside this tx
         // (nested client calls on poolers expire interactive transactions).
@@ -325,6 +385,24 @@ export async function placeGuestOrder(
         });
         const discountMinor = campaign?.discountMinor ?? 0;
         const totalMinor = subtotalMinor - discountMinor + deliveryFeeMinor;
+
+        // Atomic stock deduction before claim/insert (fulfillment qty for 1+1).
+        for (const line of availableLines) {
+          if (line.stockQuantity == null) {
+            continue;
+          }
+          const ok = await deductProductStockInTransaction(tx, {
+            tenantId: context.tenantId,
+            productId: line.productId,
+            quantity: line.fulfillmentQuantity,
+          });
+          if (!ok) {
+            throw new AppError(
+              "CONFLICT",
+              `Not enough stock for ${line.name}`,
+            );
+          }
+        }
 
         let customer;
         if (context.cartIdentity.customerId) {
@@ -397,6 +475,11 @@ export async function placeGuestOrder(
             sellingUnitSnapshot: line.sellingUnitSnapshot,
             unitPriceMinor: line.unitPriceMinor,
             quantity: line.quantity,
+            freeQuantity: line.freeQuantity,
+            fulfillmentQuantity: line.fulfillmentQuantity,
+            promotionIdSnapshot: line.promotionIdSnapshot,
+            promotionNameSnapshot: line.promotionNameSnapshot,
+            promotionTypeSnapshot: line.promotionTypeSnapshot,
             lineTotalMinor: line.lineTotalMinor,
           })),
         });

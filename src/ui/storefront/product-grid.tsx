@@ -10,6 +10,7 @@ type ProductGridProps = {
   basePath: string;
   emptyMessage?: ReactNode;
   campaign?: StorefrontCampaignDisplay | null;
+  bogoByProductId?: Record<string, { promotionName: string }>;
 };
 
 export function ProductGrid({
@@ -17,6 +18,7 @@ export function ProductGrid({
   basePath,
   emptyMessage = "No products available right now.",
   campaign = null,
+  bogoByProductId,
 }: ProductGridProps) {
   if (products.length === 0) {
     return (
@@ -34,6 +36,7 @@ export function ProductGrid({
           product={product}
           href={`${basePath}/products/${product.slug}`}
           campaign={campaign}
+          bogo={bogoByProductId?.[product.id] ?? null}
         />
       ))}
     </div>

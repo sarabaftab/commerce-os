@@ -182,6 +182,25 @@ export function ProductForm({
         />
       </div>
 
+      <div className="grid gap-2">
+        <Label htmlFor="stockQuantity">Stock quantity (optional)</Label>
+        <Input
+          id="stockQuantity"
+          name="stockQuantity"
+          type="number"
+          min="0"
+          step="1"
+          defaultValue={product?.stockQuantity != null ? String(product.stockQuantity) : ""}
+          placeholder="e.g. 24"
+        />
+        <p className="text-xs text-muted-foreground">
+          Required for 1+1 promotions. Available promotional sets = floor(stock ÷ 2).
+        </p>
+        {state.fieldErrors?.stockQuantity ? (
+          <p className="text-xs text-destructive">{state.fieldErrors.stockQuantity[0]}</p>
+        ) : null}
+      </div>
+
       <ProductImageField initialUrl={primaryMedia} onUploadingChange={setImageUploading} />
       {state.fieldErrors?.mediaUrl ? (
         <p className="text-xs text-destructive">{state.fieldErrors.mediaUrl[0]}</p>

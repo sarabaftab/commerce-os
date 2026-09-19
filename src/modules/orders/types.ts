@@ -48,6 +48,11 @@ export type CartLineView = {
   isAvailable: boolean;
   volume: string | null;
   sellingUnit: SellingUnit;
+  freeQuantity?: number;
+  fulfillmentQuantity?: number;
+  promotionNameSnapshot?: string | null;
+  promotionTypeSnapshot?: string | null;
+  isBuyOneGetOne?: boolean;
 };
 
 export type CartSummary = {
@@ -67,6 +72,7 @@ export type CartWithItems = Cart & {
       priceMinor: number;
       currency: string;
       isAvailable: boolean;
+      stockQuantity: number | null;
       deletedAt: Date | null;
       volume: string | null;
       sellingUnit: SellingUnit;
@@ -86,6 +92,11 @@ export type OrderLineView = {
   lineTotalMinor: number;
   volume: string | null;
   sellingUnit: SellingUnit;
+  freeQuantity?: number;
+  fulfillmentQuantity?: number;
+  promotionNameSnapshot?: string | null;
+  promotionTypeSnapshot?: string | null;
+  isBuyOneGetOne?: boolean;
 };
 
 export type OrderConfirmation = {

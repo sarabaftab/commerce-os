@@ -2,7 +2,10 @@ import {
   getFeaturedStorefrontProducts,
   getStorefrontCategories,
 } from "@/modules/catalog";
-import { getActiveStorefrontCampaign } from "@/modules/promotions";
+import {
+  getActiveBuyOneGetOneMap,
+  getActiveStorefrontCampaign,
+} from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { createTimer } from "@/shared/observability/timing";
 import { STOREFRONT_BRAND } from "@/ui/storefront/brand";
@@ -21,19 +24,32 @@ type HomePageProps = {
   params: Promise<{ tenantSlug: string }>;
 };
 
+function bogoRecordFromMap(
+  map: Awaited<ReturnType<typeof getActiveBuyOneGetOneMap>>,
+): Record<string, { promotionName: string }> {
+  const record: Record<string, { promotionName: string }> = {};
+  for (const [productId, entry] of map) {
+    record[productId] = { promotionName: entry.promotionName };
+  }
+  return record;
+}
+
 export default async function StorefrontHomePage({ params }: HomePageProps) {
   const timer = createTimer("page.storefront.home");
   const { tenantSlug } = await params;
   const { tenant, basePath } = await resolveStorefrontTenant(tenantSlug);
   timer.mark("tenantMs");
 
-  const [categories, featured, campaign] = await Promise.all([
+  const [categories, featured, campaign, bogoMap] = await Promise.all([
     getStorefrontCategories(tenant.id),
     getFeaturedStorefrontProducts(tenant.id, 6),
     getActiveStorefrontCampaign(tenant.id),
+    getActiveBuyOneGetOneMap(tenant.id),
   ]);
   timer.mark("catalogMs");
   timer.log({ tenantSlug, categoryCount: categories.length, featuredCount: featured.length });
+
+  const bogoByProductId = bogoRecordFromMap(bogoMap);
 
   return (
     <div className="space-y-8 pt-5">
@@ -52,6 +68,7 @@ export default async function StorefrontHomePage({ params }: HomePageProps) {
           products={featured}
           basePath={basePath}
           campaign={campaign}
+          bogoByProductId={bogoByProductId}
           emptyMessage={<LocalizedText messageKey="noFeaturedProducts" />}
         />
       </section>

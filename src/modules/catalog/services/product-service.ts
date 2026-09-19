@@ -86,6 +86,7 @@ export async function createProductForTenant(input: CreateProductInput) {
     categoryId: input.categoryId,
     isAvailable: input.isAvailable,
     stockNote: input.stockNote,
+    stockQuantity: input.stockQuantity ?? null,
     sortOrder: input.sortOrder ?? 0,
   });
 
@@ -128,6 +129,7 @@ export async function updateProductForTenant(input: UpdateProductInput) {
     categoryId: input.categoryId,
     isAvailable: input.isAvailable,
     stockNote: input.stockNote,
+    stockQuantity: input.stockQuantity ?? null,
     sortOrder: input.sortOrder ?? 0,
   });
 

@@ -12,6 +12,9 @@ type Props = {
 };
 
 function valueLabel(promo: Promotion, currency: string): string {
+  if (promo.type === "buy_one_get_one") {
+    return "1+1";
+  }
   if (promo.type === "percentage") {
     return `${promo.value}%`;
   }

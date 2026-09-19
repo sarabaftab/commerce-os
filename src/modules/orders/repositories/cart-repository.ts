@@ -27,6 +27,7 @@ const checkoutCartInclude = {
           name: true,
           priceMinor: true,
           isAvailable: true,
+          stockQuantity: true,
           deletedAt: true,
           volume: true,
           sellingUnit: true,
@@ -52,6 +53,7 @@ export type CheckoutCartWithItems = {
       name: string;
       priceMinor: number;
       isAvailable: boolean;
+      stockQuantity: number | null;
       deletedAt: Date | null;
       volume: string | null;
       sellingUnit: SellingUnit;

@@ -77,6 +77,8 @@ enum SellingUnit {
 enum PromotionDiscountType {
   percentage
   fixed
+  /** Same-SKU buy 1 get 1 free — paid qty charged, fulfillment qty = paid × 2. */
+  buy_one_get_one
 }
 
 model Tenant {
@@ -179,6 +181,11 @@ model Product {
   priceMinor  Int       @map("price_minor")
   currency    String    @db.Char(3)
   isAvailable Boolean   @default(true) @map("is_available")
+  /**
+   * On-hand units for fulfillment. Null = legacy unlimited (isAvailable only).
+   * Required for buy_one_get_one eligibility checks (floor(stock/2) sets).
+   */
+  stockQuantity Int?    @map("stock_quantity")
   stockNote   String?   @map("stock_note")
   sortOrder   Int       @default(0) @map("sort_order")
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -190,6 +197,7 @@ model Product {
   media      ProductMedia[]
   orderItems OrderItem[]
   cartItems  CartItem[]
+  promotionProducts PromotionProduct[]
 
   @@unique([tenantId, slug])
   @@index([tenantId, isAvailable])
@@ -392,8 +400,17 @@ model OrderItem {
   volumeSnapshot       String?      @map("volume_snapshot")
   sellingUnitSnapshot  SellingUnit? @map("selling_unit_snapshot")
   unitPriceMinor       Int          @map("unit_price_minor")
+  /** Customer-selected / paid quantity (lineTotal = unitPrice × quantity). */
   quantity             Int
+  /** Free units from buy_one_get_one (same SKU). Snapshot — never re-derived. */
+  freeQuantity         Int          @default(0) @map("free_quantity")
+  /** Physical units to ship / inventory deducted. Snapshot — never re-derived. */
+  fulfillmentQuantity  Int          @map("fulfillment_quantity")
   lineTotalMinor       Int          @map("line_total_minor")
+  /** Line-level promotion snapshot (e.g. buy_one_get_one) — independent of live promo. */
+  promotionIdSnapshot     String? @map("promotion_id_snapshot")
+  promotionNameSnapshot   String? @map("promotion_name_snapshot")
+  promotionTypeSnapshot   String? @map("promotion_type_snapshot")
 
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
@@ -555,14 +572,22 @@ model Faq {
   @@map("faqs")
 }
 
-/** Tenant-scoped manual campaign discount. Only one eligible campaign applies per order. */
+/**
+ * Tenant-scoped campaign.
+ * Money discounts (percentage/fixed): only one eligible applies per order (newest wins).
+ * buy_one_get_one: product-scoped same-SKU free units; mutually exclusive with product-level
+ * sale display on that SKU; may coexist with a cart-level money discount on paid subtotal.
+ */
 model Promotion {
   id                    String                 @id @default(cuid())
   tenantId              String                 @map("tenant_id")
   name                  String
   bannerText            String?                @map("banner_text")
   type                  PromotionDiscountType
-  /** Percentage points (1–100) or fixed amount in minor currency units. */
+  /**
+   * Percentage points (1–100), fixed amount in minor currency units,
+   * or 1 for buy_one_get_one (buy 1 get 1 free — fixed rule).
+   */
   value                 Int
   minimumSubtotalMinor  Int?                   @map("minimum_subtotal_minor")
   startsAt              DateTime?              @map("starts_at")
@@ -571,8 +596,26 @@ model Promotion {
   createdAt             DateTime               @default(now()) @map("created_at")
   updatedAt             DateTime               @updatedAt @map("updated_at")
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products PromotionProduct[]
 
   @@index([tenantId, isActive, createdAt])
   @@map("promotions")
+}
+
+/** Eligible SKUs for buy_one_get_one — each SKU gifts itself only (no cross-SKU). */
+model PromotionProduct {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  promotionId String   @map("promotion_id")
+  productId   String   @map("product_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionId, productId])
+  @@index([tenantId, productId])
+  @@index([productId])
+  @@map("promotion_products")
 }

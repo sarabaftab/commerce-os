@@ -177,16 +177,26 @@ export async function getOrderDetailForAdmin(
       phone: order.customer.phone,
       email: order.customer.email,
     },
-    items: order.items.map((item) => ({
-      id: item.id,
-      productId: item.productId,
-      name: item.nameSnapshot,
-      quantity: item.quantity,
-      unitPriceMinor: item.unitPriceMinor,
-      lineTotalMinor: item.lineTotalMinor,
-      volume: item.volumeSnapshot,
-      sellingUnit: item.sellingUnitSnapshot ?? "item",
-    })),
+    items: order.items.map((item) => {
+      const freeQuantity = item.freeQuantity ?? 0;
+      const isBuyOneGetOne =
+        item.promotionTypeSnapshot === "buy_one_get_one" || freeQuantity > 0;
+      return {
+        id: item.id,
+        productId: item.productId,
+        name: item.nameSnapshot,
+        quantity: item.quantity,
+        unitPriceMinor: item.unitPriceMinor,
+        lineTotalMinor: item.lineTotalMinor,
+        volume: item.volumeSnapshot,
+        sellingUnit: item.sellingUnitSnapshot ?? "item",
+        freeQuantity,
+        fulfillmentQuantity: item.fulfillmentQuantity ?? item.quantity,
+        promotionNameSnapshot: item.promotionNameSnapshot,
+        promotionTypeSnapshot: item.promotionTypeSnapshot,
+        isBuyOneGetOne,
+      };
+    }),
     statusHistory,
     allowedNextStatuses: getAllowedNextStatuses(order.status, order.fulfillmentMethod),
     telegramLinked: Boolean(telegramIdentity),
