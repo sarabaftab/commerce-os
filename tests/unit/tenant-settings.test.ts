@@ -59,7 +59,7 @@ describe("computeDeliveryFeeMinor", () => {
 });
 
 describe("paymentSettingsSchema", () => {
-  it("requires ABA fields when ABA enabled", () => {
+  it("requires ABA account name and number when ABA enabled", () => {
     const parsed = paymentSettingsSchema.safeParse({
       codEnabled: true,
       abaEnabled: true,
@@ -68,6 +68,17 @@ describe("paymentSettingsSchema", () => {
       abaInstructions: "",
     });
     expect(parsed.success).toBe(false);
+  });
+
+  it("allows empty ABA instructions when account fields are set", () => {
+    const parsed = paymentSettingsSchema.safeParse({
+      codEnabled: true,
+      abaEnabled: true,
+      abaAccountName: "KIN A2 Milk",
+      abaAccountNumber: "000000000",
+      abaInstructions: "",
+    });
+    expect(parsed.success).toBe(true);
   });
 
   it("allows ABA disabled without account fields", () => {

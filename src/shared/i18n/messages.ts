@@ -53,8 +53,9 @@ const en = {
   shopProducts: "Shop products",
   noProducts: "No products available right now.",
   noFeaturedProducts: "No featured products yet. Check back soon.",
-  heroTitle: "Premium commerce, simply delivered.",
-  heroBody: "Browse products and checkout in Telegram.",
+  heroTitle: "Quality products,\ndelivered to you.",
+  heroBody:
+    "Shop Billion’s selection of trusted products with easy ordering and convenient delivery.",
   itemsCount: "items",
   itemCount: "item",
 
@@ -309,8 +310,9 @@ const km: Record<MessageKey, string> = {
   shopProducts: "ទិញផលិតផល",
   noProducts: "មិនទាន់មានផលិតផលទេ។",
   noFeaturedProducts: "មិនទាន់មានផលិតផលពិសេសទេ។ សូមពិនិត្យម្តងទៀតនៅពេលក្រោយ។",
-  heroTitle: "ពាណិជ្ជកម្មប្រកបដោយគុណភាព ដឹកជញ្ជូនយ៉ាងងាយស្រួល។",
-  heroBody: "រកមើលផលិតផល និងបញ្ជាទិញតាម Telegram។",
+  heroTitle: "ផលិតផលមានគុណភាព\nដឹកជញ្ជូនដល់អ្នក។",
+  heroBody:
+    "ទិញផលិតផលដែលទុកចិត្តបានពី Billion ជាមួយការបញ្ជាទិញងាយស្រួល និងការដឹកជញ្ជូនងាយស្រួល។",
   itemsCount: "មុខ",
   itemCount: "មុខ",
 

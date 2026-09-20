@@ -61,10 +61,10 @@ export function LocalizedHomeHero({ brandName, productsHref }: HomeHeroProps) {
         <p className="text-[11px] font-medium tracking-[0.2em] text-[color:var(--shop-accent-soft)] uppercase">
           {brandName}
         </p>
-        <h1 className="max-w-[16ch] font-[family-name:var(--font-shop-display)] text-[2.2rem] leading-[1.08] tracking-tight">
+        <h1 className="max-w-[16ch] whitespace-pre-line font-[family-name:var(--font-shop-display)] text-[2.2rem] leading-[1.08] tracking-tight">
           {t("heroTitle")}
         </h1>
-        <p className="max-w-[30ch] text-sm leading-relaxed text-white/70">{t("heroBody")}</p>
+        <p className="max-w-[42ch] text-sm leading-relaxed text-white/70">{t("heroBody")}</p>
         <Link href={productsHref} prefetch={false} className={shop.btnPrimary}>
           {t("shopProducts")}
         </Link>

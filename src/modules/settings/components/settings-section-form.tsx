@@ -115,16 +115,12 @@ function PaymentsSection({ bundle }: { bundle: TenantSettingsBundle }) {
         required={abaEnabled}
       />
       <div className="space-y-1.5">
-        <Label htmlFor="abaInstructions" required={abaEnabled}>
-          ABA instructions
-        </Label>
+        <Label htmlFor="abaInstructions">ABA instructions (optional)</Label>
         <Textarea
           id="abaInstructions"
           name="abaInstructions"
           rows={4}
           defaultValue={s.abaInstructions ?? ""}
-          required={abaEnabled}
-          aria-required={abaEnabled || undefined}
         />
       </div>
       <Field

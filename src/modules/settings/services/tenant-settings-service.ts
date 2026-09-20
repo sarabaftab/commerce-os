@@ -42,12 +42,9 @@ import { computeDeliveryFeeMinor } from "./delivery-fee";
 function isAbaComplete(settings: {
   abaAccountName: string | null;
   abaAccountNumber: string | null;
-  abaInstructions: string | null;
 }) {
   return Boolean(
-    settings.abaAccountName?.trim() &&
-      settings.abaAccountNumber?.trim() &&
-      settings.abaInstructions?.trim(),
+    settings.abaAccountName?.trim() && settings.abaAccountNumber?.trim(),
   );
 }
 

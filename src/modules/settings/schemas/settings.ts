@@ -110,13 +110,6 @@ export const paymentSettingsSchema = z
         path: ["abaAccountNumber"],
       });
     }
-    if (!data.abaInstructions?.trim()) {
-      ctx.addIssue({
-        code: "custom",
-        message: "ABA payment instructions are required when ABA is enabled",
-        path: ["abaInstructions"],
-      });
-    }
   });
 
 export const brandingSettingsSchema = z.object({
