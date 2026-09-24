@@ -7,6 +7,7 @@ import { LocationAutocomplete } from "@/modules/locations/components/location-au
 import { parseOptionalLatLng, type LatLng } from "@/modules/locations/coordinates";
 import type { LocationSearchResult } from "@/modules/locations/types";
 import { useLocale } from "@/shared/i18n";
+import { isOutsideCambodiaDeliveryHours } from "@/shared/time/cambodia-delivery-hours";
 import { FieldLabel } from "@/ui/components/field-label";
 
 type SavedAddress = {
@@ -45,6 +46,10 @@ export function CheckoutFulfillmentFields({
   isAuthenticated = false,
 }: CheckoutFulfillmentFieldsProps) {
   const { t } = useLocale();
+  const showDeliveryHoursNotice =
+    fulfillmentMethod === "delivery" &&
+    deliveryEnabled &&
+    isOutsideCambodiaDeliveryHours();
   const methods = [
     ...(deliveryEnabled ? (["delivery"] as const) : []),
     ...(pickupEnabled ? (["pickup"] as const) : []),
@@ -129,6 +134,18 @@ export function CheckoutFulfillmentFields({
 
       {fulfillmentMethod === "delivery" && deliveryEnabled ? (
         <div className="space-y-3">
+          {showDeliveryHoursNotice ? (
+            <div
+              role="status"
+              className="rounded-xl border border-[color:var(--shop-line)] bg-[color:var(--shop-surface)] px-3 py-3 text-sm text-[color:var(--shop-ink)]"
+            >
+              <p className="font-medium">{t("deliveryHoursNoticeTitle")}</p>
+              <p className="mt-1 text-[color:var(--shop-ink-muted)] leading-relaxed">
+                {t("deliveryHoursNoticeBody")}
+              </p>
+            </div>
+          ) : null}
+
           {deliveryNotes ? (
             <p className="text-xs text-[color:var(--shop-ink-muted)]">{deliveryNotes}</p>
           ) : null}

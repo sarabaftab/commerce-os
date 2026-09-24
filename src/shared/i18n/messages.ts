@@ -74,6 +74,9 @@ const en = {
   deliveryFeeAtCheckout: "Delivery fee calculated at checkout.",
   removeUnavailable: "Remove unavailable items before checkout.",
   removeItemAria: "Remove item",
+  deliveryHoursNoticeTitle: "Delivery Hours: 8:00 AM – 8:00 PM",
+  deliveryHoursNoticeBody:
+    "You can still place your order now. Orders placed outside delivery hours will be processed during our delivery operating hours.",
 
   // Checkout
   checkout: "Checkout",
@@ -330,6 +333,9 @@ const km: Record<MessageKey, string> = {
   deliveryFeeAtCheckout: "ថ្លៃដឹកជញ្ជូននឹងគណនានៅពេលទូទាត់។",
   removeUnavailable: "សូមលុបទំនិញដែលមិនមានមុនពេលទូទាត់។",
   removeItemAria: "លុបទំនិញ",
+  deliveryHoursNoticeTitle: "ម៉ោងដឹកជញ្ជូន៖ ៨:០០ ព្រឹក – ៨:០០ ល្ងាច",
+  deliveryHoursNoticeBody:
+    "អ្នកនៅតែអាចបញ្ជាទិញបានឥឡូវនេះ។ ការបញ្ជាទិញក្រៅម៉ោងដឹកជញ្ជូននឹងត្រូវបានដំណើរការក្នុងម៉ោងដឹកជញ្ជូនរបស់យើង។",
 
   checkout: "ការទូទាត់",
   contact: "ទំនាក់ទំនង",
