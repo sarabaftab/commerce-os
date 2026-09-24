@@ -1,3 +1,4 @@
+import { publishBroadcastAction } from "@/modules/broadcasts/actions/broadcast-actions";
 import { BroadcastForm } from "@/modules/broadcasts/components/broadcast-form";
 import { getBroadcastChannelForAdmin } from "@/modules/broadcasts/services/broadcast-service";
 import { requireAdminSession } from "@/shared/auth/admin-session";
@@ -23,7 +24,11 @@ export default async function AdminBroadcastsPage() {
           ensure the bot token is mapped to this storefront slug.
         </div>
       ) : (
-        <BroadcastForm channel={channel} defaultStoreUrl={defaultStoreUrl} />
+        <BroadcastForm
+          channel={channel}
+          defaultStoreUrl={defaultStoreUrl}
+          action={publishBroadcastAction}
+        />
       )}
     </div>
   );

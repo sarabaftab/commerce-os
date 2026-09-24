@@ -2,25 +2,30 @@
 
 import { useActionState, useEffect, useState } from "react";
 
-import {
-  publishBroadcastAction,
-  type PublishBroadcastActionState,
-} from "@/modules/broadcasts/actions/broadcast-actions";
+import type { PublishBroadcastActionState } from "@/modules/broadcasts/actions/broadcast-actions";
 import { TELEGRAM_MESSAGE_MAX_LENGTH } from "@/modules/broadcasts/schemas/broadcast";
 import { Button } from "@/ui/components/ui/button";
+import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
 import { Textarea } from "@/ui/components/ui/textarea";
-import { Input } from "@/ui/components/ui/input";
 
 type BroadcastFormProps = {
   channel: string;
   defaultStoreUrl: string;
+  action: (
+    prev: PublishBroadcastActionState,
+    formData: FormData,
+  ) => Promise<PublishBroadcastActionState>;
 };
 
 const initial: PublishBroadcastActionState = {};
 
-export function BroadcastForm({ channel, defaultStoreUrl }: BroadcastFormProps) {
-  const [state, action, pending] = useActionState(publishBroadcastAction, initial);
+export function BroadcastForm({
+  channel,
+  defaultStoreUrl,
+  action,
+}: BroadcastFormProps) {
+  const [state, formAction, pending] = useActionState(action, initial);
   const [message, setMessage] = useState("");
   const [buttonLabel, setButtonLabel] = useState("Shop Now");
   const [buttonDestination, setButtonDestination] = useState("");
@@ -41,7 +46,7 @@ export function BroadcastForm({ channel, defaultStoreUrl }: BroadcastFormProps) 
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
       <form
         key={formKey}
-        action={action}
+        action={formAction}
         className="space-y-4 rounded-2xl border border-[color:var(--admin-line)] bg-[color:var(--admin-surface-elevated)] p-5 shadow-[var(--admin-shadow)]"
         onSubmit={(event) => {
           if (pending) {
