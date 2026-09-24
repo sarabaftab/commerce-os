@@ -131,6 +131,8 @@ const en = {
   payment: "Payment",
   cashOnDelivery: "Cash on Delivery",
   cashOnDeliveryHint: "Pay when your order arrives",
+  codUnavailableOverLimit:
+    "Cash on Delivery is available for orders below $30. Please use ABA Bank Transfer for this order.",
   abaTransfer: "ABA Bank Transfer",
   abaTransferShort: "ABA Transfer",
   abaTransferHint: "Bank transfer before fulfillment",
@@ -388,6 +390,8 @@ const km: Record<MessageKey, string> = {
   payment: "ការបង់ប្រាក់",
   cashOnDelivery: "បង់ពេលទទួលទំនិញ",
   cashOnDeliveryHint: "បង់ពេលទទួលការបញ្ជាទិញ",
+  codUnavailableOverLimit:
+    "ការបង់ពេលទទួលទំនិញមានសម្រាប់ការបញ្ជាទិញក្រោម ៣០ ដុល្លារ។ សូមប្រើការផ្ទេរប្រាក់តាម ABA សម្រាប់ការបញ្ជាទិញនេះ។",
   abaTransfer: "ផ្ទេរប្រាក់តាម ABA",
   abaTransferShort: "ផ្ទេរ ABA",
   abaTransferHint: "ផ្ទេរប្រាក់មុនពេលរៀបចំទំនិញ",

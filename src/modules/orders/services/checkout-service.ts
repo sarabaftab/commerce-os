@@ -31,6 +31,10 @@ import {
   resolveLinePromotionQuantities,
 } from "../line-promotion";
 import {
+  assertCashOnDeliveryAllowed,
+  merchandiseSubtotalAfterDiscountMinor,
+} from "../cod-eligibility";
+import {
   findOpenCheckoutCartInTransaction,
   type CheckoutCartWithItems,
 } from "../repositories/cart-repository";
@@ -362,6 +366,21 @@ export async function placeGuestOrder(
     listActivePromotionsForTenant(context.tenantId),
   ]);
 
+  // Early COD gate using the same merchandise formula (after discount, before delivery).
+  // Authoritative re-check happens inside the transaction before stock/cart mutation.
+  const previewCampaign = pickEligibleCampaignDiscount(activePromotions, {
+    subtotalMinor: preview.subtotalMinor,
+  });
+  assertCashOnDeliveryAllowed({
+    paymentMethod: input.paymentMethod,
+    merchandiseSubtotalMinor: merchandiseSubtotalAfterDiscountMinor(
+      preview.subtotalMinor,
+      previewCampaign?.discountMinor ?? 0,
+    ),
+    currency: settings.currency,
+    locale: input.customerLocale,
+  });
+
   try {
     const order = await prisma.$transaction(
       async (tx) => {
@@ -384,7 +403,19 @@ export async function placeGuestOrder(
           subtotalMinor,
         });
         const discountMinor = campaign?.discountMinor ?? 0;
-        const totalMinor = subtotalMinor - discountMinor + deliveryFeeMinor;
+        const merchandiseSubtotalMinor = merchandiseSubtotalAfterDiscountMinor(
+          subtotalMinor,
+          discountMinor,
+        );
+        const totalMinor = merchandiseSubtotalMinor + deliveryFeeMinor;
+
+        // Authoritative COD gate: reject before stock deduction or cart claim.
+        assertCashOnDeliveryAllowed({
+          paymentMethod: input.paymentMethod,
+          merchandiseSubtotalMinor,
+          currency: settings.currency,
+          locale: input.customerLocale,
+        });
 
         // Atomic stock deduction before claim/insert (fulfillment qty for 1+1).
         for (const line of availableLines) {

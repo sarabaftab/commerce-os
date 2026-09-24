@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 
 import { FieldLabel } from "@/ui/components/field-label";
 import type { CheckoutPreview } from "@/modules/orders";
@@ -8,6 +8,10 @@ import {
   placeOrderAction,
   type PlaceOrderActionState,
 } from "@/modules/orders/actions/checkout-actions";
+import {
+  isCashOnDeliveryEligible,
+  merchandiseSubtotalAfterDiscountMinor,
+} from "@/modules/orders/cod-eligibility";
 import { useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
 
@@ -27,12 +31,21 @@ const initialState: PlaceOrderActionState = {};
 
 export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
   const { locale, t } = useLocale();
+  const discountMinor = preview.discountMinor ?? 0;
+  const merchandiseSubtotalMinor = merchandiseSubtotalAfterDiscountMinor(
+    preview.cart.subtotalMinor,
+    discountMinor,
+  );
+  const codSelectable =
+    preview.codEnabled &&
+    isCashOnDeliveryEligible(merchandiseSubtotalMinor, preview.cart.currency);
+
   const initialFulfillment = preview.deliveryEnabled
     ? "delivery"
     : preview.pickupEnabled
       ? "pickup"
       : "delivery";
-  const initialPayment = preview.codEnabled
+  const initialPayment = codSelectable
     ? "cod"
     : preview.abaAvailable
       ? "aba_transfer"
@@ -47,9 +60,14 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
     initialState,
   );
 
+  useEffect(() => {
+    if (paymentMethod === "cod" && !codSelectable && preview.abaAvailable) {
+      setPaymentMethod("aba_transfer");
+    }
+  }, [codSelectable, paymentMethod, preview.abaAvailable]);
+
   const deliveryFeeMinor = fulfillmentMethod === "delivery" ? preview.deliveryFeeMinor : 0;
-  const discountMinor = preview.discountMinor ?? 0;
-  const totalMinor = preview.cart.subtotalMinor - discountMinor + deliveryFeeMinor;
+  const totalMinor = merchandiseSubtotalMinor + deliveryFeeMinor;
 
   const composedName =
     preview.prefillDisplayName ||
@@ -131,6 +149,7 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
             paymentMethod={paymentMethod}
             onPaymentMethodChange={setPaymentMethod}
             codEnabled={preview.codEnabled}
+            codSelectable={codSelectable}
             abaAvailable={preview.abaAvailable}
             abaInstructions={preview.abaInstructions}
             abaQrImageUrl={preview.abaQrImageUrl}
