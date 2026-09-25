@@ -53,6 +53,7 @@ export function AccountNav({ tenantSlug }: AccountNavProps) {
           <Link
             key={link.key}
             href={href}
+            prefetch={false}
             className={cn(
               "rounded-full px-3 py-1.5 transition",
               active ? shop.navActive : shop.navIdle,

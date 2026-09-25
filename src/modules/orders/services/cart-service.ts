@@ -186,6 +186,21 @@ export async function getOrCreateCart(
     newGuestToken = created.guestToken;
   }
 
+  if (process.env.NODE_ENV === "production") {
+    console.info(
+      JSON.stringify({
+        event: "cart.identity_resolved",
+        tenantId: identity.tenantId,
+        hasCustomerId: Boolean(identity.customerId),
+        hasGuestToken: Boolean(identity.guestToken),
+        cartId: cart.id,
+        cartHasCustomerId: Boolean(cart.customerId),
+        cartHasGuestToken: Boolean(cart.guestToken),
+        itemCount: cart.items.reduce((sum, item) => sum + item.quantity, 0),
+      }),
+    );
+  }
+
   const bogoMap = await loadBogoMap(identity.tenantId);
   return {
     summary: buildCartSummary(cart, tenantCurrency, bogoMap),

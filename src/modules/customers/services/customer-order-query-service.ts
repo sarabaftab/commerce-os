@@ -50,29 +50,28 @@ export async function listCustomerOrders(input: {
     ...statusFilterWhere(filter),
   };
 
-  const [total, rows] = await Promise.all([
-    prisma.order.count({ where }),
-    prisma.order.findMany({
-      where,
-      orderBy: { placedAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      include: {
-        items: {
-          orderBy: { id: "asc" },
-          select: {
-            quantity: true,
-            nameSnapshot: true,
-            product: {
-              select: {
-                media: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } },
-              },
+  // Sequential reads — avoid Promise.all against connection_limit=1 on Vercel.
+  const total = await prisma.order.count({ where });
+  const rows = await prisma.order.findMany({
+    where,
+    orderBy: { placedAt: "desc" },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+    include: {
+      items: {
+        orderBy: { id: "asc" },
+        select: {
+          quantity: true,
+          nameSnapshot: true,
+          product: {
+            select: {
+              media: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } },
             },
           },
         },
       },
-    }),
-  ]);
+    },
+  });
 
   logCustomerEvent("customer.orders_listed", {
     tenantId: input.tenantId,

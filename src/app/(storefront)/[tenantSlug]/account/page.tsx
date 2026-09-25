@@ -1,3 +1,4 @@
+import { AccountLoadError } from "@/modules/customers/components/account-load-error";
 import {
   getCustomerProfile,
   listCustomerAddresses,
@@ -5,6 +6,7 @@ import {
   loadAccountPageSession,
 } from "@/modules/customers";
 import { resolveStorefrontTenant } from "@/modules/storefront";
+import { isPrismaPoolTimeout } from "@/shared/db/prisma-errors";
 import { LocalizedAccountHome } from "@/ui/storefront/localized-text";
 
 export const dynamic = "force-dynamic";
@@ -20,33 +22,49 @@ export default async function AccountHomePage({ params }: PageProps) {
   if (!session) {
     return null;
   }
-  const [profile, addresses, orders] = await Promise.all([
-    getCustomerProfile(session.tenantId, session.customerId),
-    listCustomerAddresses(session.tenantId, session.customerId),
-    listCustomerOrders({
+
+  try {
+    // Sequential on purpose: Vercel Prisma uses connection_limit=1. Parallel
+    // Account queries + Next.js link prefetch previously caused P2024 crashes.
+    const profile = await getCustomerProfile(session.tenantId, session.customerId);
+    const addresses = await listCustomerAddresses(session.tenantId, session.customerId);
+    const orders = await listCustomerOrders({
       tenantId: session.tenantId,
       customerId: session.customerId,
       pageSize: 3,
-    }),
-  ]);
+    });
 
-  const base = `/${tenantSlug}/account`;
-  const displayName =
-    profile.displayName ||
-    [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
-    profile.phone ||
-    "Account";
+    const base = `/${tenantSlug}/account`;
+    const displayName =
+      profile.displayName ||
+      [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
+      profile.phone ||
+      "Account";
 
-  return (
-    <LocalizedAccountHome
-      displayName={displayName}
-      profileHref={`${base}/profile`}
-      addressesHref={`${base}/addresses`}
-      ordersHref={`${base}/orders`}
-      faqHref={`/${tenantSlug}/faq`}
-      addressesCount={addresses.length}
-      defaultAddressLabel={addresses.find((a) => a.isDefault)?.label ?? null}
-      ordersTotal={orders.total}
-    />
-  );
+    return (
+      <LocalizedAccountHome
+        displayName={displayName}
+        profileHref={`${base}/profile`}
+        addressesHref={`${base}/addresses`}
+        ordersHref={`${base}/orders`}
+        faqHref={`/${tenantSlug}/faq`}
+        addressesCount={addresses.length}
+        defaultAddressLabel={addresses.find((a) => a.isDefault)?.label ?? null}
+        ordersTotal={orders.total}
+      />
+    );
+  } catch (error) {
+    if (isPrismaPoolTimeout(error)) {
+      console.error(
+        JSON.stringify({
+          event: "account.pool_timeout",
+          tenantId: session.tenantId,
+          customerId: session.customerId,
+          page: "home",
+        }),
+      );
+      return <AccountLoadError tenantSlug={tenantSlug} />;
+    }
+    throw error;
+  }
 }

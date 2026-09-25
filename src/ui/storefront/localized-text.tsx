@@ -227,6 +227,7 @@ export function LocalizedAccountHome({
         <li>
           <Link
             href={profileHref}
+            prefetch={false}
             className="block rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]"
           >
             <p className="text-sm font-semibold">{t("profile")}</p>
@@ -238,6 +239,7 @@ export function LocalizedAccountHome({
         <li>
           <Link
             href={addressesHref}
+            prefetch={false}
             className="block rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]"
           >
             <p className="text-sm font-semibold">{t("savedAddresses")}</p>
@@ -247,6 +249,7 @@ export function LocalizedAccountHome({
         <li>
           <Link
             href={ordersHref}
+            prefetch={false}
             className="block rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]"
           >
             <p className="text-sm font-semibold">{t("myOrders")}</p>
@@ -256,6 +259,7 @@ export function LocalizedAccountHome({
         <li>
           <Link
             href={faqHref}
+            prefetch={false}
             className="block rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]"
           >
             <p className="text-sm font-semibold">{t("helpFaq")}</p>
