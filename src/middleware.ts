@@ -1,16 +1,39 @@
+import {
+  TELEGRAM_ACCOUNT_ACCESS_HEADER,
+  TELEGRAM_ACCOUNT_ACCESS_QUERY,
+} from "@/channels/telegram/account-access-constants";
+import { updateSession } from "@/shared/auth/supabase/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-import { updateSession } from "@/shared/auth/supabase/middleware";
+function isStorefrontAccountPath(pathname: string): boolean {
+  const parts = pathname.split("/").filter(Boolean);
+  return parts.length >= 2 && parts[1] === "account";
+}
 
 /**
- * Telegram session handoff no longer uses middleware 307 redirects.
- * Desktop WebViews often drop Set-Cookie on redirects; handoff is applied by
- * GET /[tenant]/telegram-session/complete (200 HTML + Set-Cookie) instead.
+ * Forward opaque tg_a from the Account URL onto an internal request header.
+ * Never trusts a client-supplied copy of that header.
+ * Proof validation happens in Node (Account resolver), not Edge.
  */
+function withTelegramAccountAccessHeader(request: NextRequest): NextResponse {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete(TELEGRAM_ACCOUNT_ACCESS_HEADER);
+  const code = request.nextUrl.searchParams.get(TELEGRAM_ACCOUNT_ACCESS_QUERY)?.trim();
+  if (code) {
+    requestHeaders.set(TELEGRAM_ACCOUNT_ACCESS_HEADER, code);
+  }
+  return NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (isStorefrontAccountPath(pathname)) {
+    return withTelegramAccountAccessHeader(request);
+  }
 
   const isAdminApiRoute = pathname.startsWith("/api/admin");
   const isAdminRoute = pathname.startsWith("/admin");
@@ -62,5 +85,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/:tenantSlug/account",
+    "/:tenantSlug/account/:path*",
+  ],
 };

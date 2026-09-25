@@ -103,6 +103,7 @@ model Tenant {
   pickupLocations    PickupLocation[]
   customerSessions          CustomerSession[]
   telegramSessionHandoffs   TelegramSessionHandoff[]
+  telegramAccountAccesses   TelegramAccountAccess[]
   customerAddresses         CustomerAddress[]
   faqs                      Faq[]
   notifications             CustomerNotification[]
@@ -245,6 +246,7 @@ model Customer {
   orders     Order[]
   carts      Cart[]
   sessions   CustomerSession[]
+  accountAccesses TelegramAccountAccess[]
   addresses     CustomerAddress[]
   notifications CustomerNotification[]
 
@@ -317,6 +319,7 @@ model CustomerSession {
   tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   handoffs TelegramSessionHandoff[]
+  accountAccesses TelegramAccountAccess[]
 
   @@index([tenantId, customerId])
   @@index([expiresAt])
@@ -339,6 +342,29 @@ model TelegramSessionHandoff {
   @@index([tenantId])
   @@index([expiresAt])
   @@map("telegram_session_handoffs")
+}
+
+/**
+ * Short-lived multi-use Account access proofs for Telegram Desktop when
+ * commerceos_customer cookies do not persist. Opaque code only — never a session token.
+ * Created only after verified Telegram initData.
+ */
+model TelegramAccountAccess {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  customerId String   @map("customer_id")
+  sessionId  String   @map("session_id")
+  codeHash   String   @unique @map("code_hash")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  session  CustomerSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, customerId])
+  @@index([expiresAt])
+  @@map("telegram_account_accesses")
 }
 
 model Order {

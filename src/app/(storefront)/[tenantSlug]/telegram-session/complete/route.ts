@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 
+import {
+  TELEGRAM_ACCOUNT_ACCESS_QUERY,
+  TELEGRAM_ACCOUNT_ACCESS_STORAGE_KEY,
+} from "@/channels/telegram/account-access-constants";
+import { appendTelegramAccountAccessQuery } from "@/channels/telegram/server/account-access";
 import { safeTelegramAccountPath } from "@/channels/telegram/server/account-session-path";
 import {
   attachCustomerSessionCookie,
@@ -17,15 +22,14 @@ type RouteContext = {
 
 /**
  * Consume a one-time tg_s handoff code via document GET (200 HTML + Set-Cookie).
- * Telegram Desktop often ignores Set-Cookie on redirects while still accepting
- * cookies on full document navigations (same pattern as POST /telegram-session).
- *
- * tg_s is an opaque short-lived code — never the commerceos_customer token.
+ * Also forwards the opaque Account access proof (tg_a) into sessionStorage + next URL
+ * so Desktop can open Account when commerceos_customer does not persist.
  */
 export async function GET(request: Request, context: RouteContext) {
   const { tenantSlug } = await context.params;
   const url = new URL(request.url);
   const handoffCode = url.searchParams.get(TELEGRAM_SESSION_HANDOFF_QUERY);
+  const accessCode = url.searchParams.get(TELEGRAM_ACCOUNT_ACCESS_QUERY);
   const nextPath = safeTelegramAccountPath(
     tenantSlug,
     url.searchParams.get("next") ?? `/${tenantSlug}/account`,
@@ -55,13 +59,14 @@ export async function GET(request: Request, context: RouteContext) {
       protocol: url.protocol.replace(":", ""),
       handoffPresent: Boolean(handoffCode),
       handoffValid: cookieSet,
+      accountAccessPresent: Boolean(accessCode),
       cookieAlreadyPresent,
       cookieSet,
       nextPath,
     }),
   );
 
-  const response = new NextResponse(connectingHtml(nextPath), {
+  const response = new NextResponse(connectingHtml(nextPath, accessCode), {
     status: 200,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
@@ -77,6 +82,11 @@ export async function GET(request: Request, context: RouteContext) {
   return response;
 }
 
-function connectingHtml(nextPath: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Connecting</title></head><body><p>Connecting your account…</p><script>location.replace(${JSON.stringify(nextPath)});</script></body></html>`;
+function connectingHtml(nextPath: string, accessCode: string | null) {
+  const code = accessCode?.trim() || "";
+  const storage = code
+    ? `try{sessionStorage.setItem(${JSON.stringify(TELEGRAM_ACCOUNT_ACCESS_STORAGE_KEY)},${JSON.stringify(code)});}catch(e){}`
+    : "";
+  const target = code ? appendTelegramAccountAccessQuery(nextPath, code) : nextPath;
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Connecting</title></head><body><p>Connecting your account…</p><script>${storage}location.replace(${JSON.stringify(target)});</script></body></html>`;
 }

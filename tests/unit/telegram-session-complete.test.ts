@@ -39,7 +39,7 @@ describe("telegram-session complete handoff route", () => {
 
     const response = await GET(
       new Request(
-        "https://billionco.vercel.app/kin-a2/telegram-session/complete?tg_s=abc&next=/kin-a2/account",
+        "https://billionco.vercel.app/kin-a2/telegram-session/complete?tg_s=abc&tg_a=access-proof&next=/kin-a2/account",
       ),
       { params: Promise.resolve({ tenantSlug: "kin-a2" }) },
     );
@@ -56,6 +56,8 @@ describe("telegram-session complete handoff route", () => {
     const html = await response.text();
     expect(html).toContain("location.replace");
     expect(html).toContain("/kin-a2/account");
+    expect(html).toContain("tg_a=access-proof");
+    expect(html).toContain("sessionStorage.setItem");
     expect(html).toContain('name="referrer" content="no-referrer"');
     expect(html).not.toContain("tg_s=");
   });

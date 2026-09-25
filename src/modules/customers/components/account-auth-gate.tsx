@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { TELEGRAM_ACCOUNT_ACCESS_STORAGE_KEY } from "@/channels/telegram/account-access-constants";
 import { submitTelegramSessionForm } from "@/channels/telegram/client/submit-session-form";
 import { waitForTelegramInitData } from "@/channels/telegram/client/wait-for-init-data";
 import { useTelegram } from "@/channels/telegram/client/telegram-provider";
@@ -81,14 +82,20 @@ export function AccountAuthGate({ tenantSlug }: AccountAuthGateProps) {
           {t("couldNotOpenAccount")}
         </h1>
         <p className="text-sm text-[color:var(--shop-ink-muted)]">
-          Telegram did not keep your login in this Mini App. {t("tryAgain")} — if it still fails, ask
-          the shop owner to confirm the Mini App URL in BotFather matches this shop.
+          Telegram did not keep your login in this Mini App, or the secure connection expired.{" "}
+          {t("tryAgain")} — reopen Account from the shop menu if it still fails. Confirm the Mini
+          App URL in BotFather matches this shop.
         </p>
         <button
           type="button"
           className={shop.btnPrimary}
           onClick={() => {
-            sessionStorage.removeItem(TELEGRAM_ACCOUNT_NAV_KEY);
+            try {
+              sessionStorage.removeItem(TELEGRAM_ACCOUNT_NAV_KEY);
+              sessionStorage.removeItem(TELEGRAM_ACCOUNT_ACCESS_STORAGE_KEY);
+            } catch {
+              // ignore
+            }
             startedRef.current = false;
             setNavigationAttempted(false);
             retryAuth();

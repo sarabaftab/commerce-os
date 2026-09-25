@@ -178,9 +178,11 @@ describe("telegram session handoff path", () => {
       "kin-a2",
       "/kin-a2/account",
       "opaque-one-time-code",
+      "opaque-access-proof",
     );
     expect(path.startsWith("/kin-a2/telegram-session/complete?")).toBe(true);
     expect(path).toContain("tg_s=");
+    expect(path).toContain("tg_a=");
     expect(path).toContain("next=");
     expect(path).not.toMatch(/^\/kin-a2\/account\?/);
     expect(path).not.toContain("session-token");
