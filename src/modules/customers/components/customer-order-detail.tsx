@@ -6,6 +6,7 @@ import { AbaPaymentDetails } from "@/modules/orders/components/aba-payment-detai
 import { AbaProofUpload } from "@/modules/orders/components/aba-proof-upload";
 import { BogoCartBanner, BogoLineCallout } from "@/modules/orders/components/bogo-line-callout";
 import { CUSTOMER_ORDER_STATUS_MESSAGE_KEYS } from "@/modules/customers/types";
+import { openStreetMapPinUrl, parseOptionalLatLng } from "@/modules/locations/coordinates";
 import { useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
 import { formatPackSizeLine, formatPriceTimesQuantity } from "@/modules/catalog/selling-unit";
@@ -22,6 +23,9 @@ export function CustomerOrderDetail({ tenantSlug, order }: Props) {
   const { t } = useLocale();
   const statusKey = CUSTOMER_ORDER_STATUS_MESSAGE_KEYS[order.status];
   const statusLabel = statusKey ? t(statusKey) : order.statusLabel;
+  const deliveryPin = order.delivery
+    ? parseOptionalLatLng(order.delivery.latitude, order.delivery.longitude)
+    : null;
   return (
     <div className="space-y-5">
       <div>
@@ -167,6 +171,18 @@ export function CustomerOrderDetail({ tenantSlug, order }: Props) {
             </p>
             {order.delivery.deliveryInstructions ? (
               <p>{order.delivery.deliveryInstructions}</p>
+            ) : null}
+            {deliveryPin ? (
+              <p className="pt-1">
+                <a
+                  href={openStreetMapPinUrl(deliveryPin)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
+                >
+                  {t("viewOnMap")}
+                </a>
+              </p>
             ) : null}
           </div>
         ) : null}

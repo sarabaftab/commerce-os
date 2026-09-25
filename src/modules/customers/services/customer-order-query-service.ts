@@ -185,6 +185,8 @@ export async function getCustomerOrderByNumber(input: {
             countryCode: order.countryCode,
             label: order.addressLabel,
             deliveryInstructions: order.deliveryInstructions,
+            latitude: order.deliveryLatitude,
+            longitude: order.deliveryLongitude,
           }
         : null,
     pickup:

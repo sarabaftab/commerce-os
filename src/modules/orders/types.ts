@@ -119,6 +119,8 @@ export type OrderConfirmation = {
   addressLine: string | null;
   cityOrArea: string | null;
   deliveryInstructions: string | null;
+  deliveryLatitude: number | null;
+  deliveryLongitude: number | null;
   pickupLocationKey: string | null;
   pickupLocationName: string | null;
   pickupLocationAddress: string | null;

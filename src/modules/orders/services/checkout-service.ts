@@ -11,6 +11,11 @@ import {
   upsertCustomerByPhone,
 } from "@/modules/customers/repositories/customer-repository";
 import { parseOptionalLatLng } from "@/modules/locations/coordinates";
+import {
+  addressFieldsFromLocationResult,
+  isPinnedLocationFallback,
+  reverseGeocodeLatLng,
+} from "@/modules/locations";
 import { assertCheckoutOptions, getCheckoutSettings } from "@/modules/settings";
 import { notifyOrderPlacedAfterCommit } from "@/modules/notifications/services/notification-service";
 import {
@@ -207,13 +212,41 @@ async function resolveDeliverySnapshot(
   }
 
   const pin = parseOptionalLatLng(input.deliveryLatitude, input.deliveryLongitude);
+  let addressLine = input.addressLine;
+  let cityOrArea = input.cityOrArea;
+  let provinceOrState = input.provinceOrState;
+  let postalCode = input.postalCode;
+  let countryCode = input.countryCode ?? "KH";
+
+  // Resolve pin → text once at checkout when the customer only confirmed coordinates
+  // (or still has the placeholder). Never block order placement on geocoding failure.
+  if (pin && isPinnedLocationFallback(addressLine)) {
+    const resolved = await reverseGeocodeLatLng(pin);
+    if (resolved) {
+      const fields = addressFieldsFromLocationResult(resolved);
+      addressLine = fields.addressLine;
+      if (fields.cityOrArea) {
+        cityOrArea = fields.cityOrArea;
+      }
+      if (fields.provinceOrState) {
+        provinceOrState = fields.provinceOrState;
+      }
+      if (fields.postalCode) {
+        postalCode = fields.postalCode;
+      }
+      if (fields.countryCode) {
+        countryCode = fields.countryCode;
+      }
+    }
+  }
+
   const snapshot: DeliverySnapshot = {
-    addressLine: input.addressLine,
+    addressLine,
     addressLine2: input.addressLine2,
-    cityOrArea: input.cityOrArea,
-    provinceOrState: input.provinceOrState,
-    postalCode: input.postalCode,
-    countryCode: input.countryCode ?? "KH",
+    cityOrArea,
+    provinceOrState,
+    postalCode,
+    countryCode,
     recipientFirstName: input.firstName,
     recipientLastName: input.lastName,
     recipientPhone: input.phone,
@@ -235,12 +268,12 @@ async function resolveDeliverySnapshot(
           input.displayName.split(" ").slice(1).join(" ") ||
           "Customer",
         phone: input.phone,
-        addressLine1: input.addressLine,
+        addressLine1: addressLine,
         addressLine2: input.addressLine2,
-        cityOrDistrict: input.cityOrArea,
-        provinceOrState: input.provinceOrState?.trim() || input.cityOrArea,
-        postalCode: input.postalCode,
-        countryCode: input.countryCode ?? "KH",
+        cityOrDistrict: cityOrArea,
+        provinceOrState: provinceOrState?.trim() || cityOrArea,
+        postalCode,
+        countryCode,
         deliveryInstructions: input.deliveryInstructions,
         isDefault: Boolean(input.setAddressAsDefault),
         latitude: pin?.latitude ?? null,

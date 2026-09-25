@@ -91,6 +91,8 @@ export type CustomerOrderDetailDto = {
     countryCode: string | null;
     label: string | null;
     deliveryInstructions: string | null;
+    latitude: number | null;
+    longitude: number | null;
   } | null;
   pickup: {
     name: string | null;

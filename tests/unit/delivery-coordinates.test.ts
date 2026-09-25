@@ -124,7 +124,7 @@ describe("Admin map link", () => {
     ).toContain("mlat=11.556400");
   });
 
-  it("shows View Delivery Location only when the order snapshot has coordinates", () => {
+  it("shows View on Map only when the order snapshot has coordinates", () => {
     const base = {
       id: "o1",
       orderNumber: "KIN-1",
@@ -168,7 +168,8 @@ describe("Admin map link", () => {
         },
       }),
     );
-    expect(withPin).toContain("View Delivery Location");
+    expect(withPin).toContain("12 Street");
+    expect(withPin).toContain("View on Map");
     expect(withPin).toContain("mlat=11.556400");
 
     const withoutPin = renderToStaticMarkup(
@@ -176,6 +177,6 @@ describe("Admin map link", () => {
         order: { ...base, deliveryLatitude: null, deliveryLongitude: null },
       }),
     );
-    expect(withoutPin).not.toContain("View Delivery Location");
+    expect(withoutPin).not.toContain("View on Map");
   });
 });

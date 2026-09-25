@@ -31,7 +31,7 @@ export function OrderFulfillmentPanel({ order }: OrderFulfillmentPanelProps) {
                   rel="noreferrer"
                   className="font-medium text-[color:var(--admin-ink)] underline decoration-[color:var(--admin-primary)] underline-offset-4"
                 >
-                  View Delivery Location
+                  View on Map
                 </a>
               </p>
             ) : null}

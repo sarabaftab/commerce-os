@@ -5,6 +5,7 @@ import { AbaPaymentDetails } from "@/modules/orders/components/aba-payment-detai
 import { AbaProofUpload } from "@/modules/orders/components/aba-proof-upload";
 import { BogoCartBanner, BogoLineCallout } from "@/modules/orders/components/bogo-line-callout";
 import { formatPackSizeLine, formatPriceTimesQuantity } from "@/modules/catalog/selling-unit";
+import { openStreetMapPinUrl, parseOptionalLatLng } from "@/modules/locations/coordinates";
 import { useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
 import {
@@ -45,6 +46,7 @@ export function OrderConfirmationView({
     order.paymentMethod === "cod" ? t("cashOnDelivery") : t("abaTransferShort");
   const statusKey = CUSTOMER_ORDER_STATUS_MESSAGE_KEYS[order.status];
   const statusLabel = statusKey ? t(statusKey) : order.status.replaceAll("_", " ");
+  const deliveryPin = parseOptionalLatLng(order.deliveryLatitude, order.deliveryLongitude);
   return (
     <div className="space-y-4">
       <div className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
@@ -85,12 +87,29 @@ export function OrderConfirmationView({
         </section>
 
         <section>
-<h2 className="text-sm font-semibold">{t("fulfillmentMethod")}</h2>
+          <h2 className="text-sm font-semibold">{t("fulfillmentMethod")}</h2>
           <p className="mt-2 text-sm">{order.fulfillmentMethod === "pickup" ? t("pickup") : t("delivery")}</p>
+          {order.fulfillmentMethod === "delivery" ? (
+            <p className="mt-1 text-xs font-medium text-[color:var(--shop-ink-muted)]">
+              {t("deliveryAddress")}
+            </p>
+          ) : null}
           <p className="text-sm text-[color:var(--shop-ink-muted)]">{formatFulfillment(order, t("pickup"))}</p>
           {order.deliveryInstructions ? (
             <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
               {order.deliveryInstructions}
+            </p>
+          ) : null}
+          {deliveryPin ? (
+            <p className="mt-2">
+              <a
+                href={openStreetMapPinUrl(deliveryPin)}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
+              >
+                {t("viewOnMap")}
+              </a>
             </p>
           ) : null}
         </section>

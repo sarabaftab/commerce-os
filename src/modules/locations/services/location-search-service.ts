@@ -1,6 +1,18 @@
 import { env } from "@/shared/config/env";
 
+import type { LatLng } from "../coordinates";
+import {
+  addressFieldsFromLocationResult,
+  isPinnedLocationFallback,
+  PINNED_LOCATION_FALLBACK_ADDRESS,
+} from "../location-address";
 import type { LocationSearchResponse, LocationSearchResult } from "../types";
+
+export {
+  addressFieldsFromLocationResult,
+  isPinnedLocationFallback,
+  PINNED_LOCATION_FALLBACK_ADDRESS,
+};
 
 const PHOTON_LIMIT = 8;
 const PHOTON_TIMEOUT_MS = 5000;
@@ -32,6 +44,22 @@ function uniqueAddressParts(parts: (string | null)[]) {
     seen.add(key);
     return true;
   });
+}
+
+/**
+ * Photon search uses `/api`; reverse uses `/reverse` on the same host.
+ * Example: https://photon.komoot.io/api → https://photon.komoot.io/reverse
+ */
+export function photonReverseEndpoint(searchApiBaseUrl: string): string {
+  const url = new URL(searchApiBaseUrl);
+  const path = url.pathname.replace(/\/+$/, "") || "/";
+  if (path === "/api" || path.endsWith("/api")) {
+    url.pathname = `${path.slice(0, -"/api".length) || ""}/reverse`;
+  } else {
+    url.pathname = `${path}/reverse`;
+  }
+  url.search = "";
+  return url.toString();
 }
 
 export function normalizePhotonFeature(
@@ -109,14 +137,7 @@ export function rankLocationResults(
     .map(({ result }) => result);
 }
 
-export async function searchLocations(query: string): Promise<LocationSearchResponse> {
-  const settings = env();
-  const endpoint = new URL(settings.PHOTON_BASE_URL);
-  endpoint.searchParams.set("q", query);
-  endpoint.searchParams.set("limit", String(PHOTON_LIMIT));
-  endpoint.searchParams.set("lang", "en");
-  endpoint.searchParams.set("countrycode", settings.PHOTON_COUNTRY_CODE.toLowerCase());
-
+async function fetchPhotonFeatures(endpoint: URL): Promise<PhotonFeature[]> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), PHOTON_TIMEOUT_MS);
   try {
@@ -128,28 +149,66 @@ export async function searchLocations(query: string): Promise<LocationSearchResp
       throw new Error(`Photon returned ${response.status}`);
     }
     const payload: unknown = await response.json();
-    const features =
+    if (
       typeof payload === "object" &&
       payload !== null &&
       "features" in payload &&
       Array.isArray(payload.features)
-        ? payload.features
-        : [];
-    const results = features
-      .map((feature, index) =>
-        typeof feature === "object" && feature !== null
-        ? normalizePhotonFeature(feature as PhotonFeature, index)
-          : null,
-      )
-      .filter((result): result is LocationSearchResult => result !== null);
-
-    return {
-      results: rankLocationResults(results, {
-        countryCode: settings.PHOTON_COUNTRY_CODE,
-        city: settings.PHOTON_BIAS_CITY,
-      }).slice(0, PHOTON_LIMIT),
-    };
+    ) {
+      return payload.features.filter(
+        (feature): feature is PhotonFeature =>
+          typeof feature === "object" && feature !== null,
+      );
+    }
+    return [];
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+export async function searchLocations(query: string): Promise<LocationSearchResponse> {
+  const settings = env();
+  const endpoint = new URL(settings.PHOTON_BASE_URL);
+  endpoint.searchParams.set("q", query);
+  endpoint.searchParams.set("limit", String(PHOTON_LIMIT));
+  endpoint.searchParams.set("lang", "en");
+  endpoint.searchParams.set("countrycode", settings.PHOTON_COUNTRY_CODE.toLowerCase());
+
+  const features = await fetchPhotonFeatures(endpoint);
+  const results = features
+    .map((feature, index) => normalizePhotonFeature(feature, index))
+    .filter((result): result is LocationSearchResult => result !== null);
+
+  return {
+    results: rankLocationResults(results, {
+      countryCode: settings.PHOTON_COUNTRY_CODE,
+      city: settings.PHOTON_BIAS_CITY,
+    }).slice(0, PHOTON_LIMIT),
+  };
+}
+
+/**
+ * Reverse-geocode a pin into a Photon address result.
+ * Returns null on timeout/network/empty response — never throws for caller UX.
+ */
+export async function reverseGeocodeLatLng(
+  point: LatLng,
+): Promise<LocationSearchResult | null> {
+  try {
+    const settings = env();
+    const endpoint = new URL(photonReverseEndpoint(settings.PHOTON_BASE_URL));
+    endpoint.searchParams.set("lat", String(point.latitude));
+    endpoint.searchParams.set("lon", String(point.longitude));
+    endpoint.searchParams.set("lang", "en");
+    endpoint.searchParams.set("limit", "1");
+
+    const features = await fetchPhotonFeatures(endpoint);
+    const first = features[0];
+    if (!first) {
+      return null;
+    }
+    return normalizePhotonFeature(first, 0);
+  } catch {
+    return null;
   }
 }

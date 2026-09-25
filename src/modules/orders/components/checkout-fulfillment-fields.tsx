@@ -5,6 +5,11 @@ import { useState } from "react";
 import { DeliveryLocationPicker } from "@/modules/locations/components/delivery-location-picker";
 import { LocationAutocomplete } from "@/modules/locations/components/location-autocomplete";
 import { parseOptionalLatLng, type LatLng } from "@/modules/locations/coordinates";
+import {
+  addressFieldsFromLocationResult,
+  isPinnedLocationFallback,
+  PINNED_LOCATION_FALLBACK_ADDRESS,
+} from "@/modules/locations/location-address";
 import type { LocationSearchResult } from "@/modules/locations/types";
 import { useLocale } from "@/shared/i18n";
 import { isOutsideCambodiaDeliveryHours } from "@/shared/time/cambodia-delivery-hours";
@@ -72,18 +77,18 @@ export function CheckoutFulfillmentFields({
   });
   const [pin, setPin] = useState<LatLng | null>(null);
   const [pinConfirmed, setPinConfirmed] = useState(false);
+  const [resolvingPin, setResolvingPin] = useState(false);
 
   function applyLocation(location: LocationSearchResult) {
-    const addressLine = [location.houseNumber, location.street].filter(Boolean).join(" ");
-    const cityOrArea = [location.district, location.city].filter(Boolean).join(" / ");
+    const fields = addressFieldsFromLocationResult(location);
     const nextPin = parseOptionalLatLng(location.latitude, location.longitude);
     setNewAddress((current) => ({
       ...current,
-      addressLine: addressLine || location.formattedAddress,
-      cityOrArea: cityOrArea || current.cityOrArea,
-      provinceOrState: location.province || current.provinceOrState,
-      postalCode: location.postalCode || current.postalCode,
-      countryCode: location.countryCode || current.countryCode,
+      addressLine: fields.addressLine,
+      cityOrArea: fields.cityOrArea || current.cityOrArea,
+      provinceOrState: fields.provinceOrState || current.provinceOrState,
+      postalCode: fields.postalCode || current.postalCode,
+      countryCode: fields.countryCode || current.countryCode,
     }));
     if (nextPin) {
       setPin(nextPin);
@@ -94,11 +99,53 @@ export function CheckoutFulfillmentFields({
   function applyTelegramPin(next: LatLng) {
     setPin(next);
     setPinConfirmed(false);
+    // Do not overwrite a real address while the customer is still adjusting the pin.
+    // Resolve text address only on confirm (or leave existing autocomplete text alone).
+  }
+
+  async function confirmPinnedLocation(next: LatLng) {
+    setPin(next);
+    setResolvingPin(true);
+    try {
+      const response = await fetch(
+        `/api/location/reverse?lat=${encodeURIComponent(String(next.latitude))}&lng=${encodeURIComponent(String(next.longitude))}`,
+      );
+      if (response.ok) {
+        const payload: unknown = await response.json();
+        const result =
+          typeof payload === "object" &&
+          payload !== null &&
+          "data" in payload &&
+          typeof payload.data === "object" &&
+          payload.data !== null &&
+          "result" in payload.data
+            ? (payload.data.result as LocationSearchResult | null)
+            : null;
+        if (result?.formattedAddress) {
+          applyLocation({
+            ...result,
+            latitude: result.latitude ?? next.latitude,
+            longitude: result.longitude ?? next.longitude,
+          });
+          setPinConfirmed(true);
+          return;
+        }
+      }
+    } catch {
+      // Fall through to last-resort label — checkout must still work.
+    } finally {
+      setResolvingPin(false);
+    }
+
     setNewAddress((current) => ({
       ...current,
-      addressLine: current.addressLine.trim() ? current.addressLine : "Pinned delivery location",
+      addressLine:
+        current.addressLine.trim() && !isPinnedLocationFallback(current.addressLine)
+          ? current.addressLine
+          : PINNED_LOCATION_FALLBACK_ADDRESS,
       cityOrArea: current.cityOrArea.trim() ? current.cityOrArea : "Phnom Penh",
     }));
+    setPinConfirmed(true);
   }
 
   return (
@@ -230,10 +277,14 @@ export function CheckoutFulfillmentFields({
                 confirmed={pinConfirmed}
                 onDraftChange={applyTelegramPin}
                 onConfirm={(next) => {
-                  setPin(next);
-                  setPinConfirmed(true);
+                  void confirmPinnedLocation(next);
                 }}
               />
+              {resolvingPin ? (
+                <p role="status" className="text-xs text-[color:var(--shop-ink-muted)]">
+                  {t("resolvingPinnedAddress")}
+                </p>
+              ) : null}
               {pinConfirmed && pin ? (
                 <>
                   <input type="hidden" name="deliveryLatitude" value={String(pin.latitude)} />
