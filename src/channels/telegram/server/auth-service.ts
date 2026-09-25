@@ -112,6 +112,7 @@ export async function authenticateTelegramInitData(input: {
 }): Promise<{
   result: TelegramAuthResult;
   sessionToken: string | null;
+  sessionId: string | null;
   startParam?: string;
   sessionReused: boolean;
 }> {
@@ -133,6 +134,7 @@ export async function authenticateTelegramInitData(input: {
   if (canReuse) {
     return {
       sessionToken: null,
+      sessionId: input.existingSession?.sessionId ?? null,
       sessionReused: true,
       startParam: validated.startParam,
       result: {
@@ -146,13 +148,14 @@ export async function authenticateTelegramInitData(input: {
     };
   }
 
-  const { token } = await createCustomerSession({
+  const { token, sessionId } = await createCustomerSession({
     tenantId: input.tenantId,
     customerId: customer.id,
   });
 
   return {
     sessionToken: token,
+    sessionId,
     sessionReused: false,
     startParam: validated.startParam,
     result: {

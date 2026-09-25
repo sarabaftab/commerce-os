@@ -101,11 +101,12 @@ model Tenant {
   carts              Cart[]
   settings           TenantSettings?
   pickupLocations    PickupLocation[]
-  customerSessions   CustomerSession[]
-  customerAddresses  CustomerAddress[]
-  faqs               Faq[]
-  notifications      CustomerNotification[]
-  promotions         Promotion[]
+  customerSessions          CustomerSession[]
+  telegramSessionHandoffs   TelegramSessionHandoff[]
+  customerAddresses         CustomerAddress[]
+  faqs                      Faq[]
+  notifications             CustomerNotification[]
+  promotions                Promotion[]
 
   @@map("tenants")
 }
@@ -315,10 +316,29 @@ model CustomerSession {
 
   tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  handoffs TelegramSessionHandoff[]
 
   @@index([tenantId, customerId])
   @@index([expiresAt])
   @@map("customer_sessions")
+}
+
+/** Short-lived single-use codes for Desktop WebView cookie handoff. Never store raw session tokens here. */
+model TelegramSessionHandoff {
+  id         String    @id @default(cuid())
+  tenantId   String    @map("tenant_id")
+  sessionId  String    @map("session_id")
+  codeHash   String    @unique @map("code_hash")
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  session CustomerSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([expiresAt])
+  @@map("telegram_session_handoffs")
 }
 
 model Order {

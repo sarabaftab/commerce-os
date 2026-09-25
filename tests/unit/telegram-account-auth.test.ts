@@ -2,10 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { customerSessionCookiePolicy } from "@/channels/telegram/server/customer-session";
 import { decodeTelegramInitDataField } from "@/channels/telegram/server/session-form";
-import {
-  createTelegramSessionHandoff,
-  readTelegramSessionHandoff,
-} from "@/channels/telegram/server/session-handoff";
 import { safeTelegramAccountPath } from "@/channels/telegram/server/account-session-path";
 import { waitForTelegramInitData } from "@/channels/telegram/client/wait-for-init-data";
 import {
@@ -173,11 +169,20 @@ describe("decodeTelegramInitDataField", () => {
   });
 });
 
-describe("telegram session handoff", () => {
-  it("accepts a fresh signed session token and rejects a tampered one", async () => {
-    const token = "session-token-example";
-    const handoff = await createTelegramSessionHandoff(token);
-    await expect(readTelegramSessionHandoff(handoff)).resolves.toBe(token);
-    await expect(readTelegramSessionHandoff(`${handoff}x`)).resolves.toBeNull();
+describe("telegram session handoff path", () => {
+  it("routes Desktop-safe completion through a document URL, not Account?tg_s", async () => {
+    const { buildTelegramSessionCompletePath } = await import(
+      "@/channels/telegram/server/session-form"
+    );
+    const path = buildTelegramSessionCompletePath(
+      "kin-a2",
+      "/kin-a2/account",
+      "opaque-one-time-code",
+    );
+    expect(path.startsWith("/kin-a2/telegram-session/complete?")).toBe(true);
+    expect(path).toContain("tg_s=");
+    expect(path).toContain("next=");
+    expect(path).not.toMatch(/^\/kin-a2\/account\?/);
+    expect(path).not.toContain("session-token");
   });
 });

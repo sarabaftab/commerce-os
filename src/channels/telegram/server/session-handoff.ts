@@ -1,89 +1,102 @@
+import { createHash, randomBytes } from "node:crypto";
+
+import { prisma } from "@/shared/db/prisma";
+
 export const TELEGRAM_SESSION_HANDOFF_QUERY = "tg_s";
-const HANDOFF_TTL_MS = 120_000;
 
-function handoffSecret(): string {
-  return process.env.TELEGRAM_BOT_TOKEN || process.env.DATABASE_URL || "commerceos-tg-handoff";
+/** Short-lived one-time exchange code for Desktop document cookie handoff. */
+export const TELEGRAM_SESSION_HANDOFF_TTL_MS = 120_000;
+
+function hashHandoffCode(code: string): string {
+  return createHash("sha256").update(code).digest("hex");
 }
 
-function toBase64Url(bytes: Uint8Array): string {
-  let binary = "";
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
+function hashSessionToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+/**
+ * Create an opaque one-time handoff code. The URL value is NOT the customer
+ * session token — only a random code whose hash is stored server-side.
+ */
+export async function createTelegramSessionHandoff(input: {
+  tenantId: string;
+  sessionId: string;
+}): Promise<string> {
+  const code = randomBytes(32).toString("base64url");
+  const expiresAt = new Date(Date.now() + TELEGRAM_SESSION_HANDOFF_TTL_MS);
+
+  await prisma.telegramSessionHandoff.create({
+    data: {
+      tenantId: input.tenantId,
+      sessionId: input.sessionId,
+      codeHash: hashHandoffCode(code),
+      expiresAt,
+    },
+  });
+
+  return code;
+}
+
+/**
+ * Atomically consume a handoff code for this tenant and return a fresh
+ * session cookie token for the referenced CustomerSession (token rotated).
+ * Invalid, expired, reused, or cross-tenant codes return null.
+ */
+export async function consumeTelegramSessionHandoff(input: {
+  tenantId: string;
+  code: string | null | undefined;
+}): Promise<string | null> {
+  const code = input.code?.trim();
+  if (!code) {
+    return null;
   }
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
 
-function fromBase64Url(value: string): Uint8Array | null {
-  try {
-    const padded = value.replace(/-/g, "+").replace(/_/g, "/");
-    const pad = padded.length % 4 === 0 ? "" : "=".repeat(4 - (padded.length % 4));
-    const binary = atob(padded + pad);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) {
-      bytes[i] = binary.charCodeAt(i);
+  const codeHash = hashHandoffCode(code);
+  const now = new Date();
+
+  return prisma.$transaction(async (tx) => {
+    const row = await tx.telegramSessionHandoff.findUnique({
+      where: { codeHash },
+    });
+
+    if (!row) {
+      return null;
     }
-    return bytes;
-  } catch {
-    return null;
-  }
-}
+    if (row.tenantId !== input.tenantId) {
+      return null;
+    }
+    if (row.consumedAt) {
+      return null;
+    }
+    if (row.expiresAt.getTime() <= now.getTime()) {
+      return null;
+    }
 
-function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-  let diff = 0;
-  for (let i = 0; i < a.length; i += 1) {
-    diff |= a[i] ^ b[i];
-  }
-  return diff === 0;
-}
+    const claimed = await tx.telegramSessionHandoff.updateMany({
+      where: { id: row.id, consumedAt: null },
+      data: { consumedAt: now },
+    });
+    if (claimed.count !== 1) {
+      return null;
+    }
 
-async function hmacSha256(value: string): Promise<Uint8Array> {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(handoffSecret()),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value));
-  return new Uint8Array(signature);
-}
+    const session = await tx.customerSession.findFirst({
+      where: { id: row.sessionId, tenantId: input.tenantId },
+    });
+    if (!session || session.expiresAt.getTime() <= now.getTime()) {
+      return null;
+    }
 
-/** Edge-safe (middleware cannot import node:crypto). */
-export async function createTelegramSessionHandoff(sessionToken: string): Promise<string> {
-  const exp = String(Date.now() + HANDOFF_TTL_MS);
-  const body = `${exp}.${sessionToken}`;
-  const sig = toBase64Url(await hmacSha256(body));
-  return `${body}.${sig}`;
-}
+    const token = randomBytes(32).toString("base64url");
+    await tx.customerSession.update({
+      where: { id: session.id },
+      data: {
+        tokenHash: hashSessionToken(token),
+        lastSeenAt: now,
+      },
+    });
 
-export async function readTelegramSessionHandoff(
-  value: string | null | undefined,
-): Promise<string | null> {
-  if (!value) {
-    return null;
-  }
-  const parts = value.split(".");
-  if (parts.length !== 3) {
-    return null;
-  }
-  const [expRaw, sessionToken, sig] = parts;
-  if (!expRaw || !sessionToken || !sig) {
-    return null;
-  }
-  const exp = Number(expRaw);
-  if (!Number.isFinite(exp) || Date.now() > exp) {
-    return null;
-  }
-  const actual = fromBase64Url(sig);
-  if (!actual) {
-    return null;
-  }
-  const expected = await hmacSha256(`${expRaw}.${sessionToken}`);
-  if (!timingSafeEqual(actual, expected)) {
-    return null;
-  }
-  return sessionToken;
+    return token;
+  });
 }
