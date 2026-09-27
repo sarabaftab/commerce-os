@@ -97,7 +97,7 @@ export function buildLocalizedPaymentRejectedMessage(input: {
   const text =
     locale === "km"
       ? [
-          "ការបញ្ជាក់ការបង់ប្រាក់ត្រូវការយកចិត្តទុកដាក់",
+          "សូមពិនិត្យមើលការបញ្ជាក់ការបង់ប្រាក់",
           "",
           `យើងមិនអាចផ្ទៀងផ្ទាត់ការបញ្ជាក់ការបង់ប្រាក់សម្រាប់ការបញ្ជាទិញ #${input.orderNumber} ទេ។`,
           "",
@@ -179,7 +179,7 @@ export function buildLocalizedOrderStatusMessage(input: {
     switch (input.toStatus) {
       case "confirmed":
         return {
-          text: `ការបញ្ជាទិញ #${n} ត្រូវបានបញ្ជាក់\n\nការបញ្ជាទិញរបស់អ្នកត្រូវបានបញ្ជាក់ ហើយកំពុងត្រូវបានរៀបចំ។`,
+          text: `ការបញ្ជាទិញ #${n} ត្រូវបានបញ្ជាក់\n\nការបញ្ជាទិញរបស់អ្នកត្រូវបានបញ្ជាក់។`,
           buttonText,
         };
       case "processing":
@@ -194,7 +194,7 @@ export function buildLocalizedOrderStatusMessage(input: {
         };
       case "out_for_delivery":
         return {
-          text: `ការបញ្ជាទិញ #${n} កំពុងដឹកជញ្ជូន\n\nការបញ្ជាទិញរបស់អ្នកកំពុងមកដល់។`,
+          text: `ការបញ្ជាទិញ #${n} កំពុងដឹកជញ្ជូន\n\nការបញ្ជាទិញរបស់អ្នកកំពុងស្ថិតក្នុងដំណើរការដឹកជញ្ជូន។`,
           buttonText,
         };
       case "completed":
@@ -217,7 +217,7 @@ export function buildLocalizedOrderStatusMessage(input: {
   switch (input.toStatus) {
     case "confirmed":
       return {
-        text: `Order #${n} confirmed\n\nYour order has been confirmed and is now being prepared.`,
+        text: `Order #${n} confirmed\n\nYour order has been confirmed.`,
         buttonText,
       };
     case "processing":

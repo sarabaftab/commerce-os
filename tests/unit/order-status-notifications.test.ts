@@ -200,6 +200,28 @@ describe("localized order status telegram copy", () => {
     }
   });
 
+  it("uses the approved Khmer confirmed body", () => {
+    const message = buildLocalizedOrderStatusMessage({
+      locale: "km",
+      orderNumber: "KIN-A2-000120",
+      toStatus: "confirmed",
+      fulfillmentMethod: "delivery",
+    });
+    expect(message.text).toBe(
+      "ការបញ្ជាទិញ #KIN-A2-000120 ត្រូវបានបញ្ជាក់\n\nការបញ្ជាទិញរបស់អ្នកត្រូវបានបញ្ជាក់។",
+    );
+  });
+
+  it("uses the approved Khmer out-for-delivery body", () => {
+    const message = buildLocalizedOrderStatusMessage({
+      locale: "km",
+      orderNumber: "KIN-A2-000120",
+      toStatus: "out_for_delivery",
+      fulfillmentMethod: "delivery",
+    });
+    expect(message.text).toContain("ការបញ្ជាទិញរបស់អ្នកកំពុងស្ថិតក្នុងដំណើរការដឹកជញ្ជូន។");
+  });
+
   it("uses English copy for customerLocale=en", () => {
     for (const toStatus of statuses) {
       const message = buildLocalizedOrderStatusMessage({
@@ -223,7 +245,7 @@ describe("localized order status telegram copy", () => {
         fulfillmentMethod: "delivery",
       });
       expect(message.text).toBe(
-        "Order #KIN-A2-000104 confirmed\n\nYour order has been confirmed and is now being prepared.",
+        "Order #KIN-A2-000104 confirmed\n\nYour order has been confirmed.",
       );
       expect(message.buttonText).toBe("View Order");
     }
@@ -238,7 +260,7 @@ describe("localized order status telegram copy", () => {
         fulfillmentMethod: "delivery",
       }).text,
     ).toBe(
-      "Order #KIN-A2-000104 confirmed\n\nYour order has been confirmed and is now being prepared.",
+      "Order #KIN-A2-000104 confirmed\n\nYour order has been confirmed.",
     );
   });
 });
@@ -313,9 +335,7 @@ describe("deliverOrderStatusNotification locale resolution", () => {
 
     expect(sendTelegramBotMessage).toHaveBeenCalledTimes(1);
     const payload = sendTelegramBotMessage.mock.calls[0][0];
-    expect(payload.text).toContain(
-      "Your order has been confirmed and is now being prepared.",
-    );
+    expect(payload.text).toContain("Your order has been confirmed.");
     expect(payload.buttonText).toBe("View Order");
   });
 

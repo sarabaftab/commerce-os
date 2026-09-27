@@ -10,10 +10,18 @@ export type PaymentProofTelegramMessage = {
 
 const GENERIC_REJECTION_REASON =
   "Please upload a clearer screenshot of your successful ABA transfer.";
+const GENERIC_REJECTION_REASON_KM = "សូមបង្ហោះរូបភាពបញ្ជាក់ការបង់ប្រាក់ម្ដងទៀត";
 
-export function resolvePaymentProofRejectionReason(reason: string | null | undefined): string {
+export function resolvePaymentProofRejectionReason(
+  reason: string | null | undefined,
+  locale?: string | null,
+): string {
   const trimmed = reason?.trim();
-  return trimmed ? trimmed : GENERIC_REJECTION_REASON;
+  const isKhmer = locale === "km";
+  if (!trimmed || trimmed === GENERIC_REJECTION_REASON) {
+    return isKhmer ? GENERIC_REJECTION_REASON_KM : GENERIC_REJECTION_REASON;
+  }
+  return trimmed;
 }
 
 /** Customer Telegram copy after Admin verifies an ABA payment proof. */

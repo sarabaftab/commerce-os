@@ -496,6 +496,7 @@ async function deliverPaymentProofNotification(input: {
           orderNumber: order.orderNumber,
           reason: resolvePaymentProofRejectionReason(
             input.rejectionReason ?? order.paymentProofRejectionReason,
+            order.customerLocale,
           ),
         });
 
