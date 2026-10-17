@@ -152,6 +152,8 @@ export type CheckoutPreview = {
   /** For storefront sale-price display when discount applies. */
   promotionType: "percentage" | "fixed" | null;
   promotionValue: number | null;
+  /** Empty means the discount applies to every cart line. */
+  promotionProductIds: string[];
   freeDeliveryThresholdMinor: number | null;
   deliveryNotes: string | null;
   pickupLocations: { id: string; name: string; address: string; instructions: string | null }[];

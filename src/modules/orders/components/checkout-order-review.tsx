@@ -3,7 +3,10 @@
 import type { CartSummary } from "@/modules/orders";
 import { formatPackSizeLine, formatPriceTimesQuantity } from "@/modules/catalog/selling-unit";
 import { BogoCartBanner, BogoLineCallout } from "@/modules/orders/components/bogo-line-callout";
-import { computeUnitSalePriceMinor } from "@/modules/promotions/discount";
+import {
+  campaignAppliesToProduct,
+  computeUnitSalePriceMinor,
+} from "@/modules/promotions/discount";
 import { localizedValue, useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
 
@@ -14,6 +17,7 @@ type CheckoutOrderReviewProps = {
   promotionName?: string | null;
   promotionType?: "percentage" | "fixed" | null;
   promotionValue?: number | null;
+  promotionProductIds?: string[];
   fulfillmentMethod: "delivery" | "pickup";
   freeDeliveryThresholdMinor?: number | null;
 };
@@ -25,6 +29,7 @@ export function CheckoutOrderReview({
   promotionName,
   promotionType = null,
   promotionValue = null,
+  promotionProductIds = [],
   fulfillmentMethod,
   freeDeliveryThresholdMinor,
 }: CheckoutOrderReviewProps) {
@@ -53,14 +58,18 @@ export function CheckoutOrderReview({
         {availableItems.map((item) => {
             const isBogo = Boolean(item.isBuyOneGetOne || (item.freeQuantity ?? 0) > 0);
             const receiveCount = item.fulfillmentQuantity ?? item.quantity * (isBogo ? 2 : 1);
-            const saleUnit =
-              !isBogo && percentCampaign != null
-                ? computeUnitSalePriceMinor(item.unitPriceMinor, percentCampaign)
+            const lineCampaign =
+              !isBogo &&
+              percentCampaign != null &&
+              campaignAppliesToProduct(promotionProductIds, item.productId)
+                ? percentCampaign
                 : null;
-            const saleLine =
-              !isBogo && percentCampaign != null
-                ? computeUnitSalePriceMinor(item.lineTotalMinor, percentCampaign)
-                : null;
+            const saleUnit = lineCampaign
+              ? computeUnitSalePriceMinor(item.unitPriceMinor, lineCampaign)
+              : null;
+            const saleLine = lineCampaign
+              ? computeUnitSalePriceMinor(item.lineTotalMinor, lineCampaign)
+              : null;
 
             return (
               <li key={item.id} className="flex items-start justify-between gap-3 text-sm">

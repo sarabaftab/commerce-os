@@ -12,8 +12,11 @@ import {
   updateCartItemAction,
 } from "@/modules/orders/actions/cart-actions";
 import { BogoLineCallout } from "@/modules/orders/components/bogo-line-callout";
-import type { StorefrontCampaignDisplay } from "@/modules/promotions/discount";
-import { computeUnitSalePriceMinor } from "@/modules/promotions/discount";
+import {
+  campaignAppliesToProduct,
+  computeUnitSalePriceMinor,
+  type StorefrontCampaignDisplay,
+} from "@/modules/promotions/discount";
 import { localizedValue, useLocale } from "@/shared/i18n";
 import { formatMoney } from "@/shared/money/money";
 import { notifyCartChanged } from "@/ui/storefront/cart-events";
@@ -35,6 +38,10 @@ export function CartLineItem({
 }: CartLineItemProps) {
   const router = useRouter();
   const { locale, t } = useLocale();
+  const pricedCampaign =
+    campaign != null && campaignAppliesToProduct(campaign.productIds, line.productId)
+      ? campaign
+      : null;
   const [pending, startTransition] = useTransition();
   const displayName = localizedValue({
     locale,
@@ -102,7 +109,7 @@ export function CartLineItem({
               priceMinor={line.unitPriceMinor}
               currency={line.currency}
               sellingUnit={line.sellingUnit}
-              campaign={line.isBuyOneGetOne ? null : campaign}
+              campaign={line.isBuyOneGetOne ? null : pricedCampaign}
             />
             {formatPackSizeLine(line.volume, line.sellingUnit) ? (
               <p className="text-xs text-[color:var(--shop-ink-muted)]">
@@ -149,8 +156,8 @@ export function CartLineItem({
             </div>
             {(() => {
               const saleLine =
-                campaign != null && !line.isBuyOneGetOne
-                  ? computeUnitSalePriceMinor(line.lineTotalMinor, campaign)
+                pricedCampaign != null && !line.isBuyOneGetOne
+                  ? computeUnitSalePriceMinor(line.lineTotalMinor, pricedCampaign)
                   : null;
               if (saleLine == null || saleLine >= line.lineTotalMinor) {
                 return (

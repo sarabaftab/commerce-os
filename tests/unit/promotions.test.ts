@@ -174,6 +174,52 @@ describe("pickEligibleCampaignDiscount", () => {
       pickEligibleCampaignDiscount([foreign], { subtotalMinor: 5000, now })?.promotionId,
     ).toBe("foreign");
   });
+
+  it("discounts only eligible product lines and leaves unrestricted campaigns on the whole cart", () => {
+    const lines = [
+      { productId: "milk", lineTotalMinor: 3000 },
+      { productId: "yogurt", lineTotalMinor: 2000 },
+    ];
+    const scoped = {
+      ...promo({
+        id: "milk-10",
+        name: "Milk 10%",
+        type: "percentage" as const,
+        value: 10,
+      }),
+      products: [{ productId: "milk" }],
+    };
+    const chosen = pickEligibleCampaignDiscount([scoped], {
+      subtotalMinor: 5000,
+      lines,
+      now,
+    });
+    expect(chosen?.discountMinor).toBe(300);
+    expect(chosen?.productIds).toEqual(["milk"]);
+
+    const fixed = {
+      ...promo({
+        id: "milk-3",
+        name: "Milk $50",
+        type: "fixed" as const,
+        value: 5000,
+      }),
+      products: [{ productId: "milk" }],
+    };
+    expect(
+      pickEligibleCampaignDiscount([fixed], { subtotalMinor: 5000, lines, now })?.discountMinor,
+    ).toBe(3000);
+
+    const legacy = promo({
+      id: "all",
+      name: "Storewide",
+      type: "percentage",
+      value: 10,
+    });
+    expect(
+      pickEligibleCampaignDiscount([legacy], { subtotalMinor: 5000, lines, now })?.discountMinor,
+    ).toBe(500);
+  });
 });
 
 describe("isPromotionVisibleForBanner", () => {
@@ -305,6 +351,20 @@ describe("promotionFormSchema", () => {
     const input = promotionFormToCreateInput(fixed, "tenant-a", "USD");
     expect(input.value).toBe(300);
     expect(input.tenantId).toBe("tenant-a");
+    expect(input.productIds).toEqual([]);
+  });
+
+  it("keeps eligible products on percentage and fixed promotions", () => {
+    const parsed = promotionFormSchema.parse({
+      name: "Milk 10%",
+      type: "percentage",
+      valueMajor: "10",
+      isActive: true,
+      productIds: ["milk", "yogurt"],
+    });
+    const input = promotionFormToCreateInput(parsed, "tenant-a", "USD");
+    expect(input.productIds).toEqual(["milk", "yogurt"]);
+    expect(input.value).toBe(10);
   });
 
   it("rejects invalid percentage and end before start", () => {

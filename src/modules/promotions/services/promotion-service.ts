@@ -69,7 +69,7 @@ async function assertEligibleProductsBelongToTenant(
 }
 
 export async function createPromotionForTenant(input: CreatePromotionInput) {
-  const productIds = isBuyOneGetOneType(input.type) ? (input.productIds ?? []) : [];
+  const productIds = input.productIds ?? [];
   if (isBuyOneGetOneType(input.type) && productIds.length === 0) {
     throw new AppError("VALIDATION", "Select at least one eligible product for 1+1");
   }
@@ -91,7 +91,7 @@ export async function createPromotionForTenant(input: CreatePromotionInput) {
 
 export async function updatePromotionForTenant(input: UpdatePromotionInput) {
   await getPromotionForTenant(input.tenantId, input.promotionId);
-  const productIds = isBuyOneGetOneType(input.type) ? (input.productIds ?? []) : [];
+  const productIds = input.productIds ?? [];
   if (isBuyOneGetOneType(input.type) && productIds.length === 0) {
     throw new AppError("VALIDATION", "Select at least one eligible product for 1+1");
   }
@@ -118,11 +118,13 @@ export async function updatePromotionForTenant(input: UpdatePromotionInput) {
 export async function resolveCampaignDiscountForCheckout(input: {
   tenantId: string;
   subtotalMinor: number;
+  lines?: { productId: string; lineTotalMinor: number }[];
   now?: Date;
 }): Promise<ResolvedCampaignDiscount | null> {
   const promotions = await listActivePromotionsForTenant(input.tenantId);
   return pickEligibleCampaignDiscount(promotions, {
     subtotalMinor: input.subtotalMinor,
+    lines: input.lines,
     now: input.now,
   });
 }

@@ -315,6 +315,12 @@ export async function getCheckoutPreview(
   const campaign = await resolveCampaignDiscountForCheckout({
     tenantId: context.tenantId,
     subtotalMinor: summary.subtotalMinor,
+    lines: summary.items
+      .filter((item) => item.isAvailable)
+      .map((item) => ({
+        productId: item.productId,
+        lineTotalMinor: item.lineTotalMinor,
+      })),
   });
 
   return {
@@ -331,6 +337,7 @@ export async function getCheckoutPreview(
         ? campaign.type
         : null,
     promotionValue: campaign?.value ?? null,
+    promotionProductIds: campaign?.productIds ?? [],
     freeDeliveryThresholdMinor: settings.freeDeliveryThresholdMinor,
     deliveryNotes: settings.deliveryNotes,
     pickupLocations: settings.activePickupLocations,
@@ -401,8 +408,15 @@ export async function placeGuestOrder(
 
   // Early COD gate using the same merchandise formula (after discount, before delivery).
   // Authoritative re-check happens inside the transaction before stock/cart mutation.
+  const previewLines = preview.items
+    .filter((item) => item.isAvailable)
+    .map((item) => ({
+      productId: item.productId,
+      lineTotalMinor: item.lineTotalMinor,
+    }));
   const previewCampaign = pickEligibleCampaignDiscount(activePromotions, {
     subtotalMinor: preview.subtotalMinor,
+    lines: previewLines,
   });
   assertCashOnDeliveryAllowed({
     paymentMethod: input.paymentMethod,
@@ -434,6 +448,10 @@ export async function placeGuestOrder(
         // (nested client calls on poolers expire interactive transactions).
         const campaign = pickEligibleCampaignDiscount(activePromotions, {
           subtotalMinor,
+          lines: availableLines.map((line) => ({
+            productId: line.productId,
+            lineTotalMinor: line.lineTotalMinor,
+          })),
         });
         const discountMinor = campaign?.discountMinor ?? 0;
         const merchandiseSubtotalMinor = merchandiseSubtotalAfterDiscountMinor(

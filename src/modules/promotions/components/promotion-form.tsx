@@ -131,40 +131,39 @@ export function PromotionForm({
         ) : null}
       </div>
 
-      {isBogo ? (
-        <div className="grid gap-2">
-          <Label>Eligible products</Label>
-          {products.length === 0 ? (
-            <p className="text-sm text-[color:var(--admin-ink-muted)]">
-              No products available. Add products with stock before creating a 1+1 campaign.
-            </p>
-          ) : (
-            <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-input p-3">
-              {products.map((product) => (
-                <label
-                  key={product.id}
-                  className="flex items-center gap-2 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    name="productIds"
-                    value={product.id}
-                    defaultChecked={selectedProductIds.has(product.id)}
-                    className="size-4 rounded border"
-                  />
-                  <span>{product.name}</span>
-                </label>
-              ))}
-            </div>
-          )}
-          {state.fieldErrors?.productIds ? (
-            <p className="text-xs text-destructive">{state.fieldErrors.productIds[0]}</p>
-          ) : null}
-          <p className="text-xs text-[color:var(--admin-ink-muted)]">
-            Buy 1, get 1 free of the same product. Stock quantity must be set on each product.
+      <div className="grid gap-2">
+        <Label>Eligible products</Label>
+        {products.length === 0 ? (
+          <p className="text-sm text-[color:var(--admin-ink-muted)]">
+            No products available. Add products before selecting eligible products.
           </p>
-        </div>
-      ) : (
+        ) : (
+          <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-input p-3">
+            {products.map((product) => (
+              <label key={product.id} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="productIds"
+                  value={product.id}
+                  defaultChecked={selectedProductIds.has(product.id)}
+                  className="size-4 rounded border"
+                />
+                <span>{product.name}</span>
+              </label>
+            ))}
+          </div>
+        )}
+        {state.fieldErrors?.productIds ? (
+          <p className="text-xs text-destructive">{state.fieldErrors.productIds[0]}</p>
+        ) : null}
+        <p className="text-xs text-[color:var(--admin-ink-muted)]">
+          {isBogo
+            ? "Buy 1, get 1 free of the same product. Stock quantity must be set on each product."
+            : "Discount applies only to selected products. With none selected, it applies to the whole order."}
+        </p>
+      </div>
+
+      {!isBogo ? (
         <div className="grid gap-2">
           <Label htmlFor="minimumSubtotalMajor">Minimum order subtotal (optional)</Label>
           <Input
@@ -176,7 +175,7 @@ export function PromotionForm({
             defaultValue={minDefault}
           />
         </div>
-      )}
+      ) : null}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">

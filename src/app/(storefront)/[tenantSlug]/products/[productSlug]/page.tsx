@@ -5,6 +5,7 @@ import { formatPackSizeLine } from "@/modules/catalog/selling-unit";
 import { AddToCartButton } from "@/modules/orders/components/add-to-cart-button";
 import { isProductPurchasable } from "@/modules/orders/line-promotion";
 import {
+  campaignAppliesToProduct,
   getActiveBuyOneGetOneMap,
   getActiveStorefrontCampaign,
 } from "@/modules/promotions";
@@ -60,6 +61,8 @@ export default async function StorefrontProductDetailPage({
   const imageUrl = product.media[0]?.url;
   const imageAlt = product.media[0]?.alt ?? product.name;
   const bogo = bogoMap.get(product.id) ?? null;
+  const pricedCampaign =
+    campaign && campaignAppliesToProduct(campaign.productIds, product.id) ? campaign : null;
   const purchasable = isProductPurchasable(
     {
       isAvailable: product.isAvailable,
@@ -95,7 +98,7 @@ export default async function StorefrontProductDetailPage({
             </div>
           )}
           {purchasable ? (
-            bogo ? <BogoBadge /> : <PromotionSaleBadge campaign={campaign} />
+            bogo ? <BogoBadge /> : <PromotionSaleBadge campaign={pricedCampaign} />
           ) : (
             <span className="absolute top-3 left-3 rounded-full bg-[color:var(--shop-ink)]/80 px-2.5 py-1 text-[11px] font-medium tracking-wide text-white uppercase">
               <LocalizedText messageKey="outOfStock" />
@@ -117,7 +120,7 @@ export default async function StorefrontProductDetailPage({
               priceMinor={product.priceMinor}
               currency={product.currency}
               sellingUnit={product.sellingUnit}
-              campaign={bogo && purchasable ? null : campaign}
+              campaign={bogo && purchasable ? null : pricedCampaign}
               size="lg"
             />
             {bogo && purchasable ? (

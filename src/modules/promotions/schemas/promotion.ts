@@ -114,7 +114,7 @@ export function promotionFormToCreateInput(
     startsAt: parseOptionalDate(values.startsAt),
     endsAt: parseOptionalDate(values.endsAt),
     isActive: values.isActive,
-    productIds: isBogo ? values.productIds : [],
+    productIds: values.productIds,
   };
 }
 

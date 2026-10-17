@@ -5,7 +5,10 @@ import Link from "next/link";
 import type { ProductWithRelations } from "@/modules/catalog/types";
 import { formatPackSizeLine } from "@/modules/catalog/selling-unit";
 import { isProductPurchasable } from "@/modules/orders/line-promotion";
-import type { StorefrontCampaignDisplay } from "@/modules/promotions/discount";
+import {
+  campaignAppliesToProduct,
+  type StorefrontCampaignDisplay,
+} from "@/modules/promotions/discount";
 import { localizedValue, useLocale } from "@/shared/i18n";
 import { cn } from "@/ui/lib/utils";
 import { ProductImage } from "@/ui/storefront/product-image";
@@ -56,6 +59,10 @@ export function ProductCard({
     bogo,
   );
   const showBogo = Boolean(bogo && purchasable);
+  const pricedCampaign =
+    campaign != null && campaignAppliesToProduct(campaign.productIds, product.id)
+      ? campaign
+      : null;
 
   return (
     <Link
@@ -91,7 +98,7 @@ export function ProductCard({
         ) : showBogo ? (
           <BogoBadge />
         ) : (
-          <PromotionSaleBadge campaign={campaign} />
+          <PromotionSaleBadge campaign={pricedCampaign} />
         )}
       </div>
 
@@ -119,7 +126,7 @@ export function ProductCard({
           priceMinor={product.priceMinor}
           currency={product.currency}
           sellingUnit={product.sellingUnit}
-          campaign={showBogo ? null : campaign}
+          campaign={showBogo ? null : pricedCampaign}
         />
         {formatPackSizeLine(product.volume, product.sellingUnit) ? (
           <p className="text-xs text-[color:var(--shop-ink-muted)]">

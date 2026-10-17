@@ -10,8 +10,10 @@ export {
 export type { BogoLineQuantities, BuyOneGetOneType } from "./buy-one-get-one";
 export {
   buildActiveBuyOneGetOneByProductId,
+  campaignAppliesToProduct,
   computeCampaignDiscountMinor,
   computeUnitSalePriceMinor,
+  eligibleMerchandiseSubtotalMinor,
   isPromotionEligible,
   isPromotionInActiveWindow,
   isPromotionVisibleForBanner,

@@ -25,7 +25,54 @@ export type ResolvedCampaignDiscount = {
   type: PromotionDiscountType;
   value: number;
   discountMinor: number;
+  /** Empty means the discount applies to the whole cart (legacy money promotions). */
+  productIds: string[];
 };
+
+export type DiscountLine = {
+  productId: string;
+  lineTotalMinor: number;
+};
+
+type PromotionProductLink = { productId: string };
+
+export function linkedPromotionProductIds(
+  promo: { products?: PromotionProductLink[] | null },
+): string[] {
+  return promo.products?.map((row) => row.productId) ?? [];
+}
+
+/**
+ * Merchandise base for a money discount.
+ * No linked products → whole cart (existing percentage/fixed campaigns).
+ * Linked products → only those lines.
+ */
+export function eligibleMerchandiseSubtotalMinor(
+  lines: readonly DiscountLine[],
+  productIds: readonly string[],
+): number {
+  if (productIds.length === 0) {
+    return lines.reduce((sum, line) => sum + Math.max(0, line.lineTotalMinor), 0);
+  }
+  const allowed = new Set(productIds);
+  return lines.reduce((sum, line) => {
+    if (!allowed.has(line.productId)) {
+      return sum;
+    }
+    return sum + Math.max(0, line.lineTotalMinor);
+  }, 0);
+}
+
+/** Empty productIds applies to every product. */
+export function campaignAppliesToProduct(
+  productIds: readonly string[] | null | undefined,
+  productId: string,
+): boolean {
+  if (!productIds || productIds.length === 0) {
+    return true;
+  }
+  return productIds.includes(productId);
+}
 
 export function isMoneyDiscountType(
   type: PromotionDiscountType | string,
@@ -98,8 +145,8 @@ export function computeCampaignDiscountMinor(
  * buy_one_get_one is excluded (resolved per product).
  */
 export function pickEligibleCampaignDiscount(
-  promotions: Promotion[],
-  input: { subtotalMinor: number; now?: Date },
+  promotions: Array<Promotion & { products?: PromotionProductLink[] }>,
+  input: { subtotalMinor: number; lines?: readonly DiscountLine[]; now?: Date },
 ): ResolvedCampaignDiscount | null {
   const eligible = promotions
     .filter((promo) => isMoneyDiscountType(promo.type))
@@ -107,24 +154,35 @@ export function pickEligibleCampaignDiscount(
     .slice()
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-  const chosen = eligible[0];
-  if (!chosen) {
-    return null;
+  for (const chosen of eligible) {
+    const productIds = linkedPromotionProductIds(chosen);
+    const baseMinor =
+      input.lines == null
+        ? input.subtotalMinor
+        : eligibleMerchandiseSubtotalMinor(input.lines, productIds);
+    // A product-scoped campaign with none of those products in the cart does not
+    // block an older whole-cart campaign.
+    if (input.lines != null && productIds.length > 0 && baseMinor <= 0) {
+      continue;
+    }
+
+    const discountMinor = computeCampaignDiscountMinor(baseMinor, chosen);
+    if (discountMinor <= 0) {
+      continue;
+    }
+
+    return {
+      promotionId: chosen.id,
+      promotionName: chosen.name,
+      bannerText: chosen.bannerText,
+      type: chosen.type,
+      value: chosen.value,
+      discountMinor,
+      productIds,
+    };
   }
 
-  const discountMinor = computeCampaignDiscountMinor(input.subtotalMinor, chosen);
-  if (discountMinor <= 0) {
-    return null;
-  }
-
-  return {
-    promotionId: chosen.id,
-    promotionName: chosen.name,
-    bannerText: chosen.bannerText,
-    type: chosen.type,
-    value: chosen.value,
-    discountMinor,
-  };
+  return null;
 }
 
 /** Active + in date window (ignores minimum subtotal — browsing/banner display). */
@@ -180,11 +238,13 @@ export type StorefrontCampaignDisplay = {
   name: string;
   type: PromotionDiscountType;
   value: number;
+  /** Empty means every product (legacy money promotions with no eligible products). */
+  productIds: string[];
 };
 
 /** Newest active-window money campaign for storefront sale-price display. */
 export function pickStorefrontCampaignDisplay(
-  promotions: Promotion[],
+  promotions: Array<Promotion & { products?: PromotionProductLink[] }>,
   now: Date = new Date(),
 ): StorefrontCampaignDisplay | null {
   const chosen = promotions
@@ -200,6 +260,7 @@ export function pickStorefrontCampaignDisplay(
     name: chosen.name,
     type: chosen.type,
     value: chosen.value,
+    productIds: linkedPromotionProductIds(chosen),
   };
 }
 
