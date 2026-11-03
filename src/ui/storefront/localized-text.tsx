@@ -1,10 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { localizedValue, useLocale, type MessageKey } from "@/shared/i18n";
-import { shop } from "@/ui/storefront/shop-classes";
 
 type LocalizedTextProps = {
   messageKey: MessageKey;
@@ -40,35 +40,36 @@ export function LocalizedFaqHeading({ tenantName }: { tenantName: string }) {
   );
 }
 
-type HomeHeroProps = {
-  brandName: string;
-  productsHref: string;
-};
+const HOME_HERO = {
+  en: {
+    src: "/storefront/home-hero-en.jpg",
+    alt: "Your KIN A2 Favorites, Delivered.",
+  },
+  km: {
+    src: "/storefront/home-hero-km.jpg",
+    alt: "ផលិតផល KIN A2 ដែលអ្នកចូលចិត្ត ដឹកជញ្ជូនដល់ទីកន្លែង។",
+  },
+} as const;
 
-export function LocalizedHomeHero({ brandName, productsHref }: HomeHeroProps) {
-  const { t } = useLocale();
+/** Supplied artwork is 1024×512 (2:1). Shared ratio so language switches do not shift layout. */
+const HOME_HERO_WIDTH = 1024;
+const HOME_HERO_HEIGHT = 512;
+
+export function LocalizedHomeHero() {
+  const { locale } = useLocale();
+  const hero = locale === "km" ? HOME_HERO.km : HOME_HERO.en;
+
   return (
-    <section className="relative overflow-hidden rounded-[1.75rem] bg-[color:var(--shop-ink)] px-5 py-8 text-[color:var(--shop-surface-elevated)]">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-50"
-        style={{
-          background:
-            "radial-gradient(circle at 88% 12%, rgba(249,220,92,0.55), transparent 42%), linear-gradient(145deg, transparent 35%, rgba(250,229,136,0.25))",
-        }}
+    <section className="overflow-hidden rounded-[1.75rem]">
+      <Image
+        src={hero.src}
+        alt={hero.alt}
+        width={HOME_HERO_WIDTH}
+        height={HOME_HERO_HEIGHT}
+        priority
+        sizes="(min-width: 1024px) 960px, (min-width: 768px) 720px, 100vw"
+        className="h-auto w-full"
       />
-      <div className="relative space-y-4">
-        <p className="text-[11px] font-medium tracking-[0.2em] text-[color:var(--shop-accent-soft)] uppercase">
-          {brandName}
-        </p>
-        <h1 className="max-w-[16ch] whitespace-pre-line font-[family-name:var(--font-shop-display)] text-[2.2rem] leading-[1.08] tracking-tight">
-          {t("heroTitle")}
-        </h1>
-        <p className="max-w-[42ch] text-sm leading-relaxed text-white/70">{t("heroBody")}</p>
-        <Link href={productsHref} prefetch={false} className={shop.btnPrimary}>
-          {t("shopProducts")}
-        </Link>
-      </div>
     </section>
   );
 }

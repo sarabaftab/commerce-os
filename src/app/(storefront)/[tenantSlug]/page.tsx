@@ -8,7 +8,6 @@ import {
 } from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { createTimer } from "@/shared/observability/timing";
-import { STOREFRONT_BRAND } from "@/ui/storefront/brand";
 import { CategoryChips } from "@/ui/storefront/category-chips";
 import {
   LocalizedHomeHero,
@@ -53,7 +52,7 @@ export default async function StorefrontHomePage({ params }: HomePageProps) {
 
   return (
     <div className="space-y-8 pt-5">
-      <LocalizedHomeHero brandName={STOREFRONT_BRAND.name} productsHref={`${basePath}/products`} />
+      <LocalizedHomeHero />
 
       {categories.length > 0 ? (
         <section>
