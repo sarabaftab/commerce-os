@@ -42,12 +42,13 @@ describe("dashboard date range presets", () => {
 });
 
 describe("custom dashboard date range", () => {
-  it("accepts a valid from/to inclusive UTC day window", () => {
+  it("accepts a valid from/to inclusive Cambodia calendar-day window", () => {
     const window = parseCustomDashboardRange("2026-09-01", "2026-09-14");
     expect(window).not.toBeNull();
     expect(window?.kind).toBe("custom");
-    expect(window?.from.toISOString()).toBe("2026-09-01T00:00:00.000Z");
-    expect(window?.to?.toISOString()).toBe("2026-09-14T23:59:59.999Z");
+    // Asia/Phnom_Penh is UTC+7 year-round.
+    expect(window?.from.toISOString()).toBe("2026-08-31T17:00:00.000Z");
+    expect(window?.to?.toISOString()).toBe("2026-09-14T16:59:59.999Z");
     expect(window?.label).toBe("2026-09-01 → 2026-09-14");
     expect(dashboardPlacedAtFilter(window!)).toEqual({
       gte: window!.from,
@@ -55,10 +56,10 @@ describe("custom dashboard date range", () => {
     });
   });
 
-  it("accepts a same-day range", () => {
+  it("accepts a same-day Cambodia range", () => {
     const window = parseCustomDashboardRange("2026-09-10", "2026-09-10");
-    expect(window?.from.toISOString()).toBe("2026-09-10T00:00:00.000Z");
-    expect(window?.to?.toISOString()).toBe("2026-09-10T23:59:59.999Z");
+    expect(window?.from.toISOString()).toBe("2026-09-09T17:00:00.000Z");
+    expect(window?.to?.toISOString()).toBe("2026-09-10T16:59:59.999Z");
   });
 
   it("rejects From after To", () => {

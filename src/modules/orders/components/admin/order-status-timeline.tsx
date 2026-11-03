@@ -1,4 +1,5 @@
 import type { AdminOrderDetail } from "@/modules/orders";
+import { formatDateTimeInCambodia } from "@/shared/time/format-cambodia";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/components/ui/card";
 
 type OrderStatusTimelineProps = {
@@ -24,7 +25,7 @@ export function OrderStatusTimeline({ history }: OrderStatusTimelineProps) {
                     : entry.toStatus.replaceAll("_", " ")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {entry.createdAt.toLocaleString()} · {entry.actorLabel}
+                  {formatDateTimeInCambodia(entry.createdAt)} · {entry.actorLabel}
                 </p>
                 {entry.note ? (
                   <p className="mt-1 text-sm text-muted-foreground">{entry.note}</p>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowUpRight, ShoppingBag, Users } from "lucide-react";
+import { ArrowUpRight, CircleDollarSign, ShoppingBag, Users } from "lucide-react";
 
 import { CustomerTypeBadge } from "@/modules/customers/components/admin/customer-type-badge";
 import type { DashboardWindow } from "@/modules/orders/dashboard-range";
@@ -14,6 +14,7 @@ import {
 import type { AdminDashboardLiveSnapshot } from "@/modules/orders/services/dashboard-stats-service";
 import { formatMoney } from "@/shared/money/money";
 import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
+import { formatDateTimeInCambodia } from "@/shared/time/format-cambodia";
 import { Badge } from "@/ui/components/ui/badge";
 import { buttonVariants } from "@/ui/components/ui/button";
 import { cn } from "@/ui/lib/utils";
@@ -127,9 +128,16 @@ export function DashboardLiveSections({
       </p>
 
       <section
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
         data-testid="dashboard-metric-cards"
       >
+        <MetricCard
+          label="Total Sales"
+          value={formatMoney(data.salesInPeriodMinor, data.currency)}
+          hint={`${rangeLabel} · ${formatMoney(data.salesAllTimeMinor, data.currency)} all-time · excl. cancelled`}
+          href="/admin/orders"
+          icon={<CircleDollarSign className="size-4" />}
+        />
         <MetricCard
           label="Total Orders"
           value={String(data.ordersInPeriod)}
@@ -225,7 +233,7 @@ export function DashboardLiveSections({
                         {formatMoney(order.totalMinor, order.currency)}
                       </p>
                       <p className="text-[11px] text-[color:var(--admin-ink-muted)]">
-                        {new Date(order.placedAt).toLocaleString()}
+                        {formatDateTimeInCambodia(order.placedAt)}
                       </p>
                     </div>
                   </Link>

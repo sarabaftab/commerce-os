@@ -21,9 +21,13 @@ export const ACTIVE_ORDER_STATUSES = [
   "out_for_delivery",
 ] as const;
 
+/** Cancelled orders are excluded from Total Sales (revenue), not from order counts. */
+export const SALES_EXCLUDED_STATUSES = ["cancelled"] as const;
+
 export type DashboardPeriodStats = {
   window: DashboardWindow;
   ordersInPeriod: number;
+  salesInPeriodMinor: number;
   newCustomersInPeriod: number;
   returningCustomersInPeriod: number;
 };
@@ -54,6 +58,11 @@ export type AdminDashboardLiveSnapshot = {
   toParam: string | null;
   ordersInPeriod: number;
   ordersAllTime: number;
+  /** Revenue (order totals) excluding cancelled; period window. */
+  salesInPeriodMinor: number;
+  /** Revenue (order totals) excluding cancelled; all-time. */
+  salesAllTimeMinor: number;
+  currency: string;
   customersAllTime: number;
   newCustomersInPeriod: number;
   returningCustomersInPeriod: number;
@@ -80,19 +89,31 @@ export async function getAdminDashboardLiveSnapshot(
   const window = normalizeWindow(windowOrDays, now);
   const placedAt = dashboardPlacedAtFilter(window);
 
-  const [periodStats, recent, ordersAllTime, customersAllTime, activeOrders] =
-    await Promise.all([
-      getDashboardPeriodStats(tenantId, window, now),
-      listRecentOrdersSince(tenantId, placedAt, 6),
-      prisma.order.count({ where: { tenantId } }),
-      prisma.customer.count({ where: { tenantId } }),
-      prisma.order.count({
-        where: {
-          tenantId,
-          status: { in: [...ACTIVE_ORDER_STATUSES] },
-        },
-      }),
-    ]);
+  const [
+    periodStats,
+    recent,
+    ordersAllTime,
+    salesAllTime,
+    customersAllTime,
+    activeOrders,
+    tenant,
+  ] = await Promise.all([
+    getDashboardPeriodStats(tenantId, window, now),
+    listRecentOrdersSince(tenantId, placedAt, 6),
+    prisma.order.count({ where: { tenantId } }),
+    sumSalesTotalMinor(tenantId),
+    prisma.customer.count({ where: { tenantId } }),
+    prisma.order.count({
+      where: {
+        tenantId,
+        status: { in: [...ACTIVE_ORDER_STATUSES] },
+      },
+    }),
+    prisma.tenant.findFirst({
+      where: { id: tenantId },
+      select: { currency: true },
+    }),
+  ]);
 
   return {
     kind: window.kind,
@@ -102,6 +123,9 @@ export async function getAdminDashboardLiveSnapshot(
     toParam: window.toParam,
     ordersInPeriod: periodStats.ordersInPeriod,
     ordersAllTime,
+    salesInPeriodMinor: periodStats.salesInPeriodMinor,
+    salesAllTimeMinor: salesAllTime,
+    currency: tenant?.currency ?? "USD",
     customersAllTime,
     newCustomersInPeriod: periodStats.newCustomersInPeriod,
     returningCustomersInPeriod: periodStats.returningCustomersInPeriod,
@@ -109,6 +133,21 @@ export async function getAdminDashboardLiveSnapshot(
     recent: recent.items.map(serializeDashboardOrder),
     generatedAt: now.toISOString(),
   };
+}
+
+async function sumSalesTotalMinor(
+  tenantId: string,
+  placedAt?: { gte: Date; lte?: Date },
+): Promise<number> {
+  const result = await prisma.order.aggregate({
+    where: {
+      tenantId,
+      status: { notIn: [...SALES_EXCLUDED_STATUSES] },
+      ...(placedAt ? { placedAt } : {}),
+    },
+    _sum: { totalMinor: true },
+  });
+  return result._sum.totalMinor ?? 0;
 }
 
 function serializeDashboardOrder(order: AdminOrderListItem): AdminDashboardLiveOrder {
@@ -138,10 +177,11 @@ export async function getDashboardPeriodStats(
   const window = normalizeWindow(windowOrDays, now);
   const placedAt = dashboardPlacedAtFilter(window);
 
-  const [ordersInPeriod, periodCustomerIds] = await Promise.all([
+  const [ordersInPeriod, salesInPeriodMinor, periodCustomerIds] = await Promise.all([
     prisma.order.count({
       where: { tenantId, placedAt },
     }),
+    sumSalesTotalMinor(tenantId, placedAt),
     prisma.order.findMany({
       where: { tenantId, placedAt },
       select: { customerId: true },
@@ -170,6 +210,7 @@ export async function getDashboardPeriodStats(
   return {
     window,
     ordersInPeriod,
+    salesInPeriodMinor,
     newCustomersInPeriod,
     returningCustomersInPeriod,
   };

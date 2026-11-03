@@ -1,3 +1,8 @@
+import {
+  endOfCambodiaDayFromParam,
+  startOfCambodiaDayFromParam,
+} from "@/shared/time/format-cambodia";
+
 export const DASHBOARD_RANGES = [7, 14, 28] as const;
 
 export type DashboardRangeDays = (typeof DASHBOARD_RANGES)[number];
@@ -61,16 +66,17 @@ export function isValidDashboardDateParam(raw: string): boolean {
   );
 }
 
-/** Start of UTC calendar day for a YYYY-MM-DD param. */
+/**
+ * Start of store calendar day (Asia/Phnom_Penh) for a YYYY-MM-DD param.
+ * Stored/queried as UTC; wall-clock day is Cambodia local.
+ */
 export function startOfUtcDayFromParam(raw: string): Date {
-  const [year, month, day] = raw.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+  return startOfCambodiaDayFromParam(raw);
 }
 
-/** End of UTC calendar day for a YYYY-MM-DD param (inclusive). */
+/** Inclusive end of store calendar day (Asia/Phnom_Penh) for a YYYY-MM-DD param. */
 export function endOfUtcDayFromParam(raw: string): Date {
-  const [year, month, day] = raw.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+  return endOfCambodiaDayFromParam(raw);
 }
 
 /**
