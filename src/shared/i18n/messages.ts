@@ -55,7 +55,7 @@ const en = {
   noFeaturedProducts: "No featured products yet. Check back soon.",
   heroTitle: "Quality products,\ndelivered to you.",
   heroBody:
-    "Shop Billion’s selection of trusted products with easy ordering and convenient delivery.",
+    "Shop KIN A2 Flagship Store’s selection of trusted products with easy ordering and convenient delivery.",
   itemsCount: "items",
   itemCount: "item",
 
@@ -319,7 +319,7 @@ const km: Record<MessageKey, string> = {
   noFeaturedProducts: "មិនទាន់មានផលិតផលពិសេសទេ។ សូមពិនិត្យម្តងទៀតនៅពេលក្រោយ។",
   heroTitle: "ផលិតផលមានគុណភាព\nដឹកជញ្ជូនដល់អ្នក។",
   heroBody:
-    "ទិញផលិតផលដែលទុកចិត្តបានពី Billion ជាមួយការបញ្ជាទិញងាយស្រួល និងការដឹកជញ្ជូនងាយស្រួល។",
+    "ទិញផលិតផលដែលទុកចិត្តបានពី KIN A2 Flagship Store ជាមួយការបញ្ជាទិញងាយស្រួល និងការដឹកជញ្ជូនងាយស្រួល។",
   itemsCount: "មុខ",
   itemCount: "មុខ",
 

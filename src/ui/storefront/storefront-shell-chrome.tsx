@@ -53,14 +53,14 @@ export function StorefrontShellChrome({
                 width={40}
                 height={40}
                 priority
-                className="h-10 w-10 shrink-0"
+                className="h-10 w-10 shrink-0 object-contain"
               />
               <div className="min-w-0">
                 <p className="truncate font-[family-name:var(--font-shop-display)] text-lg leading-none tracking-tight text-[color:var(--shop-ink)]">
                   {STOREFRONT_BRAND.shortName}
                 </p>
                 <p className="mt-1 truncate text-[10px] tracking-[0.14em] text-[color:var(--shop-ink-muted)] uppercase">
-                  Consulting Co., Ltd.
+                  {STOREFRONT_BRAND.tagline}
                 </p>
               </div>
             </Link>

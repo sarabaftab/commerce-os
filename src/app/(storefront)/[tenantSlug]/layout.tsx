@@ -39,7 +39,7 @@ export async function generateMetadata({
     const { tenant } = await resolveStorefrontTenant(tenantSlug);
     const settings = await getStorefrontSettings(tenant.id, tenant.slug);
     return {
-      title: `${settings.displayName} · ${STOREFRONT_BRAND.shortName}`,
+      title: settings.displayName?.trim() || STOREFRONT_BRAND.name,
       description: `Shop with ${STOREFRONT_BRAND.name}`,
     };
   } catch {
