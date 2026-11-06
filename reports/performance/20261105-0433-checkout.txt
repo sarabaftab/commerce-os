@@ -1,0 +1,498 @@
+
+> commerce-os@0.1.0 load:checkout
+> tsx scripts/load-checkout.ts
+
+◇ injected env (18) from .env // tip: ⌘ enable debugging { debug: true }
+◇ injected env (18) from .env.local // tip: ⌘ override existing { override: true }
+Checkout load · env=staging · tenant=kin-a2
+DB host=aws-0-ap-northeast-1.pooler.supabase.com · client_pool=15
+Product=KIN A2 Fresh Milk 1L · pickup=kin-showroom
+Serial=5 · levels=1,3,5,8,10
+
+Preparing 5 carts for serial hold-time…
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31w6r4000p9t59w9l66sjb',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31w6r4000p9t59w9l66sjb',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31wdhk00119t59yvtccsfw',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31wdhk00119t59yvtccsfw',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31wk1m001d9t59lgw6t9vy',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31wk1m001d9t59lgw6t9vy',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31wobr001p9t59q2i9leto',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31wobr001p9t59q2i9leto',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31wucm00219t594tdvkv39',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31wucm00219t594tdvkv39',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+Serial hold-time (placeGuestOrder wall ms): p50=7674 p95=16463 max=16463 mean=8872 ok=5 fail=0
+Idealized checkouts/sec ≈ pool(15) / hold_p50(7.674s) = 2/s (hypothesis, not measured concurrency)
+
+Parallel 1… [notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31x1hd002h9t59kmdo54y3',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31x1hd002h9t59kmdo54y3',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+ok=1 fail=0 p50=9189ms p95=9189ms wall=9190ms rps=0.1
+Parallel 3… [notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31xaxt00359t59uj1hlcez',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31xaxt00359t59uj1hlcez',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31xez2003l9t59krmi5lej',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31xez2003l9t59krmi5lej',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31xild003t9t59ljhc9ld3',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31xild003t9t59ljhc9ld3',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+ok=3 fail=0 p50=19484ms p95=22097ms wall=22097ms rps=0.1
+Parallel 5… [notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31xtpm004p9t596ogzxtfe',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31xtpm004p9t596ogzxtfe',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31xvkm00559t59qiz6iwm2',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31xvkm00559t59qiz6iwm2',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31xwv6005l9t59dwu9xdtv',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31xwv6005l9t59dwu9xdtv',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31xyjz005t9t59l5r1u0fd',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31xyjz005t9t59l5r1u0fd',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31y1vy00619t59hbq665th',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31y1vy00619t59hbq665th',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+ok=5 fail=0 p50=10342ms p95=20084ms wall=20085ms rps=0.2
+Parallel 8… [notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31yges007j9t59rf8huhij',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31yges007j9t59rf8huhij',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31yhyi007z9t59rc8ih6wh',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31yhyi007z9t59rc8ih6wh',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31ykak008d9t59hf6jfg6s',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31ykak008d9t59hf6jfg6s',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31ymqs008n9t59jm6dgazv',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31ymqs008n9t59jm6dgazv',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31ynv6008x9t59blmrfiqg',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31ynv6008x9t59blmrfiqg',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+prisma:error 
+Invalid `prisma.$queryRaw()` invocation:
+
+
+Transaction API error: Transaction already closed: A query cannot be executed on an expired transaction. The timeout for this transaction was 20000 ms, however 22720 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31ytpy00959t594q9hubeb',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31ytpy00959t594q9hubeb',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Transaction API error: Transaction already closed: A query cannot be executed on an expired transaction. The timeout for this transaction was 20000 ms, however 20147 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.
+ok=6 fail=2 p50=11863ms p95=26515ms wall=27627ms rps=0.2
+  first error: 
+Invalid `prisma.$queryRaw()` invocation:
+
+
+Transaction API error: Transaction already closed: A query cannot be executed on an expired transaction. The timeout
+Parallel 10… [notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31z8x800b19t59s46v9a6g',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31zbyq00bt9t59effm81ji',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31z8x800b19t59s46v9a6g',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31zbyq00bt9t59effm81ji',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31zczb00c19t5935zkybn2',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31zczb00c19t5935zkybn2',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31ze0h00cd9t59ribfb07z',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31ze0h00cd9t59ribfb07z',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31zf1d00cl9t59mghl3wal',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31zf1d00cl9t59mghl3wal',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31zg1m00ct9t590oa1l3dh',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31zg1m00ct9t590oa1l3dh',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31zidt00d19t59h6jywefi',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31zidt00d19t59h6jywefi',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31zlxj00d99t59dza3ow3w',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31zlxj00d99t59dza3ow3w',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+prisma:error 
+Invalid `prisma.$queryRaw()` invocation:
+
+
+Transaction API error: Transaction already closed: A query cannot be executed on an expired transaction. The timeout for this transaction was 20000 ms, however 24653 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31znch00dh9t59u6r4yued',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw31znch00dh9t59u6r4yued',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+ok=9 fail=1 p50=13273ms p95=27496ms wall=27498ms rps=0.3
+  first error: 
+Invalid `prisma.$queryRaw()` invocation:
+
+
+Transaction API error: Transaction already closed: A query cannot be executed on an expired transaction. The timeout
+
+Parallel summary:
+┌─────────┬────┬────┬──────┬───────┬───────┬───────┬────────┬─────┐
+│ (index) │ vu │ ok │ fail │ p50   │ p95   │ max   │ wallMs │ rps │
+├─────────┼────┼────┼──────┼───────┼───────┼───────┼────────┼─────┤
+│ 0       │ 1  │ 1  │ 0    │ 9189  │ 9189  │ 9189  │ 9190   │ 0.1 │
+│ 1       │ 3  │ 3  │ 0    │ 19484 │ 22097 │ 22097 │ 22097  │ 0.1 │
+│ 2       │ 5  │ 5  │ 0    │ 10342 │ 20084 │ 20084 │ 20085  │ 0.2 │
+│ 3       │ 8  │ 6  │ 2    │ 11863 │ 26515 │ 26515 │ 27627  │ 0.2 │
+│ 4       │ 10 │ 9  │ 1    │ 13273 │ 27496 │ 27496 │ 27498  │ 0.3 │
+└─────────┴────┴────┴──────┴───────┴───────┴───────┴────────┴─────┘
+
+Cleaning LOADTEST orders…
+Removed 29 tagged orders (and related rows).

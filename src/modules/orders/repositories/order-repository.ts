@@ -239,29 +239,46 @@ export function formatOrderNumber(tenantSlug: string, sequence: number): string 
   return `${tenantSlug.toUpperCase()}-${String(sequence).padStart(6, "0")}`;
 }
 
+/**
+ * Atomically claim the next order sequence for this tenant.
+ * Must run inside an interactive transaction so concurrent checkouts serialize
+ * on the tenants row instead of racing read→write on orderSequence.
+ */
 export async function allocateOrderNumber(
   tx: Prisma.TransactionClient,
   tenantId: string,
   tenantSlug: string,
 ): Promise<string> {
-  const tenant = await tx.tenant.findUniqueOrThrow({ where: { id: tenantId } });
-  let sequence = tenant.orderSequence > 0 ? tenant.orderSequence : 1;
-
   // Skip numbers that already exist (e.g. after seed reset orderSequence).
   for (let attempt = 0; attempt < 50; attempt += 1) {
+    // Claim one sequence under a row lock (UPDATE … RETURNING).
+    // order_sequence means "next number to issue"; we advance it and use previous.
+    const rows = await tx.$queryRaw<Array<{ order_sequence: number }>>`
+      UPDATE tenants
+      SET
+        order_sequence = CASE
+          WHEN order_sequence < 1 THEN 2
+          ELSE order_sequence + 1
+        END,
+        updated_at = NOW()
+      WHERE id = ${tenantId}
+      RETURNING order_sequence
+    `;
+
+    const nextSequence = rows[0]?.order_sequence;
+    if (nextSequence == null) {
+      throw new Error("Tenant not found while allocating order number");
+    }
+
+    const sequence = nextSequence - 1;
     const orderNumber = formatOrderNumber(tenantSlug, sequence);
     const exists = await tx.order.findFirst({
       where: { tenantId, orderNumber },
       select: { id: true },
     });
     if (!exists) {
-      await tx.tenant.update({
-        where: { id: tenantId },
-        data: { orderSequence: sequence + 1 },
-      });
       return orderNumber;
     }
-    sequence += 1;
   }
 
   throw new Error("Unable to allocate a unique order number");

@@ -13,6 +13,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "perf:baseline": "tsx scripts/perf-baseline.ts",
+    "load:ramp": "tsx scripts/load-ramp.ts",
+    "load:checkout": "tsx scripts/load-checkout.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
