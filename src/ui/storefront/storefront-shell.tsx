@@ -40,7 +40,7 @@ export function StorefrontShell({ tenantSlug, children }: StorefrontShellProps) 
                   {STOREFRONT_BRAND.shortName}
                 </p>
                 <p className="mt-1 truncate text-[10px] tracking-[0.14em] text-[color:var(--shop-ink-muted)] uppercase">
-                  Consulting Co., Ltd.
+                  Flagship Store
                 </p>
               </div>
             </Link>
