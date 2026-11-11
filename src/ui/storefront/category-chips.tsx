@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 
 import type { Category } from "@prisma/client";
 
+import { localizedValue, useLocale } from "@/shared/i18n";
 import { cn } from "@/ui/lib/utils";
 import { shop } from "@/ui/storefront/shop-classes";
 
@@ -18,17 +21,22 @@ export function CategoryChips({
   activeSlug,
   allHref,
 }: CategoryChipsProps) {
+  const { locale, t } = useLocale();
   const allLink = allHref ?? `${basePath}/products`;
 
   return (
     <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <Chip href={allLink} active={!activeSlug} label="All" />
+      <Chip href={allLink} active={!activeSlug} label={t("all")} />
       {categories.map((category) => (
         <Chip
           key={category.id}
           href={`${basePath}/products?category=${category.slug}`}
           active={activeSlug === category.slug}
-          label={category.name}
+          label={localizedValue({
+            locale,
+            en: category.name,
+            km: category.nameKm,
+          })}
         />
       ))}
     </div>

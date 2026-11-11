@@ -25,7 +25,9 @@ export async function listActiveFaqs(tenantId: string) {
     select: {
       id: true,
       question: true,
+      questionKm: true,
       answer: true,
+      answerKm: true,
     },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { question: "asc" }],
   });

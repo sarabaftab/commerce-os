@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import type { AdminCustomerListItem } from "@/modules/customers/services/customer-admin-service";
 import { formatMoney } from "@/shared/money/money";
+import { formatDateTimeInCambodia } from "@/shared/time/format-cambodia";
 import {
   Table,
   TableBody,
@@ -66,7 +67,7 @@ export function CustomerListTable({ customers }: CustomerListTableProps) {
               <TableCell className="text-sm text-muted-foreground">
                 {customer.lastOrderAt ? (
                   <div>
-                    <div>{customer.lastOrderAt.toLocaleString()}</div>
+                    <div>{formatDateTimeInCambodia(customer.lastOrderAt)}</div>
                     {customer.lastOrderNumber ? (
                       <div className="text-xs">{customer.lastOrderNumber}</div>
                     ) : null}

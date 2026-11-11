@@ -51,8 +51,7 @@ async function main() {
       abaEnabled: true,
       abaAccountName: "KIN A2 Milk",
       abaAccountNumber: "000 000 000",
-      abaInstructions:
-        "Transfer to ABA account KIN A2 Milk. Include your phone number as the payment reference.",
+      abaInstructions: null,
     },
     create: {
       tenantId: tenant.id,
@@ -65,8 +64,7 @@ async function main() {
       abaEnabled: true,
       abaAccountName: "KIN A2 Milk",
       abaAccountNumber: "000 000 000",
-      abaInstructions:
-        "Transfer to ABA account KIN A2 Milk. Include your phone number as the payment reference.",
+      abaInstructions: null,
     },
   });
 

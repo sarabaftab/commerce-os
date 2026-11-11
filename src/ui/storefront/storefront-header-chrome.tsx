@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { useTelegram } from "@/channels/telegram/client/telegram-provider";
+import { useLocale } from "@/shared/i18n";
 import { CartIconLink } from "@/ui/storefront/cart-icon-link";
 import { useStorefrontCartItemCount } from "@/ui/storefront/storefront-cart-count";
 
@@ -16,6 +17,7 @@ type Props = {
  */
 export function StorefrontHeaderChrome({ tenantSlug }: Props) {
   const itemCount = useStorefrontCartItemCount();
+  const { t } = useLocale();
   const basePath = `/${tenantSlug}`;
   const { isTelegram, authStatus } = useTelegram();
   const telegramAuthPending =
@@ -28,7 +30,7 @@ export function StorefrontHeaderChrome({ tenantSlug }: Props) {
           className="rounded-full px-3 py-2 text-[color:var(--shop-ink-muted)]"
           aria-busy="true"
         >
-          Account
+          {t("account")}
         </span>
       ) : (
         <Link
@@ -36,7 +38,7 @@ export function StorefrontHeaderChrome({ tenantSlug }: Props) {
           prefetch={false}
           className="rounded-full px-3 py-2 text-[color:var(--shop-ink)] transition hover:bg-[color:var(--shop-surface)]/70"
         >
-          Account
+          {t("account")}
         </Link>
       )}
       <CartIconLink basePath={basePath} itemCount={itemCount} />

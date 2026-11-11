@@ -23,6 +23,8 @@ export type CustomerAddressDto = {
   deliveryInstructions: string | null;
   isDefault: boolean;
   isActive: boolean;
+  latitude: number | null;
+  longitude: number | null;
   formattedShort: string;
 };
 
@@ -76,6 +78,7 @@ export type CustomerOrderDetailDto = {
   subtotalMinor: number;
   deliveryFeeMinor: number;
   discountMinor: number;
+  promotionNameSnapshot: string | null;
   totalMinor: number;
   delivery: {
     recipientName: string | null;
@@ -88,6 +91,8 @@ export type CustomerOrderDetailDto = {
     countryCode: string | null;
     label: string | null;
     deliveryInstructions: string | null;
+    latitude: number | null;
+    longitude: number | null;
   } | null;
   pickup: {
     name: string | null;
@@ -101,6 +106,9 @@ export type CustomerOrderDetailDto = {
     imageUrl: string | null;
     volume: string | null;
     sellingUnit: import("@prisma/client").SellingUnit;
+    freeQuantity?: number;
+    fulfillmentQuantity?: number;
+    isBuyOneGetOne?: boolean;
   }[];
   timeline: CustomerOrderTimelineEntryDto[];
   supportPhone: string | null;
@@ -120,6 +128,26 @@ export const CUSTOMER_ORDER_STATUS_LABELS: Record<string, string> = {
 export function customerOrderStatusLabel(status: string): string {
   return CUSTOMER_ORDER_STATUS_LABELS[status] ?? status;
 }
+
+/** Message keys for customer-facing order status (EN UI keys; use with t()). */
+export const CUSTOMER_ORDER_STATUS_MESSAGE_KEYS: Record<
+  string,
+  | "statusPending"
+  | "statusConfirmed"
+  | "statusProcessing"
+  | "statusReadyForPickup"
+  | "statusOutForDelivery"
+  | "statusCompleted"
+  | "statusCancelled"
+> = {
+  pending: "statusPending",
+  confirmed: "statusConfirmed",
+  processing: "statusProcessing",
+  ready_for_pickup: "statusReadyForPickup",
+  out_for_delivery: "statusOutForDelivery",
+  completed: "statusCompleted",
+  cancelled: "statusCancelled",
+};
 
 export function formatAddressShort(input: {
   addressLine1: string;

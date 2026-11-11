@@ -43,6 +43,7 @@ export async function saveGeneralSettingsAction(
       timezone: String(formData.get("timezone") ?? "Asia/Phnom_Penh"),
       businessHours: String(formData.get("businessHours") ?? ""),
       currency: String(formData.get("currency") ?? "USD"),
+      telegramSupportUsername: String(formData.get("telegramSupportUsername") ?? ""),
     });
   } catch (error) {
     if (isAppError(error)) {
@@ -52,6 +53,7 @@ export async function saveGeneralSettingsAction(
   }
   revalidatePath("/admin/settings");
   revalidatePath(`/${session.tenantSlug}`, "layout");
+  revalidatePath(`/${session.tenantSlug}/faq`);
   return { success: true };
 }
 

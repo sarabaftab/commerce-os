@@ -82,13 +82,13 @@ export function buildAttributionCookieHeader(referralCode: string): string {
 export async function createCustomerSession(input: {
   tenantId: string;
   customerId: string;
-}): Promise<{ token: string; expiresAt: Date }> {
+}): Promise<{ token: string; sessionId: string; expiresAt: Date }> {
   const token = randomBytes(32).toString("base64url");
   const tokenHash = hashToken(token);
   const ttl = env().CUSTOMER_SESSION_TTL_SECONDS;
   const expiresAt = new Date(Date.now() + ttl * 1000);
 
-  await prisma.customerSession.create({
+  const row = await prisma.customerSession.create({
     data: {
       tenantId: input.tenantId,
       customerId: input.customerId,
@@ -97,7 +97,7 @@ export async function createCustomerSession(input: {
     },
   });
 
-  return { token, expiresAt };
+  return { token, sessionId: row.id, expiresAt };
 }
 
 export async function revokeCustomerSessionByToken(token: string) {

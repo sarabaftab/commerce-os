@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 
+import { formatTelegramSupportUsernameInput } from "@/channels/telegram/support-link";
 import {
   saveBrandingSettingsAction,
   saveDeliverySettingsAction,
@@ -58,6 +59,12 @@ function GeneralSection({ bundle }: { bundle: TenantSettingsBundle }) {
       <Field label="Currency" name="currency" defaultValue={bundle.currency} required />
       <Field label="Phone" name="phone" defaultValue={s.phone ?? ""} />
       <Field label="Email" name="email" defaultValue={s.email ?? ""} type="email" />
+      <Field
+        label="Telegram support username"
+        name="telegramSupportUsername"
+        defaultValue={formatTelegramSupportUsernameInput(s.telegramSupportUsername)}
+        hint="Public username for FAQ “Contact Our Team” (example: @BillionSupport). Leave blank to hide the button."
+      />
       <Field label="Address" name="address" defaultValue={s.address ?? ""} />
       <Field label="Timezone" name="timezone" defaultValue={s.timezone} required />
       <div className="space-y-1.5">
@@ -108,16 +115,12 @@ function PaymentsSection({ bundle }: { bundle: TenantSettingsBundle }) {
         required={abaEnabled}
       />
       <div className="space-y-1.5">
-        <Label htmlFor="abaInstructions" required={abaEnabled}>
-          ABA instructions
-        </Label>
+        <Label htmlFor="abaInstructions">ABA instructions (optional)</Label>
         <Textarea
           id="abaInstructions"
           name="abaInstructions"
           rows={4}
           defaultValue={s.abaInstructions ?? ""}
-          required={abaEnabled}
-          aria-required={abaEnabled || undefined}
         />
       </div>
       <Field
@@ -335,12 +338,14 @@ function Field({
   defaultValue,
   type = "text",
   required = false,
+  hint,
 }: {
   label: string;
   name: string;
   defaultValue: string;
   type?: string;
   required?: boolean;
+  hint?: string;
 }) {
   return (
     <div className="space-y-1.5">
@@ -355,6 +360,7 @@ function Field({
         required={required}
         aria-required={required || undefined}
       />
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }

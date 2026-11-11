@@ -21,6 +21,8 @@ export function toAddressDto(row: {
   deliveryInstructions: string | null;
   isDefault: boolean;
   isActive: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 }): CustomerAddressDto {
   return {
     id: row.id,
@@ -37,6 +39,8 @@ export function toAddressDto(row: {
     deliveryInstructions: row.deliveryInstructions,
     isDefault: row.isDefault,
     isActive: row.isActive,
+    latitude: row.latitude ?? null,
+    longitude: row.longitude ?? null,
     formattedShort: formatAddressShort(row),
   };
 }
@@ -104,6 +108,8 @@ export async function createAddressInTransaction(
       postalCode: input.data.postalCode ?? null,
       countryCode: input.data.countryCode,
       deliveryInstructions: input.data.deliveryInstructions ?? null,
+      latitude: input.data.latitude ?? null,
+      longitude: input.data.longitude ?? null,
       isDefault: input.makeDefault,
       isActive: true,
     },
@@ -152,6 +158,8 @@ export async function updateAddressInTransaction(
       countryCode: input.data.countryCode,
       deliveryInstructions: input.data.deliveryInstructions ?? null,
       isDefault: input.data.isDefault ?? false,
+      ...(input.data.latitude !== undefined ? { latitude: input.data.latitude } : {}),
+      ...(input.data.longitude !== undefined ? { longitude: input.data.longitude } : {}),
     },
   });
 }

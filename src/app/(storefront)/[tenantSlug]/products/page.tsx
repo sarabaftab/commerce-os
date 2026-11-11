@@ -2,10 +2,15 @@ import {
   getStorefrontCategories,
   getStorefrontProducts,
 } from "@/modules/catalog";
+import {
+  getActiveBuyOneGetOneMap,
+  getActiveStorefrontCampaign,
+} from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { isAppError } from "@/shared/errors/app-error";
 import { createTimer } from "@/shared/observability/timing";
 import { CategoryChips } from "@/ui/storefront/category-chips";
+import { LocalizedPageHeading, LocalizedText } from "@/ui/storefront/localized-text";
 import { ProductGrid } from "@/ui/storefront/product-grid";
 import { notFound } from "next/navigation";
 
@@ -16,6 +21,16 @@ type ProductsPageProps = {
   params: Promise<{ tenantSlug: string }>;
   searchParams: Promise<{ category?: string }>;
 };
+
+function bogoRecordFromMap(
+  map: Awaited<ReturnType<typeof getActiveBuyOneGetOneMap>>,
+): Record<string, { promotionName: string }> {
+  const record: Record<string, { promotionName: string }> = {};
+  for (const [productId, entry] of map) {
+    record[productId] = { promotionName: entry.promotionName };
+  }
+  return record;
+}
 
 export default async function StorefrontProductsPage({
   params,
@@ -29,12 +44,16 @@ export default async function StorefrontProductsPage({
 
   let products;
   let categories;
+  let campaign;
+  let bogoMap;
   try {
-    [categories, products] = await Promise.all([
+    [categories, products, campaign, bogoMap] = await Promise.all([
       getStorefrontCategories(tenant.id),
       getStorefrontProducts(tenant.id, {
         categorySlug: categorySlug || undefined,
       }),
+      getActiveStorefrontCampaign(tenant.id),
+      getActiveBuyOneGetOneMap(tenant.id),
     ]);
   } catch (error) {
     if (isAppError(error) && error.code === "NOT_FOUND") {
@@ -49,19 +68,20 @@ export default async function StorefrontProductsPage({
     productCount: products.length,
   });
 
-  const activeCategoryName =
-    categories.find((category) => category.slug === categorySlug)?.name ?? null;
+  const activeCategory = categories.find((category) => category.slug === categorySlug);
+  const bogoByProductId = bogoRecordFromMap(bogoMap);
 
   return (
     <div className="space-y-6 pt-5">
-      <div>
-        <h1 className="font-[family-name:var(--font-shop-display)] text-3xl tracking-tight">
-          {activeCategoryName ?? "All products"}
-        </h1>
-        <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
-          {products.length} {products.length === 1 ? "item" : "items"}
-        </p>
-      </div>
+      {activeCategory ? (
+        <LocalizedPageHeading
+          titleEn={activeCategory.name}
+          titleKm={activeCategory.nameKm}
+          count={products.length}
+        />
+      ) : (
+        <LocalizedPageHeading titleKey="allProducts" count={products.length} />
+      )}
 
       <CategoryChips
         categories={categories}
@@ -69,7 +89,13 @@ export default async function StorefrontProductsPage({
         activeSlug={categorySlug ?? null}
       />
 
-      <ProductGrid products={products} basePath={basePath} />
+      <ProductGrid
+        products={products}
+        basePath={basePath}
+        campaign={campaign}
+        bogoByProductId={bogoByProductId}
+        emptyMessage={<LocalizedText messageKey="noProducts" />}
+      />
     </div>
   );
 }

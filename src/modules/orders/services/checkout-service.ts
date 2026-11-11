@@ -10,12 +10,35 @@ import {
   updateCustomerContact,
   upsertCustomerByPhone,
 } from "@/modules/customers/repositories/customer-repository";
+import { parseOptionalLatLng } from "@/modules/locations/coordinates";
+import {
+  addressFieldsFromLocationResult,
+  isPinnedLocationFallback,
+  reverseGeocodeLatLng,
+} from "@/modules/locations";
 import { assertCheckoutOptions, getCheckoutSettings } from "@/modules/settings";
 import { notifyOrderPlacedAfterCommit } from "@/modules/notifications/services/notification-service";
+import {
+  listActivePromotionsForTenant,
+  pickEligibleCampaignDiscount,
+  resolveCampaignDiscountForCheckout,
+  buildActiveBuyOneGetOneByProductId,
+  type ActiveBuyOneGetOne,
+} from "@/modules/promotions";
+import { deductProductStockInTransaction } from "@/modules/promotions/repositories/promotion-repository";
 import { prisma } from "@/shared/db/prisma";
 import { AppError, isAppError } from "@/shared/errors/app-error";
 import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
 
+import {
+  isProductPurchasable,
+  maxPurchasableQuantity,
+  resolveLinePromotionQuantities,
+} from "../line-promotion";
+import {
+  assertCashOnDeliveryAllowed,
+  merchandiseSubtotalAfterDiscountMinor,
+} from "../cod-eligibility";
 import {
   findOpenCheckoutCartInTransaction,
   type CheckoutCartWithItems,
@@ -29,6 +52,7 @@ import {
 } from "../repositories/order-repository";
 import type { CheckoutInput } from "../schemas/checkout";
 import type { CheckoutPreview, OrderConfirmation } from "../types";
+import { MAX_CART_QUANTITY } from "../types";
 import type { CartIdentity } from "./cart-service";
 import { getCartSummary } from "./cart-service";
 import { createOrderInTransaction } from "./order-service";
@@ -60,26 +84,75 @@ type DeliverySnapshot = {
   addressLabel?: string;
   sourceAddressId?: string;
   deliveryInstructions?: string;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
-function computeLineItems(cart: CheckoutCartWithItems) {
+function computeLineItems(
+  cart: CheckoutCartWithItems,
+  bogoByProductId: Map<string, ActiveBuyOneGetOne>,
+) {
   const lines = cart.items
     .filter((item) => item.product && !item.product.deletedAt)
     .map((item) => {
-      const available = item.product.isAvailable;
+      const bogo = bogoByProductId.get(item.productId) ?? null;
+      const available = isProductPurchasable(
+        {
+          isAvailable: item.product.isAvailable,
+          deletedAt: item.product.deletedAt,
+          stockQuantity: item.product.stockQuantity,
+        },
+        bogo,
+      );
+      const maxQty = maxPurchasableQuantity(
+        {
+          isAvailable: item.product.isAvailable,
+          deletedAt: item.product.deletedAt,
+          stockQuantity: item.product.stockQuantity,
+        },
+        bogo,
+        MAX_CART_QUANTITY,
+      );
+      if (available && item.quantity > maxQty) {
+        throw new AppError(
+          "VALIDATION",
+          `Not enough stock for ${item.product.name}`,
+        );
+      }
+
       const unitPriceMinor = item.product.priceMinor;
-      const lineTotalMinor = available ? unitPriceMinor * item.quantity : 0;
+      const resolved = available
+        ? resolveLinePromotionQuantities({
+            paidQuantity: item.quantity,
+            unitPriceMinor,
+            bogo,
+          })
+        : {
+            paidQuantity: item.quantity,
+            freeQuantity: 0,
+            fulfillmentQuantity: item.quantity,
+            promotionIdSnapshot: null as string | null,
+            promotionNameSnapshot: null as string | null,
+            promotionTypeSnapshot: null as string | null,
+            lineTotalMinor: 0,
+          };
 
       return {
         cartItemId: item.id,
         productId: item.productId,
         name: item.product.name,
-        quantity: item.quantity,
+        quantity: resolved.paidQuantity,
+        freeQuantity: resolved.freeQuantity,
+        fulfillmentQuantity: resolved.fulfillmentQuantity,
+        promotionIdSnapshot: resolved.promotionIdSnapshot,
+        promotionNameSnapshot: resolved.promotionNameSnapshot,
+        promotionTypeSnapshot: resolved.promotionTypeSnapshot,
         unitPriceMinor,
-        lineTotalMinor,
+        lineTotalMinor: resolved.lineTotalMinor,
         isAvailable: available,
         volumeSnapshot: item.product.volume,
         sellingUnitSnapshot: item.product.sellingUnit,
+        stockQuantity: item.product.stockQuantity,
       };
     });
 
@@ -115,6 +188,7 @@ async function resolveDeliverySnapshot(
       context.cartIdentity.customerId,
       input.savedAddressId,
     );
+    const savedPin = parseOptionalLatLng(address.latitude, address.longitude);
     return {
       addressLine: address.addressLine1,
       addressLine2: address.addressLine2 ?? undefined,
@@ -128,6 +202,8 @@ async function resolveDeliverySnapshot(
       addressLabel: address.label,
       sourceAddressId: address.id,
       deliveryInstructions: address.deliveryInstructions ?? undefined,
+      latitude: savedPin?.latitude ?? null,
+      longitude: savedPin?.longitude ?? null,
     };
   }
 
@@ -135,18 +211,49 @@ async function resolveDeliverySnapshot(
     throw new AppError("VALIDATION", "Address is required for delivery");
   }
 
+  const pin = parseOptionalLatLng(input.deliveryLatitude, input.deliveryLongitude);
+  let addressLine = input.addressLine;
+  let cityOrArea = input.cityOrArea;
+  let provinceOrState = input.provinceOrState;
+  let postalCode = input.postalCode;
+  let countryCode = input.countryCode ?? "KH";
+
+  // Resolve pin → text once at checkout when the customer only confirmed coordinates
+  // (or still has the placeholder). Never block order placement on geocoding failure.
+  if (pin && isPinnedLocationFallback(addressLine)) {
+    const resolved = await reverseGeocodeLatLng(pin);
+    if (resolved) {
+      const fields = addressFieldsFromLocationResult(resolved);
+      addressLine = fields.addressLine;
+      if (fields.cityOrArea) {
+        cityOrArea = fields.cityOrArea;
+      }
+      if (fields.provinceOrState) {
+        provinceOrState = fields.provinceOrState;
+      }
+      if (fields.postalCode) {
+        postalCode = fields.postalCode;
+      }
+      if (fields.countryCode) {
+        countryCode = fields.countryCode;
+      }
+    }
+  }
+
   const snapshot: DeliverySnapshot = {
-    addressLine: input.addressLine,
+    addressLine,
     addressLine2: input.addressLine2,
-    cityOrArea: input.cityOrArea,
-    provinceOrState: input.provinceOrState,
-    postalCode: input.postalCode,
-    countryCode: input.countryCode ?? "KH",
+    cityOrArea,
+    provinceOrState,
+    postalCode,
+    countryCode,
     recipientFirstName: input.firstName,
     recipientLastName: input.lastName,
     recipientPhone: input.phone,
     addressLabel: input.addressLabel,
     deliveryInstructions: input.deliveryInstructions,
+    latitude: pin?.latitude ?? null,
+    longitude: pin?.longitude ?? null,
   };
 
   if (input.saveAddress && context.cartIdentity.customerId) {
@@ -161,14 +268,16 @@ async function resolveDeliverySnapshot(
           input.displayName.split(" ").slice(1).join(" ") ||
           "Customer",
         phone: input.phone,
-        addressLine1: input.addressLine,
+        addressLine1: addressLine,
         addressLine2: input.addressLine2,
-        cityOrDistrict: input.cityOrArea,
-        provinceOrState: input.provinceOrState?.trim() || input.cityOrArea,
-        postalCode: input.postalCode,
-        countryCode: input.countryCode ?? "KH",
+        cityOrDistrict: cityOrArea,
+        provinceOrState: provinceOrState?.trim() || cityOrArea,
+        postalCode,
+        countryCode,
         deliveryInstructions: input.deliveryInstructions,
         isDefault: Boolean(input.setAddressAsDefault),
+        latitude: pin?.latitude ?? null,
+        longitude: pin?.longitude ?? null,
       },
     );
     snapshot.sourceAddressId = saved.id;
@@ -203,6 +312,17 @@ export async function getCheckoutPreview(
         : settings.deliveryFeeMinor
       : 0;
 
+  const campaign = await resolveCampaignDiscountForCheckout({
+    tenantId: context.tenantId,
+    subtotalMinor: summary.subtotalMinor,
+    lines: summary.items
+      .filter((item) => item.isAvailable)
+      .map((item) => ({
+        productId: item.productId,
+        lineTotalMinor: item.lineTotalMinor,
+      })),
+  });
+
   return {
     cart: summary,
     idempotencyKey: randomUUID(),
@@ -210,6 +330,14 @@ export async function getCheckoutPreview(
     deliveryEnabled: settings.deliveryEnabled,
     pickupEnabled: settings.pickupEnabled,
     deliveryFeeMinor: previewDeliveryFee,
+    discountMinor: campaign?.discountMinor ?? 0,
+    promotionName: campaign?.promotionName ?? null,
+    promotionType:
+      campaign?.type === "percentage" || campaign?.type === "fixed"
+        ? campaign.type
+        : null,
+    promotionValue: campaign?.value ?? null,
+    promotionProductIds: campaign?.productIds ?? [],
     freeDeliveryThresholdMinor: settings.freeDeliveryThresholdMinor,
     deliveryNotes: settings.deliveryNotes,
     pickupLocations: settings.activePickupLocations,
@@ -268,15 +396,37 @@ export async function placeGuestOrder(
 
   // Validate settings + fees outside the interactive transaction so we don't
   // hold a pooled connection open during extra reads (avoids P2028 on poolers).
-  const { deliveryFeeMinor, pickup, settings } = await assertCheckoutOptions(
-    context.tenantId,
-    {
+  const [{ deliveryFeeMinor, pickup, settings }, activePromotions] = await Promise.all([
+    assertCheckoutOptions(context.tenantId, {
       fulfillmentMethod: input.fulfillmentMethod,
       paymentMethod: input.paymentMethod,
       pickupLocationKey: input.pickupLocationKey,
       subtotalMinor: preview.subtotalMinor,
-    },
-  );
+    }),
+    listActivePromotionsForTenant(context.tenantId),
+  ]);
+
+  // Early COD gate using the same merchandise formula (after discount, before delivery).
+  // Authoritative re-check happens inside the transaction before stock/cart mutation.
+  const previewLines = preview.items
+    .filter((item) => item.isAvailable)
+    .map((item) => ({
+      productId: item.productId,
+      lineTotalMinor: item.lineTotalMinor,
+    }));
+  const previewCampaign = pickEligibleCampaignDiscount(activePromotions, {
+    subtotalMinor: preview.subtotalMinor,
+    lines: previewLines,
+  });
+  assertCashOnDeliveryAllowed({
+    paymentMethod: input.paymentMethod,
+    merchandiseSubtotalMinor: merchandiseSubtotalAfterDiscountMinor(
+      preview.subtotalMinor,
+      previewCampaign?.discountMinor ?? 0,
+    ),
+    currency: settings.currency,
+    locale: input.customerLocale,
+  });
 
   try {
     const order = await prisma.$transaction(
@@ -291,10 +441,50 @@ export async function placeGuestOrder(
           throw new AppError("VALIDATION", "Cart is empty");
         }
 
-        const { availableLines, subtotalMinor } = computeLineItems(cart);
+        const bogoByProductId = buildActiveBuyOneGetOneByProductId(activePromotions);
+        const { availableLines, subtotalMinor } = computeLineItems(cart, bogoByProductId);
 
-        const discountMinor = 0;
-        const totalMinor = subtotalMinor - discountMinor + deliveryFeeMinor;
+        // Pure in-memory resolve — never query prisma from inside this tx
+        // (nested client calls on poolers expire interactive transactions).
+        const campaign = pickEligibleCampaignDiscount(activePromotions, {
+          subtotalMinor,
+          lines: availableLines.map((line) => ({
+            productId: line.productId,
+            lineTotalMinor: line.lineTotalMinor,
+          })),
+        });
+        const discountMinor = campaign?.discountMinor ?? 0;
+        const merchandiseSubtotalMinor = merchandiseSubtotalAfterDiscountMinor(
+          subtotalMinor,
+          discountMinor,
+        );
+        const totalMinor = merchandiseSubtotalMinor + deliveryFeeMinor;
+
+        // Authoritative COD gate: reject before stock deduction or cart claim.
+        assertCashOnDeliveryAllowed({
+          paymentMethod: input.paymentMethod,
+          merchandiseSubtotalMinor,
+          currency: settings.currency,
+          locale: input.customerLocale,
+        });
+
+        // Atomic stock deduction before claim/insert (fulfillment qty for 1+1).
+        for (const line of availableLines) {
+          if (line.stockQuantity == null) {
+            continue;
+          }
+          const ok = await deductProductStockInTransaction(tx, {
+            tenantId: context.tenantId,
+            productId: line.productId,
+            quantity: line.fulfillmentQuantity,
+          });
+          if (!ok) {
+            throw new AppError(
+              "CONFLICT",
+              `Not enough stock for ${line.name}`,
+            );
+          }
+        }
 
         let customer;
         if (context.cartIdentity.customerId) {
@@ -344,6 +534,8 @@ export async function placeGuestOrder(
           addressLabel: delivery?.addressLabel,
           sourceAddressId: delivery?.sourceAddressId,
           deliveryInstructions: delivery?.deliveryInstructions,
+          deliveryLatitude: delivery?.latitude ?? undefined,
+          deliveryLongitude: delivery?.longitude ?? undefined,
           pickupLocationKey: input.fulfillmentMethod === "pickup" ? pickup?.id : undefined,
           pickupLocationName: input.fulfillmentMethod === "pickup" ? pickup?.name : undefined,
           pickupLocationAddress:
@@ -354,7 +546,10 @@ export async function placeGuestOrder(
           deliveryFeeMinor,
           discountMinor,
           totalMinor,
+          promotionId: campaign?.promotionId,
+          promotionNameSnapshot: campaign?.promotionName,
           referralCode: context.referralCode ?? undefined,
+          customerLocale: input.customerLocale ?? null,
           items: availableLines.map((line) => ({
             productId: line.productId,
             nameSnapshot: line.name,
@@ -362,6 +557,11 @@ export async function placeGuestOrder(
             sellingUnitSnapshot: line.sellingUnitSnapshot,
             unitPriceMinor: line.unitPriceMinor,
             quantity: line.quantity,
+            freeQuantity: line.freeQuantity,
+            fulfillmentQuantity: line.fulfillmentQuantity,
+            promotionIdSnapshot: line.promotionIdSnapshot,
+            promotionNameSnapshot: line.promotionNameSnapshot,
+            promotionTypeSnapshot: line.promotionTypeSnapshot,
             lineTotalMinor: line.lineTotalMinor,
           })),
         });

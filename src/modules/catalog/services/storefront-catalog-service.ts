@@ -67,8 +67,8 @@ export async function getStorefrontProducts(
 
 export async function getFeaturedStorefrontProducts(tenantId: string, limit = 6) {
   return unstable_cache(
-    async () => listAvailableProducts(tenantId, { limit }),
-    [`storefront-featured`, tenantId, String(limit)],
+    async () => listAvailableProducts(tenantId, { limit, featuredOnly: true }),
+    [`storefront-featured`, tenantId, String(limit), "featured"],
     {
       revalidate: CATALOG_REVALIDATE_SECONDS,
       tags: [catalogTag(tenantId)],

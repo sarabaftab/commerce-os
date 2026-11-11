@@ -1,3 +1,5 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { prismaMock, findFirstOrdersByCustomerIds } = vi.hoisted(() => ({
@@ -5,9 +7,13 @@ const { prismaMock, findFirstOrdersByCustomerIds } = vi.hoisted(() => ({
     order: {
       count: vi.fn(),
       findMany: vi.fn(),
+      aggregate: vi.fn(),
     },
     customer: {
       count: vi.fn(),
+    },
+    tenant: {
+      findFirst: vi.fn(),
     },
   },
   findFirstOrdersByCustomerIds: vi.fn(),
@@ -21,15 +27,31 @@ vi.mock("@/modules/orders/repositories/order-repository", () => ({
   findFirstOrdersByCustomerIds,
 }));
 
-import { getAdminDashboardLiveSnapshot } from "@/modules/orders/services/dashboard-stats-service";
+import { DashboardLiveSections } from "@/modules/orders/components/admin/dashboard-live-sections";
+import {
+  dashboardWindowFromPreset,
+  parseCustomDashboardRange,
+} from "@/modules/orders/dashboard-range";
+import {
+  ACTIVE_ORDER_STATUSES,
+  getAdminDashboardLiveSnapshot,
+  getDashboardPeriodStats,
+  SALES_EXCLUDED_STATUSES,
+} from "@/modules/orders/services/dashboard-stats-service";
+
+function stubDashboardReads() {
+  prismaMock.order.count.mockResolvedValue(0);
+  prismaMock.order.findMany.mockResolvedValue([]);
+  prismaMock.order.aggregate.mockResolvedValue({ _sum: { totalMinor: 0 } });
+  prismaMock.customer.count.mockResolvedValue(0);
+  prismaMock.tenant.findFirst.mockResolvedValue({ currency: "USD" });
+  findFirstOrdersByCustomerIds.mockResolvedValue(new Map());
+}
 
 describe("getAdminDashboardLiveSnapshot customersAllTime", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    prismaMock.order.count.mockResolvedValue(0);
-    prismaMock.order.findMany.mockResolvedValue([]);
-    prismaMock.customer.count.mockResolvedValue(0);
-    findFirstOrdersByCustomerIds.mockResolvedValue(new Map());
+    stubDashboardReads();
   });
 
   it("counts Customer rows for the authenticated tenant only", async () => {
@@ -68,17 +90,206 @@ describe("getAdminDashboardLiveSnapshot customersAllTime", () => {
     });
   });
 
-  it("keeps customersAllTime all-time (not filtered by 7/14/28 range)", async () => {
+  it("keeps customersAllTime all-time (not filtered by range)", async () => {
     prismaMock.customer.count.mockResolvedValue(9);
 
     const snapshot = await getAdminDashboardLiveSnapshot("tenant-a", 28);
 
     expect(snapshot.customersAllTime).toBe(9);
-    expect(prismaMock.customer.count).toHaveBeenCalledWith({
-      where: { tenantId: "tenant-a" },
-    });
-    // No placedAt / date filter on the customer count.
     const arg = prismaMock.customer.count.mock.calls[0][0];
     expect(arg.where).toEqual({ tenantId: "tenant-a" });
+  });
+});
+
+describe("dashboard period metrics", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    stubDashboardReads();
+  });
+
+  it("counts total orders in a preset window for the tenant", async () => {
+    prismaMock.order.count.mockResolvedValueOnce(4); // period
+    prismaMock.order.aggregate.mockResolvedValueOnce({ _sum: { totalMinor: 0 } });
+    prismaMock.order.findMany.mockResolvedValueOnce([]);
+
+    const stats = await getDashboardPeriodStats(
+      "tenant-a",
+      dashboardWindowFromPreset(7, new Date("2026-09-14T12:00:00.000Z")),
+    );
+
+    expect(stats.ordersInPeriod).toBe(4);
+    expect(prismaMock.order.count).toHaveBeenCalledWith({
+      where: {
+        tenantId: "tenant-a",
+        placedAt: { gte: expect.any(Date) },
+      },
+    });
+  });
+
+  it("sums Total Sales excluding cancelled orders", async () => {
+    prismaMock.order.count.mockResolvedValueOnce(3);
+    prismaMock.order.aggregate.mockResolvedValueOnce({ _sum: { totalMinor: 12_500 } });
+    prismaMock.order.findMany.mockResolvedValueOnce([]);
+
+    const window = dashboardWindowFromPreset(7, new Date("2026-09-14T12:00:00.000Z"));
+    const stats = await getDashboardPeriodStats("tenant-a", window);
+
+    expect(stats.salesInPeriodMinor).toBe(12_500);
+    expect(SALES_EXCLUDED_STATUSES).toEqual(["cancelled"]);
+    expect(prismaMock.order.aggregate).toHaveBeenCalledWith({
+      where: {
+        tenantId: "tenant-a",
+        status: { notIn: ["cancelled"] },
+        placedAt: { gte: window.from },
+      },
+      _sum: { totalMinor: true },
+    });
+  });
+
+  it("treats null sales sum as zero", async () => {
+    prismaMock.order.count.mockResolvedValueOnce(0);
+    prismaMock.order.aggregate.mockResolvedValueOnce({ _sum: { totalMinor: null } });
+    prismaMock.order.findMany.mockResolvedValueOnce([]);
+
+    const stats = await getDashboardPeriodStats(
+      "tenant-a",
+      dashboardWindowFromPreset(7, new Date("2026-09-14T12:00:00.000Z")),
+    );
+    expect(stats.salesInPeriodMinor).toBe(0);
+  });
+
+  it("applies inclusive custom from/to on order queries", async () => {
+    const window = parseCustomDashboardRange("2026-09-01", "2026-09-10")!;
+    prismaMock.order.count.mockResolvedValueOnce(2);
+    prismaMock.order.aggregate.mockResolvedValueOnce({ _sum: { totalMinor: 100 } });
+    prismaMock.order.findMany.mockResolvedValueOnce([]);
+
+    await getDashboardPeriodStats("tenant-a", window);
+
+    expect(prismaMock.order.count).toHaveBeenCalledWith({
+      where: {
+        tenantId: "tenant-a",
+        placedAt: { gte: window.from, lte: window.to },
+      },
+    });
+  });
+
+  it("classifies new vs returning customers from first-order history", async () => {
+    const from = new Date("2026-09-01T00:00:00.000Z");
+    prismaMock.order.count.mockResolvedValueOnce(3);
+    prismaMock.order.aggregate.mockResolvedValueOnce({ _sum: { totalMinor: 0 } });
+    prismaMock.order.findMany.mockResolvedValueOnce([
+      { customerId: "new-1" },
+      { customerId: "ret-1" },
+    ]);
+    findFirstOrdersByCustomerIds.mockResolvedValue(
+      new Map([
+        ["new-1", { id: "o1", placedAt: new Date("2026-09-05T00:00:00.000Z") }],
+        ["ret-1", { id: "o0", placedAt: new Date("2026-08-01T00:00:00.000Z") }],
+      ]),
+    );
+
+    const stats = await getDashboardPeriodStats(
+      "tenant-a",
+      parseCustomDashboardRange("2026-09-01", "2026-09-30")!,
+    );
+
+    expect(stats.newCustomersInPeriod).toBe(1);
+    expect(stats.returningCustomersInPeriod).toBe(1);
+    expect(from.getTime()).toBeLessThan(
+      new Date("2026-09-05T00:00:00.000Z").getTime(),
+    );
+  });
+
+  it("counts active orders with the open pipeline statuses only", async () => {
+    prismaMock.order.count
+      .mockResolvedValueOnce(0) // period
+      .mockResolvedValueOnce(0) // all-time
+      .mockResolvedValueOnce(5); // active
+    prismaMock.order.aggregate
+      .mockResolvedValueOnce({ _sum: { totalMinor: 0 } }) // period sales
+      .mockResolvedValueOnce({ _sum: { totalMinor: 0 } }); // all-time sales
+    prismaMock.order.findMany.mockResolvedValue([]);
+    prismaMock.customer.count.mockResolvedValue(0);
+
+    const snapshot = await getAdminDashboardLiveSnapshot("tenant-a", 7);
+
+    expect(snapshot.activeOrders).toBe(5);
+    expect(ACTIVE_ORDER_STATUSES).toEqual([
+      "pending",
+      "confirmed",
+      "processing",
+      "ready_for_pickup",
+      "out_for_delivery",
+    ]);
+    expect(prismaMock.order.count).toHaveBeenCalledWith({
+      where: {
+        tenantId: "tenant-a",
+        status: { in: [...ACTIVE_ORDER_STATUSES] },
+      },
+    });
+  });
+
+  it("includes all-time sales and currency on the live snapshot", async () => {
+    prismaMock.order.aggregate.mockImplementation(
+      async (args: { where?: { placedAt?: unknown } }) => {
+        if (args.where?.placedAt) {
+          return { _sum: { totalMinor: 500 } };
+        }
+        return { _sum: { totalMinor: 9_900 } };
+      },
+    );
+    prismaMock.tenant.findFirst.mockResolvedValue({ currency: "USD" });
+
+    const snapshot = await getAdminDashboardLiveSnapshot("tenant-a", 7);
+
+    expect(snapshot.salesInPeriodMinor).toBe(500);
+    expect(snapshot.salesAllTimeMinor).toBe(9_900);
+    expect(snapshot.currency).toBe("USD");
+    expect(prismaMock.order.aggregate).toHaveBeenCalledWith({
+      where: {
+        tenantId: "tenant-a",
+        status: { notIn: ["cancelled"] },
+      },
+      _sum: { totalMinor: true },
+    });
+  });
+});
+
+describe("dashboard metric cards UI", () => {
+  it("renders Total Sales with the existing overview cards", () => {
+    const window = dashboardWindowFromPreset(7);
+    const html = renderToStaticMarkup(
+      createElement(DashboardLiveSections, {
+        window,
+        initial: {
+          kind: "preset",
+          rangeDays: 7,
+          rangeLabel: "Past 7 Days",
+          fromParam: null,
+          toParam: null,
+          ordersInPeriod: 1,
+          ordersAllTime: 2,
+          salesInPeriodMinor: 3_000,
+          salesAllTimeMinor: 12_000,
+          currency: "USD",
+          customersAllTime: 3,
+          newCustomersInPeriod: 4,
+          returningCustomersInPeriod: 5,
+          activeOrders: 6,
+          recent: [],
+          generatedAt: "2026-09-14T12:00:00.000Z",
+        },
+      }),
+    );
+
+    expect(html).toContain("Total Sales");
+    expect(html).toContain("Total Orders");
+    expect(html).toContain("Total Customers");
+    expect(html).toContain("New Customers");
+    expect(html).toContain("Returning Customers");
+    expect(html).toContain("Active Orders");
+    expect(html).not.toContain(">Products<");
+    expect(html).not.toContain("Unavailable");
   });
 });

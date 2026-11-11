@@ -74,6 +74,13 @@ enum SellingUnit {
   case
 }
 
+enum PromotionDiscountType {
+  percentage
+  fixed
+  /** Same-SKU buy 1 get 1 free — paid qty charged, fulfillment qty = paid × 2. */
+  buy_one_get_one
+}
+
 model Tenant {
   id            String   @id @default(cuid())
   slug          String   @unique
@@ -94,10 +101,13 @@ model Tenant {
   carts              Cart[]
   settings           TenantSettings?
   pickupLocations    PickupLocation[]
-  customerSessions   CustomerSession[]
-  customerAddresses  CustomerAddress[]
-  faqs               Faq[]
-  notifications      CustomerNotification[]
+  customerSessions          CustomerSession[]
+  telegramSessionHandoffs   TelegramSessionHandoff[]
+  telegramAccountAccesses   TelegramAccountAccess[]
+  customerAddresses         CustomerAddress[]
+  faqs                      Faq[]
+  notifications             CustomerNotification[]
+  promotions                Promotion[]
 
   @@map("tenants")
 }
@@ -134,6 +144,10 @@ model Category {
   id        String    @id @default(cuid())
   tenantId  String    @map("tenant_id")
   name      String
+  /** Optional Khmer display name; English `name` remains canonical. */
+  nameKm    String?   @map("name_km")
+  /** Reserved from earlier migration — unused in EN/KM storefront. */
+  nameZh    String?   @map("name_zh")
   slug      String
   sortOrder Int       @default(0) @map("sort_order")
   isActive  Boolean   @default(true) @map("is_active")
@@ -154,14 +168,28 @@ model Product {
   tenantId    String    @map("tenant_id")
   categoryId  String?   @map("category_id")
   name        String
+  /** Optional Khmer display name; English `name` remains canonical. */
+  nameKm      String?   @map("name_km")
+  /** Reserved from earlier migration — unused in EN/KM storefront. */
+  nameZh      String?   @map("name_zh")
   slug        String
   description String?
+  descriptionKm String? @map("description_km")
+  /** Reserved from earlier migration — unused in EN/KM storefront. */
+  descriptionZh String? @map("description_zh")
   brand       String?
   volume      String?
   sellingUnit SellingUnit @default(item) @map("selling_unit")
   priceMinor  Int       @map("price_minor")
   currency    String    @db.Char(3)
   isAvailable Boolean   @default(true) @map("is_available")
+  /** Explicit homepage Featured eligibility (storefront also requires isAvailable). */
+  isFeatured  Boolean   @default(false) @map("is_featured")
+  /**
+   * On-hand units for fulfillment. Null = legacy unlimited (isAvailable only).
+   * Required for buy_one_get_one eligibility checks (floor(stock/2) sets).
+   */
+  stockQuantity Int?    @map("stock_quantity")
   stockNote   String?   @map("stock_note")
   sortOrder   Int       @default(0) @map("sort_order")
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -173,6 +201,7 @@ model Product {
   media      ProductMedia[]
   orderItems OrderItem[]
   cartItems  CartItem[]
+  promotionProducts PromotionProduct[]
 
   @@unique([tenantId, slug])
   @@index([tenantId, isAvailable])
@@ -217,6 +246,7 @@ model Customer {
   orders     Order[]
   carts      Cart[]
   sessions   CustomerSession[]
+  accountAccesses TelegramAccountAccess[]
   addresses     CustomerAddress[]
   notifications CustomerNotification[]
 
@@ -241,6 +271,9 @@ model CustomerAddress {
   postalCode           String?  @map("postal_code")
   countryCode          String   @default("KH") @map("country_code") @db.Char(2)
   deliveryInstructions String?  @map("delivery_instructions")
+  /** Confirmed delivery pin; optional so existing text-only addresses remain valid. */
+  latitude             Float?
+  longitude            Float?
   isDefault            Boolean  @default(false) @map("is_default")
   isActive             Boolean  @default(true) @map("is_active")
   createdAt            DateTime @default(now()) @map("created_at")
@@ -285,10 +318,53 @@ model CustomerSession {
 
   tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  handoffs TelegramSessionHandoff[]
+  accountAccesses TelegramAccountAccess[]
 
   @@index([tenantId, customerId])
   @@index([expiresAt])
   @@map("customer_sessions")
+}
+
+/** Short-lived single-use codes for Desktop WebView cookie handoff. Never store raw session tokens here. */
+model TelegramSessionHandoff {
+  id         String    @id @default(cuid())
+  tenantId   String    @map("tenant_id")
+  sessionId  String    @map("session_id")
+  codeHash   String    @unique @map("code_hash")
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  session CustomerSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([expiresAt])
+  @@map("telegram_session_handoffs")
+}
+
+/**
+ * Short-lived multi-use Account access proofs for Telegram Desktop when
+ * commerceos_customer cookies do not persist. Opaque code only — never a session token.
+ * Created only after verified Telegram initData.
+ */
+model TelegramAccountAccess {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  customerId String   @map("customer_id")
+  sessionId  String   @map("session_id")
+  codeHash   String   @unique @map("code_hash")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  session  CustomerSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, customerId])
+  @@index([expiresAt])
+  @@map("telegram_account_accesses")
 }
 
 model Order {
@@ -310,6 +386,9 @@ model Order {
   addressLabel              String?           @map("address_label")
   sourceAddressId           String?           @map("source_address_id")
   deliveryInstructions      String?           @map("delivery_instructions")
+  /** Snapshot of confirmed delivery pin at order time — never recalculated from saved addresses. */
+  deliveryLatitude          Float?            @map("delivery_latitude")
+  deliveryLongitude         Float?            @map("delivery_longitude")
   pickupLocationKey         String?           @map("pickup_location_key")
   pickupLocationName        String?           @map("pickup_location_name")
   pickupLocationAddress     String?           @map("pickup_location_address")
@@ -330,11 +409,15 @@ model Order {
   channel                   IdentityChannel   @default(manual)
   // Optional attribution — stored only; no promotion/referral/campaign logic yet.
   promotionId               String?           @map("promotion_id")
+  /** Snapshot of campaign name at order time — never recalculated from live promotions. */
+  promotionNameSnapshot     String?           @map("promotion_name_snapshot")
   referralCode              String?           @map("referral_code")
   campaignId                String?           @map("campaign_id")
   idempotencyKey            String?           @map("idempotency_key")
   /** Opaque capability token for guest confirmation access — never use orderNumber alone. */
   confirmationToken         String            @unique @map("confirmation_token")
+  /** Snapshot of customer UI locale at checkout (`en` | `km`) for notifications. */
+  customerLocale            String?           @map("customer_locale") @db.VarChar(8)
   placedAt                  DateTime          @default(now()) @map("placed_at")
   createdAt                 DateTime          @default(now()) @map("created_at")
   updatedAt                 DateTime          @updatedAt @map("updated_at")
@@ -365,8 +448,17 @@ model OrderItem {
   volumeSnapshot       String?      @map("volume_snapshot")
   sellingUnitSnapshot  SellingUnit? @map("selling_unit_snapshot")
   unitPriceMinor       Int          @map("unit_price_minor")
+  /** Customer-selected / paid quantity (lineTotal = unitPrice × quantity). */
   quantity             Int
+  /** Free units from buy_one_get_one (same SKU). Snapshot — never re-derived. */
+  freeQuantity         Int          @default(0) @map("free_quantity")
+  /** Physical units to ship / inventory deducted. Snapshot — never re-derived. */
+  fulfillmentQuantity  Int          @map("fulfillment_quantity")
   lineTotalMinor       Int          @map("line_total_minor")
+  /** Line-level promotion snapshot (e.g. buy_one_get_one) — independent of live promo. */
+  promotionIdSnapshot     String? @map("promotion_id_snapshot")
+  promotionNameSnapshot   String? @map("promotion_name_snapshot")
+  promotionTypeSnapshot   String? @map("promotion_type_snapshot")
 
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
@@ -480,6 +572,8 @@ model TenantSettings {
   abaCustomerNote            String?  @map("aba_customer_note")
   primaryColor                         String?  @map("primary_color")
   telegramOrderNotificationsEnabled    Boolean  @default(true) @map("telegram_order_notifications_enabled")
+  /** Public Telegram username customers open from FAQ. Bare name, no @. */
+  telegramSupportUsername              String?  @map("telegram_support_username")
   createdAt                  DateTime @default(now()) @map("created_at")
   updatedAt                  DateTime @updatedAt @map("updated_at")
 
@@ -512,6 +606,9 @@ model Faq {
   answer     String
   questionKm String?  @map("question_km")
   answerKm   String?  @map("answer_km")
+  /** Reserved from earlier migration — unused in EN/KM storefront. */
+  questionZh String?  @map("question_zh")
+  answerZh   String?  @map("answer_zh")
   sortOrder  Int      @default(0) @map("sort_order")
   isActive   Boolean  @default(true) @map("is_active")
   createdAt  DateTime @default(now()) @map("created_at")
@@ -521,4 +618,52 @@ model Faq {
 
   @@index([tenantId, isActive, sortOrder])
   @@map("faqs")
+}
+
+/**
+ * Tenant-scoped campaign.
+ * Money discounts (percentage/fixed): only one eligible applies per order (newest wins).
+ * buy_one_get_one: product-scoped same-SKU free units; mutually exclusive with product-level
+ * sale display on that SKU; may coexist with a cart-level money discount on paid subtotal.
+ */
+model Promotion {
+  id                    String                 @id @default(cuid())
+  tenantId              String                 @map("tenant_id")
+  name                  String
+  bannerText            String?                @map("banner_text")
+  type                  PromotionDiscountType
+  /**
+   * Percentage points (1–100), fixed amount in minor currency units,
+   * or 1 for buy_one_get_one (buy 1 get 1 free — fixed rule).
+   */
+  value                 Int
+  minimumSubtotalMinor  Int?                   @map("minimum_subtotal_minor")
+  startsAt              DateTime?              @map("starts_at")
+  endsAt                DateTime?              @map("ends_at")
+  isActive              Boolean                @default(true) @map("is_active")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+
+  tenant   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products PromotionProduct[]
+
+  @@index([tenantId, isActive, createdAt])
+  @@map("promotions")
+}
+
+/** Eligible SKUs for buy_one_get_one — each SKU gifts itself only (no cross-SKU). */
+model PromotionProduct {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  promotionId String   @map("promotion_id")
+  productId   String   @map("product_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionId, productId])
+  @@index([tenantId, productId])
+  @@index([productId])
+  @@map("promotion_products")
 }

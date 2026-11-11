@@ -1,10 +1,22 @@
+"use client";
+
 import Link from "next/link";
 
-import type { ProductWithRelations } from "@/modules/catalog";
-import { formatPackSizeLine, formatUnitPriceLabel } from "@/modules/catalog/selling-unit";
-import { formatMoney } from "@/shared/money/money";
+import type { ProductWithRelations } from "@/modules/catalog/types";
+import { formatPackSizeLine } from "@/modules/catalog/selling-unit";
+import { isProductPurchasable } from "@/modules/orders/line-promotion";
+import {
+  campaignAppliesToProduct,
+  type StorefrontCampaignDisplay,
+} from "@/modules/promotions/discount";
+import { localizedValue, useLocale } from "@/shared/i18n";
 import { cn } from "@/ui/lib/utils";
 import { ProductImage } from "@/ui/storefront/product-image";
+import {
+  BogoBadge,
+  PromotionSaleBadge,
+  PromotionalPrice,
+} from "@/ui/storefront/promotional-price";
 import { shop } from "@/ui/storefront/shop-classes";
 
 type ProductCardProps = {
@@ -12,11 +24,45 @@ type ProductCardProps = {
   href: string;
   className?: string;
   priority?: boolean;
+  campaign?: StorefrontCampaignDisplay | null;
+  bogo?: { promotionName: string } | null;
 };
 
-export function ProductCard({ product, href, className, priority = false }: ProductCardProps) {
+export function ProductCard({
+  product,
+  href,
+  className,
+  priority = false,
+  campaign = null,
+  bogo = null,
+}: ProductCardProps) {
+  const { locale, t } = useLocale();
+  const name = localizedValue({
+    locale,
+    en: product.name,
+    km: product.nameKm,
+  });
+  const categoryName = product.category
+    ? localizedValue({
+        locale,
+        en: product.category.name,
+        km: product.category.nameKm,
+      })
+    : null;
   const imageUrl = product.media[0]?.url;
-  const imageAlt = product.media[0]?.alt ?? product.name;
+  const imageAlt = product.media[0]?.alt ?? name;
+  const purchasable = isProductPurchasable(
+    {
+      isAvailable: product.isAvailable,
+      stockQuantity: product.stockQuantity,
+    },
+    bogo,
+  );
+  const showBogo = Boolean(bogo && purchasable);
+  const pricedCampaign =
+    campaign != null && campaignAppliesToProduct(campaign.productIds, product.id)
+      ? campaign
+      : null;
 
   return (
     <Link
@@ -41,37 +87,47 @@ export function ProductCard({ product, href, className, priority = false }: Prod
         ) : (
           <div className="flex h-full w-full items-end bg-[radial-gradient(circle_at_30%_20%,#fae588,transparent_55%),linear-gradient(160deg,#fffdf4,#fff1b9)] p-4">
             <span className="text-sm font-medium text-[color:var(--shop-ink-muted)]">
-              {product.category?.name ?? "Product"}
+              {categoryName ?? t("product")}
             </span>
           </div>
         )}
-        {!product.isAvailable ? (
+        {!purchasable ? (
           <span className="absolute top-3 left-3 rounded-full bg-[color:var(--shop-ink)]/80 px-2.5 py-1 text-[11px] font-medium tracking-wide text-white uppercase">
-            Unavailable
+            {t("outOfStock")}
           </span>
-        ) : null}
+        ) : showBogo ? (
+          <BogoBadge />
+        ) : (
+          <PromotionSaleBadge campaign={pricedCampaign} />
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3.5">
-        {product.category ? (
+        {categoryName ? (
           <p className="text-[11px] font-medium tracking-[0.14em] text-[color:var(--shop-ink-muted)] uppercase">
-            {product.category.name}
+            {categoryName}
           </p>
         ) : null}
         <h3 className="font-[family-name:var(--font-shop-display)] text-[1.05rem] leading-snug text-[color:var(--shop-ink)]">
-          {product.name}
+          {name}
         </h3>
+        {showBogo ? (
+          <p className="text-xs font-medium text-[color:var(--shop-ink-muted)]">
+            {t("bogoBuyReceive")}
+          </p>
+        ) : null}
         {product.stockNote ? (
           <p className="line-clamp-1 text-xs text-[color:var(--shop-ink-muted)]">
             {product.stockNote}
           </p>
         ) : null}
-        <p className="mt-auto pt-2 text-sm font-semibold text-[color:var(--shop-ink)]">
-          {formatUnitPriceLabel(
-            formatMoney(product.priceMinor, product.currency),
-            product.sellingUnit,
-          )}
-        </p>
+        <PromotionalPrice
+          className="mt-auto pt-2"
+          priceMinor={product.priceMinor}
+          currency={product.currency}
+          sellingUnit={product.sellingUnit}
+          campaign={showBogo ? null : pricedCampaign}
+        />
         {formatPackSizeLine(product.volume, product.sellingUnit) ? (
           <p className="text-xs text-[color:var(--shop-ink-muted)]">
             {formatPackSizeLine(product.volume, product.sellingUnit)}

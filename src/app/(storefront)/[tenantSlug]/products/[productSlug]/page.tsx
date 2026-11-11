@@ -1,17 +1,29 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getStorefrontProductBySlug } from "@/modules/catalog";
-import {
-  formatPackSizeLine,
-  formatUnitPriceLabel,
-} from "@/modules/catalog/selling-unit";
+import { formatPackSizeLine } from "@/modules/catalog/selling-unit";
 import { AddToCartButton } from "@/modules/orders/components/add-to-cart-button";
+import { isProductPurchasable } from "@/modules/orders/line-promotion";
+import {
+  campaignAppliesToProduct,
+  getActiveBuyOneGetOneMap,
+  getActiveStorefrontCampaign,
+} from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { isAppError } from "@/shared/errors/app-error";
-import { formatMoney } from "@/shared/money/money";
 import { createTimer } from "@/shared/observability/timing";
+import { LocalizedText } from "@/ui/storefront/localized-text";
 import { ProductImage } from "@/ui/storefront/product-image";
+import {
+  LocalizedPlaceholderLabel,
+  ProductDetailBackLink,
+  ProductDetailCopy,
+} from "@/ui/storefront/product-detail-copy";
+import {
+  BogoBadge,
+  PromotionSaleBadge,
+  PromotionalPrice,
+} from "@/ui/storefront/promotional-price";
 
 /** Public catalog ISR — aligned with catalog data-cache TTL. */
 export const revalidate = 60;
@@ -29,8 +41,14 @@ export default async function StorefrontProductDetailPage({
   timer.mark("tenantMs");
 
   let product;
+  let campaign;
+  let bogoMap;
   try {
-    product = await getStorefrontProductBySlug(tenant.id, productSlug);
+    [product, campaign, bogoMap] = await Promise.all([
+      getStorefrontProductBySlug(tenant.id, productSlug),
+      getActiveStorefrontCampaign(tenant.id),
+      getActiveBuyOneGetOneMap(tenant.id),
+    ]);
   } catch (error) {
     if (isAppError(error) && error.code === "NOT_FOUND") {
       notFound();
@@ -42,15 +60,22 @@ export default async function StorefrontProductDetailPage({
 
   const imageUrl = product.media[0]?.url;
   const imageAlt = product.media[0]?.alt ?? product.name;
+  const bogo = bogoMap.get(product.id) ?? null;
+  const pricedCampaign =
+    campaign && campaignAppliesToProduct(campaign.productIds, product.id) ? campaign : null;
+  const purchasable = isProductPurchasable(
+    {
+      isAvailable: product.isAvailable,
+      stockQuantity: product.stockQuantity,
+    },
+    bogo,
+  );
 
   return (
     <div className="space-y-5 pt-4">
-      <Link
+      <ProductDetailBackLink
         href={`${basePath}/products${product.category ? `?category=${product.category.slug}` : ""}`}
-        className="inline-flex text-sm font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
-      >
-        ← Back to shop
-      </Link>
+      />
 
       <div className="overflow-hidden rounded-[1.75rem] bg-[color:var(--shop-surface-elevated)] ring-1 ring-[color:var(--shop-line)] md:grid md:grid-cols-2 md:items-stretch">
         <div className="relative aspect-[5/4] bg-[color:var(--shop-surface)] md:aspect-auto md:min-h-[22rem]">
@@ -65,48 +90,52 @@ export default async function StorefrontProductDetailPage({
             </div>
           ) : (
             <div className="flex h-full min-h-[16rem] w-full items-end bg-[radial-gradient(circle_at_30%_20%,#fae588,transparent_55%),linear-gradient(160deg,#fffdf4,#fff1b9)] p-6">
-              <span className="text-sm text-[color:var(--shop-ink-muted)]">
-                {product.category?.name ?? tenant.name}
-              </span>
+              <LocalizedPlaceholderLabel
+                categoryName={product.category?.name}
+                categoryNameKm={product.category?.nameKm}
+                fallback={tenant.name}
+              />
             </div>
+          )}
+          {purchasable ? (
+            bogo ? <BogoBadge /> : <PromotionSaleBadge campaign={pricedCampaign} />
+          ) : (
+            <span className="absolute top-3 left-3 rounded-full bg-[color:var(--shop-ink)]/80 px-2.5 py-1 text-[11px] font-medium tracking-wide text-white uppercase">
+              <LocalizedText messageKey="outOfStock" />
+            </span>
           )}
         </div>
 
         <div className="space-y-4 p-5 md:flex md:flex-col md:justify-center">
-          {product.category ? (
-            <p className="text-[11px] font-medium tracking-[0.16em] text-[color:var(--shop-ink-muted)] uppercase">
-              {product.category.name}
-            </p>
-          ) : null}
-
-          <div className="space-y-2">
-            <h1 className="font-[family-name:var(--font-shop-display)] text-3xl leading-tight tracking-tight break-words">
-              {product.name}
-            </h1>
-            <p className="text-xl font-semibold">
-              {formatUnitPriceLabel(
-                formatMoney(product.priceMinor, product.currency),
-                product.sellingUnit,
-              )}
-            </p>
+          <ProductDetailCopy
+            name={product.name}
+            nameKm={product.nameKm}
+            description={product.description}
+            descriptionKm={product.descriptionKm}
+            categoryName={product.category?.name}
+            categoryNameKm={product.category?.nameKm}
+            stockNote={product.stockNote}
+          >
+            <PromotionalPrice
+              priceMinor={product.priceMinor}
+              currency={product.currency}
+              sellingUnit={product.sellingUnit}
+              campaign={bogo && purchasable ? null : pricedCampaign}
+              size="lg"
+            />
+            {bogo && purchasable ? (
+              <LocalizedText
+                as="p"
+                messageKey="bogoBuyReceive"
+                className="text-sm font-medium text-[color:var(--shop-ink-muted)]"
+              />
+            ) : null}
             {formatPackSizeLine(product.volume, product.sellingUnit) ? (
               <p className="text-sm text-[color:var(--shop-ink-muted)]">
                 {formatPackSizeLine(product.volume, product.sellingUnit)}
               </p>
             ) : null}
-          </div>
-
-          {product.description ? (
-            <p className="text-sm leading-relaxed break-words text-[color:var(--shop-ink-muted)]">
-              {product.description}
-            </p>
-          ) : null}
-
-          {product.stockNote ? (
-            <p className="rounded-xl bg-[color:var(--shop-surface)] px-3 py-2 text-sm text-[color:var(--shop-ink)]">
-              {product.stockNote}
-            </p>
-          ) : null}
+          </ProductDetailCopy>
         </div>
       </div>
 
@@ -117,12 +146,18 @@ export default async function StorefrontProductDetailPage({
             "max(0.75rem, var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))",
         }}
       >
-        <AddToCartButton
-          tenantSlug={tenantSlug}
-          productId={product.id}
-          showQuantity
-          navigateToCatalogOnSuccess
-        />
+        {purchasable ? (
+          <AddToCartButton
+            tenantSlug={tenantSlug}
+            productId={product.id}
+            showQuantity
+            navigateToCatalogOnSuccess
+          />
+        ) : (
+          <p className="py-3 text-center text-sm font-medium text-[color:var(--shop-ink-muted)]">
+            <LocalizedText messageKey="outOfStock" />
+          </p>
+        )}
       </div>
     </div>
   );

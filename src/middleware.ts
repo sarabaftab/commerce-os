@@ -1,48 +1,39 @@
+import {
+  TELEGRAM_ACCOUNT_ACCESS_HEADER,
+  TELEGRAM_ACCOUNT_ACCESS_QUERY,
+} from "@/channels/telegram/account-access-constants";
+import { updateSession } from "@/shared/auth/supabase/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-import {
-  readTelegramSessionHandoff,
-  TELEGRAM_SESSION_HANDOFF_QUERY,
-} from "@/channels/telegram/server/session-handoff";
-import { updateSession } from "@/shared/auth/supabase/middleware";
+function isStorefrontAccountPath(pathname: string): boolean {
+  const parts = pathname.split("/").filter(Boolean);
+  return parts.length >= 2 && parts[1] === "account";
+}
 
-const CUSTOMER_SESSION_COOKIE = "commerceos_customer";
-
-async function applyHandoffCookie(request: NextRequest): Promise<NextResponse | null> {
-  const { pathname, searchParams } = request.nextUrl;
-  if (!pathname.includes("/account")) {
-    return null;
+/**
+ * Forward opaque tg_a from the Account URL onto an internal request header.
+ * Never trusts a client-supplied copy of that header.
+ * Proof validation happens in Node (Account resolver), not Edge.
+ */
+function withTelegramAccountAccessHeader(request: NextRequest): NextResponse {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete(TELEGRAM_ACCOUNT_ACCESS_HEADER);
+  const code = request.nextUrl.searchParams.get(TELEGRAM_ACCOUNT_ACCESS_QUERY)?.trim();
+  if (code) {
+    requestHeaders.set(TELEGRAM_ACCOUNT_ACCESS_HEADER, code);
   }
-  const raw = searchParams.get(TELEGRAM_SESSION_HANDOFF_QUERY);
-  if (!raw) {
-    return null;
-  }
-  const sessionToken = await readTelegramSessionHandoff(raw);
-  const url = request.nextUrl.clone();
-  url.searchParams.delete(TELEGRAM_SESSION_HANDOFF_QUERY);
-  const response = NextResponse.redirect(url);
-  if (sessionToken) {
-    const crossSite = process.env.TELEGRAM_FORCE_SECURE_COOKIES === "1";
-    const isProd = process.env.NODE_ENV === "production";
-    response.cookies.set(CUSTOMER_SESSION_COOKIE, sessionToken, {
-      httpOnly: true,
-      path: "/",
-      sameSite: crossSite ? "none" : "lax",
-      secure: crossSite || isProd,
-      maxAge: 60 * 60 * 24 * 30,
-    });
-  }
-  return response;
+  return NextResponse.next({
+    request: { headers: requestHeaders },
+  });
 }
 
 export async function middleware(request: NextRequest) {
-  const handoffResponse = await applyHandoffCookie(request);
-  if (handoffResponse) {
-    return handoffResponse;
-  }
-
   const { pathname } = request.nextUrl;
+
+  if (isStorefrontAccountPath(pathname)) {
+    return withTelegramAccountAccessHeader(request);
+  }
 
   const isAdminApiRoute = pathname.startsWith("/api/admin");
   const isAdminRoute = pathname.startsWith("/admin");

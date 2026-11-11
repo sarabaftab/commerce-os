@@ -101,6 +101,21 @@ describe("payment proof Telegram templates", () => {
     expect(message.text).not.toContain("null");
     expect(message.text).toMatch(/clearer screenshot/i);
   });
+
+  it("uses the Khmer generic reason for Khmer customers", () => {
+    expect(resolvePaymentProofRejectionReason(null, "km")).toBe(
+      "សូមបង្ហោះរូបភាពបញ្ជាក់ការបង់ប្រាក់ម្ដងទៀត",
+    );
+    expect(
+      resolvePaymentProofRejectionReason(
+        "Please upload a clearer screenshot of your successful ABA transfer.",
+        "km",
+      ),
+    ).toBe("សូមបង្ហោះរូបភាពបញ្ជាក់ការបង់ប្រាក់ម្ដងទៀត");
+    expect(resolvePaymentProofRejectionReason("Amount does not match", "km")).toBe(
+      "Amount does not match",
+    );
+  });
 });
 
 describe("notifyPaymentProofReviewedAfterCommit", () => {
@@ -154,6 +169,28 @@ describe("notifyPaymentProofReviewedAfterCommit", () => {
     expect(payload.text).toContain("order #BIL-2048");
     expect(payload.text).toContain("Amount does not match");
     expect(payload.buttonText).toBe("Upload New Proof");
+  });
+
+  it("sends a fully Khmer Reject notification with the generic reason", async () => {
+    stubConnectedOrder({
+      paymentProofStatus: "rejected",
+      paymentProofRejectionReason: null,
+      customerLocale: "km",
+    });
+
+    await notifyPaymentProofReviewedAfterCommit({
+      tenantId: "tenant-a",
+      orderId: "order-a",
+      outcome: "rejected",
+      rejectionReason: null,
+    });
+
+    expect(sendTelegramBotMessage).toHaveBeenCalledTimes(1);
+    const payload = sendTelegramBotMessage.mock.calls[0][0];
+    expect(payload.text).toContain("សូមពិនិត្យមើលការបញ្ជាក់ការបង់ប្រាក់");
+    expect(payload.text).toContain("សូមបង្ហោះរូបភាពបញ្ជាក់ការបង់ប្រាក់ម្ដងទៀត");
+    expect(payload.text).not.toContain("Payment Proof Needs Attention");
+    expect(payload.text).not.toMatch(/clearer screenshot/i);
   });
 
   it("skips Telegram send when the customer has no Telegram identity", async () => {

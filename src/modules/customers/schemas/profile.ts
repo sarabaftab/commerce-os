@@ -105,6 +105,8 @@ export const customerAddressInputSchema = z.object({
     .or(z.literal(""))
     .transform((v) => emptyToUndefined(v)),
   isDefault: z.boolean().optional().default(false),
+  latitude: z.number().gte(-90).lte(90).nullable().optional(),
+  longitude: z.number().gte(-180).lte(180).nullable().optional(),
 });
 
 export type CustomerAddressInput = z.infer<typeof customerAddressInputSchema>;

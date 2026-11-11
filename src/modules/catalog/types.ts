@@ -8,8 +8,10 @@ export type ProductWithRelations = Product & {
 export type CreateProductInput = {
   tenantId: string;
   name: string;
+  nameKm?: string | null;
   slug: string;
   description?: string | null;
+  descriptionKm?: string | null;
   brand?: string | null;
   volume?: string | null;
   sellingUnit?: SellingUnit;
@@ -17,7 +19,9 @@ export type CreateProductInput = {
   currency: string;
   categoryId?: string | null;
   isAvailable: boolean;
+  isFeatured?: boolean;
   stockNote?: string | null;
+  stockQuantity?: number | null;
   sortOrder?: number;
   mediaUrl?: string | null;
 };
@@ -26,8 +30,10 @@ export type UpdateProductInput = {
   tenantId: string;
   productId: string;
   name: string;
+  nameKm?: string | null;
   slug: string;
   description?: string | null;
+  descriptionKm?: string | null;
   brand?: string | null;
   volume?: string | null;
   sellingUnit?: SellingUnit;
@@ -35,7 +41,9 @@ export type UpdateProductInput = {
   currency: string;
   categoryId?: string | null;
   isAvailable: boolean;
+  isFeatured?: boolean;
   stockNote?: string | null;
+  stockQuantity?: number | null;
   sortOrder?: number;
   mediaUrl?: string | null;
 };

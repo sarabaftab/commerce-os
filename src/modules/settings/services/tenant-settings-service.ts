@@ -1,5 +1,6 @@
 import { cache } from "react";
 
+import { parseTelegramSupportUsername } from "@/channels/telegram/support-link";
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
 
@@ -17,7 +18,6 @@ import {
   listPickupLocations,
   updatePickupLocation,
   updateSettings,
-  updateTenantCurrency,
 } from "../repositories/settings-repository";
 import {
   brandingSettingsSchema,
@@ -42,12 +42,9 @@ import { computeDeliveryFeeMinor } from "./delivery-fee";
 function isAbaComplete(settings: {
   abaAccountName: string | null;
   abaAccountNumber: string | null;
-  abaInstructions: string | null;
 }) {
   return Boolean(
-    settings.abaAccountName?.trim() &&
-      settings.abaAccountNumber?.trim() &&
-      settings.abaInstructions?.trim(),
+    settings.abaAccountName?.trim() && settings.abaAccountNumber?.trim(),
   );
 }
 
@@ -114,6 +111,7 @@ const getStorefrontSettingsCached = cache(
       phone: s.phone,
       email: s.email,
       address: s.address,
+      telegramSupportUsername: parseTelegramSupportUsername(s.telegramSupportUsername),
       businessHours: s.businessHours,
       abaAccountName: s.abaAccountName,
       abaAccountNumber: s.abaAccountNumber,
@@ -235,17 +233,26 @@ export async function updateGeneralSettings(
   raw: GeneralSettingsInput,
 ) {
   const parsed = generalSettingsSchema.parse(raw);
-  await prisma.$transaction(async () => {
-    await updateTenantCurrency(tenantId, parsed.currency);
-    await updateSettings(tenantId, {
-      displayName: normalizeOptionalString(parsed.displayName),
-      phone: normalizeOptionalString(parsed.phone),
-      email: normalizeOptionalString(parsed.email),
-      address: normalizeOptionalString(parsed.address),
-      timezone: parsed.timezone,
-      businessHours: normalizeOptionalString(parsed.businessHours),
-    });
-  });
+  // Sequential (non-interactive) transaction: interactive $transaction(async)
+  // plus nested prisma calls expires on the Supabase pooler (P2028 / 5s).
+  await prisma.$transaction([
+    prisma.tenant.update({
+      where: { id: tenantId },
+      data: { currency: parsed.currency },
+    }),
+    prisma.tenantSettings.update({
+      where: { tenantId },
+      data: {
+        displayName: normalizeOptionalString(parsed.displayName),
+        phone: normalizeOptionalString(parsed.phone),
+        email: normalizeOptionalString(parsed.email),
+        address: normalizeOptionalString(parsed.address),
+        timezone: parsed.timezone,
+        businessHours: normalizeOptionalString(parsed.businessHours),
+        telegramSupportUsername: parsed.telegramSupportUsername,
+      },
+    }),
+  ]);
   invalidateSettingsCache(tenantId);
 }
 

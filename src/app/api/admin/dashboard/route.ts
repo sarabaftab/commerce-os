@@ -1,7 +1,7 @@
 import { getAdminSession } from "@/shared/auth/admin-session";
 import { AppError } from "@/shared/errors/app-error";
 import { jsonError, jsonOk } from "@/shared/http/json";
-import { parseDashboardRange } from "@/modules/orders/dashboard-range";
+import { resolveDashboardWindow } from "@/modules/orders/dashboard-range";
 import { getAdminDashboardLiveSnapshot } from "@/modules/orders/services/dashboard-stats-service";
 
 export const dynamic = "force-dynamic";
@@ -26,8 +26,12 @@ export async function GET(request: Request) {
     }
 
     const url = new URL(request.url);
-    const range = parseDashboardRange(url.searchParams.get("range") ?? undefined);
-    const snapshot = await getAdminDashboardLiveSnapshot(session.tenantId, range);
+    const window = resolveDashboardWindow({
+      range: url.searchParams.get("range"),
+      from: url.searchParams.get("from"),
+      to: url.searchParams.get("to"),
+    });
+    const snapshot = await getAdminDashboardLiveSnapshot(session.tenantId, window);
 
     return jsonOk(snapshot, {
       headers: {

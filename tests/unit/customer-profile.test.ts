@@ -66,6 +66,25 @@ describe("customerAddressInputSchema", () => {
     expect(parsed.label).toBe("Home");
     expect(parsed.countryCode).toBe("KH");
     expect(parsed.addressLine2).toBeUndefined();
+    expect(parsed.latitude).toBeUndefined();
+    expect(parsed.longitude).toBeUndefined();
+  });
+
+  it("accepts optional delivery coordinates", () => {
+    const parsed = customerAddressInputSchema.parse({
+      label: "Home",
+      recipientFirstName: "Kin",
+      recipientLastName: "Customer",
+      phone: "85512345678",
+      addressLine1: "Street 1",
+      cityOrDistrict: "Phnom Penh",
+      provinceOrState: "Phnom Penh",
+      countryCode: "KH",
+      latitude: 11.5564,
+      longitude: 104.9282,
+    });
+    expect(parsed.latitude).toBe(11.5564);
+    expect(parsed.longitude).toBe(104.9282);
   });
 
   it("rejects missing address line", () => {

@@ -23,8 +23,10 @@ export type ActionState = {
 function formDataToObject(formData: FormData) {
   return {
     name: String(formData.get("name") ?? ""),
+    nameKm: String(formData.get("nameKm") ?? ""),
     slug: String(formData.get("slug") ?? ""),
     description: String(formData.get("description") ?? ""),
+    descriptionKm: String(formData.get("descriptionKm") ?? ""),
     brand: String(formData.get("brand") ?? ""),
     volume: String(formData.get("volume") ?? ""),
     sellingUnit: String(formData.get("sellingUnit") ?? "item"),
@@ -32,7 +34,9 @@ function formDataToObject(formData: FormData) {
     currency: String(formData.get("currency") ?? ""),
     categoryId: String(formData.get("categoryId") ?? ""),
     isAvailable: formData.get("isAvailable") === "on" || formData.get("isAvailable") === "true",
+    isFeatured: formData.get("isFeatured") === "on" || formData.get("isFeatured") === "true",
     stockNote: String(formData.get("stockNote") ?? ""),
+    stockQuantity: String(formData.get("stockQuantity") ?? ""),
     sortOrder: String(formData.get("sortOrder") ?? "0"),
     mediaUrl: String(formData.get("mediaUrl") ?? ""),
   };

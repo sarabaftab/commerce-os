@@ -57,6 +57,7 @@ describe("category-admin-service", () => {
     expect(createCategory).toHaveBeenCalledWith({
       tenantId: "t1",
       name: "Dairy",
+      nameKm: null,
       slug: "dairy",
       sortOrder: 1,
       isActive: true,

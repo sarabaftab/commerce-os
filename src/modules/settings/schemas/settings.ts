@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { parseTelegramSupportUsername } from "@/channels/telegram/support-link";
+
 export const currencyCodeSchema = z
   .string()
   .trim()
@@ -44,6 +46,24 @@ export const generalSettingsSchema = z.object({
   timezone: z.string().trim().min(1).max(64),
   businessHours: z.string().trim().max(1000).optional().or(z.literal("")),
   currency: currencyCodeSchema,
+  telegramSupportUsername: z
+    .string()
+    .trim()
+    .max(128)
+    .optional()
+    .or(z.literal(""))
+    .superRefine((value, ctx) => {
+      if (!value) {
+        return;
+      }
+      if (!parseTelegramSupportUsername(value)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Enter a Telegram username like @BillionSupport",
+        });
+      }
+    })
+    .transform((value) => parseTelegramSupportUsername(value ?? "")),
 });
 
 export const deliverySettingsSchema = z.object({
@@ -88,13 +108,6 @@ export const paymentSettingsSchema = z
         code: "custom",
         message: "ABA account number is required when ABA is enabled",
         path: ["abaAccountNumber"],
-      });
-    }
-    if (!data.abaInstructions?.trim()) {
-      ctx.addIssue({
-        code: "custom",
-        message: "ABA payment instructions are required when ABA is enabled",
-        path: ["abaInstructions"],
       });
     }
   });

@@ -2,8 +2,17 @@
 
 import { useState } from "react";
 
+import { DeliveryLocationPicker } from "@/modules/locations/components/delivery-location-picker";
 import { LocationAutocomplete } from "@/modules/locations/components/location-autocomplete";
+import { parseOptionalLatLng, type LatLng } from "@/modules/locations/coordinates";
+import {
+  addressFieldsFromLocationResult,
+  isPinnedLocationFallback,
+  PINNED_LOCATION_FALLBACK_ADDRESS,
+} from "@/modules/locations/location-address";
 import type { LocationSearchResult } from "@/modules/locations/types";
+import { useLocale } from "@/shared/i18n";
+import { isOutsideCambodiaDeliveryHours } from "@/shared/time/cambodia-delivery-hours";
 import { FieldLabel } from "@/ui/components/field-label";
 
 type SavedAddress = {
@@ -41,6 +50,11 @@ export function CheckoutFulfillmentFields({
   defaultAddressId = null,
   isAuthenticated = false,
 }: CheckoutFulfillmentFieldsProps) {
+  const { t } = useLocale();
+  const showDeliveryHoursNotice =
+    fulfillmentMethod === "delivery" &&
+    deliveryEnabled &&
+    isOutsideCambodiaDeliveryHours();
   const methods = [
     ...(deliveryEnabled ? (["delivery"] as const) : []),
     ...(pickupEnabled ? (["pickup"] as const) : []),
@@ -61,23 +75,82 @@ export function CheckoutFulfillmentFields({
     postalCode: "",
     countryCode: "KH",
   });
+  const [pin, setPin] = useState<LatLng | null>(null);
+  const [pinConfirmed, setPinConfirmed] = useState(false);
+  const [resolvingPin, setResolvingPin] = useState(false);
 
   function applyLocation(location: LocationSearchResult) {
-    const addressLine = [location.houseNumber, location.street].filter(Boolean).join(" ");
-    const cityOrArea = [location.district, location.city].filter(Boolean).join(" / ");
+    const fields = addressFieldsFromLocationResult(location);
+    const nextPin = parseOptionalLatLng(location.latitude, location.longitude);
     setNewAddress((current) => ({
       ...current,
-      addressLine: addressLine || location.formattedAddress,
-      cityOrArea: cityOrArea || current.cityOrArea,
-      provinceOrState: location.province || current.provinceOrState,
-      postalCode: location.postalCode || current.postalCode,
-      countryCode: location.countryCode || current.countryCode,
+      addressLine: fields.addressLine,
+      cityOrArea: fields.cityOrArea || current.cityOrArea,
+      provinceOrState: fields.provinceOrState || current.provinceOrState,
+      postalCode: fields.postalCode || current.postalCode,
+      countryCode: fields.countryCode || current.countryCode,
     }));
+    if (nextPin) {
+      setPin(nextPin);
+      setPinConfirmed(true);
+    }
+  }
+
+  function applyTelegramPin(next: LatLng) {
+    setPin(next);
+    setPinConfirmed(false);
+    // Do not overwrite a real address while the customer is still adjusting the pin.
+    // Resolve text address only on confirm (or leave existing autocomplete text alone).
+  }
+
+  async function confirmPinnedLocation(next: LatLng) {
+    setPin(next);
+    setResolvingPin(true);
+    try {
+      const response = await fetch(
+        `/api/location/reverse?lat=${encodeURIComponent(String(next.latitude))}&lng=${encodeURIComponent(String(next.longitude))}`,
+      );
+      if (response.ok) {
+        const payload: unknown = await response.json();
+        const result =
+          typeof payload === "object" &&
+          payload !== null &&
+          "data" in payload &&
+          typeof payload.data === "object" &&
+          payload.data !== null &&
+          "result" in payload.data
+            ? (payload.data.result as LocationSearchResult | null)
+            : null;
+        if (result?.formattedAddress) {
+          applyLocation({
+            ...result,
+            latitude: result.latitude ?? next.latitude,
+            longitude: result.longitude ?? next.longitude,
+          });
+          setPinConfirmed(true);
+          return;
+        }
+      }
+    } catch {
+      // Fall through to last-resort label — checkout must still work.
+    } finally {
+      setResolvingPin(false);
+    }
+
+    setNewAddress((current) => ({
+      ...current,
+      addressLine:
+        current.addressLine.trim() && !isPinnedLocationFallback(current.addressLine)
+          ? current.addressLine
+          : PINNED_LOCATION_FALLBACK_ADDRESS,
+      cityOrArea: current.cityOrArea.trim() ? current.cityOrArea : "Phnom Penh",
+    }));
+    setPinConfirmed(true);
   }
 
   return (
     <div className="space-y-4 rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-      <h2 className="text-sm font-semibold">Fulfillment</h2>
+      <h2 className="text-sm font-semibold">{t("fulfillmentMethod")}</h2>
 
       {methods.length > 1 ? (
         <div className="grid grid-cols-2 gap-2">
@@ -98,7 +171,7 @@ export function CheckoutFulfillmentFields({
                 onChange={() => onFulfillmentMethodChange(method)}
                 className="sr-only"
               />
-              {method}
+              {method === "delivery" ? t("delivery") : t("pickup")}
             </label>
           ))}
         </div>
@@ -108,6 +181,18 @@ export function CheckoutFulfillmentFields({
 
       {fulfillmentMethod === "delivery" && deliveryEnabled ? (
         <div className="space-y-3">
+          {showDeliveryHoursNotice ? (
+            <div
+              role="status"
+              className="rounded-xl border border-[color:var(--shop-line)] bg-[color:var(--shop-surface)] px-3 py-3 text-sm text-[color:var(--shop-ink)]"
+            >
+              <p className="font-medium">{t("deliveryHoursNoticeTitle")}</p>
+              <p className="mt-1 text-[color:var(--shop-ink-muted)] leading-relaxed">
+                {t("deliveryHoursNoticeBody")}
+              </p>
+            </div>
+          ) : null}
+
           {deliveryNotes ? (
             <p className="text-xs text-[color:var(--shop-ink-muted)]">{deliveryNotes}</p>
           ) : null}
@@ -123,7 +208,7 @@ export function CheckoutFulfillmentFields({
                 }`}
                 onClick={() => setAddressMode("saved")}
               >
-                Saved address
+                {t("savedAddress")}
               </button>
               <button
                 type="button"
@@ -134,7 +219,7 @@ export function CheckoutFulfillmentFields({
                 }`}
                 onClick={() => setAddressMode("new")}
               >
-                New address
+                {t("newAddress")}
               </button>
             </div>
           ) : null}
@@ -144,7 +229,7 @@ export function CheckoutFulfillmentFields({
           {hasSaved && addressMode === "saved" ? (
             <div className="space-y-2">
               <FieldLabel htmlFor="savedAddressId" required>
-                Choose address
+                {t("chooseAddress")}
               </FieldLabel>
               <select
                 id="savedAddressId"
@@ -158,7 +243,7 @@ export function CheckoutFulfillmentFields({
                 {savedAddresses.map((address) => (
                   <option key={address.id} value={address.id}>
                     {address.label}
-                    {address.isDefault ? " (Default)" : ""} — {address.formattedShort}
+                    {address.isDefault ? ` ${t("defaultSuffix")}` : ""} — {address.formattedShort}
                   </option>
                 ))}
               </select>
@@ -167,7 +252,7 @@ export function CheckoutFulfillmentFields({
             <>
               <div>
                 <FieldLabel htmlFor="addressLine" required>
-                  Delivery address
+                  {t("deliveryLocation")}
                 </FieldLabel>
                 <LocationAutocomplete
                   id="addressLine"
@@ -183,14 +268,31 @@ export function CheckoutFulfillmentFields({
                   required={addressMode === "new" || !hasSaved}
                   aria-required={addressMode === "new" || !hasSaved}
                   className={fieldClass}
-                  placeholder="Start typing your address…"
+                  placeholder={t("locationSearchPlaceholder")}
                 />
               </div>
+              <DeliveryLocationPicker
+                latitude={pin?.latitude ?? null}
+                longitude={pin?.longitude ?? null}
+                confirmed={pinConfirmed}
+                onDraftChange={applyTelegramPin}
+                onConfirm={(next) => {
+                  void confirmPinnedLocation(next);
+                }}
+              />
+              {resolvingPin ? (
+                <p role="status" className="text-xs text-[color:var(--shop-ink-muted)]">
+                  {t("resolvingPinnedAddress")}
+                </p>
+              ) : null}
+              {pinConfirmed && pin ? (
+                <>
+                  <input type="hidden" name="deliveryLatitude" value={String(pin.latitude)} />
+                  <input type="hidden" name="deliveryLongitude" value={String(pin.longitude)} />
+                </>
+              ) : null}
               <div>
-                <FieldLabel htmlFor="addressLine2">
-                  Address line 2{" "}
-                  <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-                </FieldLabel>
+<FieldLabel htmlFor="addressLine2">{t("addressLine2Optional")}</FieldLabel>
                 <input
                   id="addressLine2"
                   name="addressLine2"
@@ -206,7 +308,7 @@ export function CheckoutFulfillmentFields({
               </div>
               <div>
                 <FieldLabel htmlFor="cityOrArea" required>
-                  City or area
+                  {t("cityOrArea")}
                 </FieldLabel>
                 <input
                   id="cityOrArea"
@@ -225,10 +327,7 @@ export function CheckoutFulfillmentFields({
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="provinceOrState">
-                  Province / state{" "}
-                  <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-                </FieldLabel>
+<FieldLabel htmlFor="provinceOrState">{t("provinceOptional")}</FieldLabel>
                 <input
                   id="provinceOrState"
                   name="provinceOrState"
@@ -243,10 +342,7 @@ export function CheckoutFulfillmentFields({
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="deliveryInstructions">
-                  Delivery instructions{" "}
-                  <span className="font-normal text-[color:var(--shop-ink-muted)]">(optional)</span>
-                </FieldLabel>
+<FieldLabel htmlFor="deliveryInstructions">{t("deliveryInstructions")}</FieldLabel>
                 <textarea
                   id="deliveryInstructions"
                   name="deliveryInstructions"
@@ -259,11 +355,11 @@ export function CheckoutFulfillmentFields({
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="saveAddress" value="true" />
-                    Save this address for next time
+                    {t("saveAddressNextTime")}
                   </label>
                   <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="setAddressAsDefault" value="true" />
-                    Set as default
+                    {t("setAsDefault")}
                   </label>
                   <input type="hidden" name="addressLabel" value="Home" />
                 </div>
@@ -278,7 +374,7 @@ export function CheckoutFulfillmentFields({
       {fulfillmentMethod === "pickup" && pickupEnabled ? (
         <div>
           <FieldLabel htmlFor="pickupLocationKey" required>
-            Pickup location
+            {t("pickupLocation")}
           </FieldLabel>
           <select
             id="pickupLocationKey"

@@ -1,4 +1,5 @@
 import type { AdminOrderDetail } from "@/modules/orders";
+import { formatDateTimeInCambodia } from "@/shared/time/format-cambodia";
 import { Badge } from "@/ui/components/ui/badge";
 
 type OrderDetailHeaderProps = {
@@ -11,7 +12,7 @@ export function OrderDetailHeader({ order }: OrderDetailHeaderProps) {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{order.orderNumber}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Placed {order.placedAt.toLocaleString()} · Channel {order.channel}
+          Placed {formatDateTimeInCambodia(order.placedAt)} · Channel {order.channel}
         </p>
       </div>
       <Badge variant="secondary" className="capitalize">

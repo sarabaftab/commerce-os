@@ -1,9 +1,8 @@
 /**
  * Pure helpers for the sticky "Proceed to Checkout" storefront CTA.
  * Destination is Cart so customers still review lines / availability before checkout.
+ * Label is localized via `t("proceedToCheckout")` in the CTA component.
  */
-
-export const STOREFRONT_CHECKOUT_CTA_LABEL = "Proceed to Checkout";
 
 /** Cart page already has the primary checkout action with availability checks. */
 export function storefrontCheckoutCtaHref(tenantSlug: string): string {

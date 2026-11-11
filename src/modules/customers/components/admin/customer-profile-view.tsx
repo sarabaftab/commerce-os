@@ -2,6 +2,10 @@ import Link from "next/link";
 
 import type { AdminCustomerProfile } from "@/modules/customers/services/customer-admin-service";
 import { formatMoney } from "@/shared/money/money";
+import {
+  formatDateInCambodia,
+  formatDateTimeInCambodia,
+} from "@/shared/time/format-cambodia";
 import { Badge } from "@/ui/components/ui/badge";
 import { Button } from "@/ui/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/components/ui/card";
@@ -54,7 +58,7 @@ export function CustomerProfileView({ profile }: CustomerProfileViewProps) {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <p className="text-base font-semibold">
-              {profile.customerSince.toLocaleDateString()}
+              {formatDateInCambodia(profile.customerSince)}
             </p>
             <CustomerLifecycleBadge lifecycle={profile.lifecycle} />
           </CardContent>
@@ -105,7 +109,7 @@ export function CustomerProfileView({ profile }: CustomerProfileViewProps) {
                 </Badge>
               ) : null}
               <span className="text-muted-foreground">
-                {profile.lastOrderAt.toLocaleString()}
+                {formatDateTimeInCambodia(profile.lastOrderAt)}
               </span>
             </div>
           ) : (
@@ -146,7 +150,7 @@ export function CustomerProfileView({ profile }: CustomerProfileViewProps) {
                       </Link>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {order.placedAt.toLocaleString()}
+                      {formatDateTimeInCambodia(order.placedAt)}
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="capitalize">

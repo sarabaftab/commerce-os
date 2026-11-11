@@ -40,6 +40,7 @@ export type CartLineView = {
   productId: string;
   slug: string;
   name: string;
+  nameKm?: string | null;
   quantity: number;
   unitPriceMinor: number;
   lineTotalMinor: number;
@@ -48,6 +49,11 @@ export type CartLineView = {
   isAvailable: boolean;
   volume: string | null;
   sellingUnit: SellingUnit;
+  freeQuantity?: number;
+  fulfillmentQuantity?: number;
+  promotionNameSnapshot?: string | null;
+  promotionTypeSnapshot?: string | null;
+  isBuyOneGetOne?: boolean;
 };
 
 export type CartSummary = {
@@ -64,9 +70,11 @@ export type CartWithItems = Cart & {
       id: string;
       slug: string;
       name: string;
+      nameKm?: string | null;
       priceMinor: number;
       currency: string;
       isAvailable: boolean;
+      stockQuantity: number | null;
       deletedAt: Date | null;
       volume: string | null;
       sellingUnit: SellingUnit;
@@ -86,6 +94,11 @@ export type OrderLineView = {
   lineTotalMinor: number;
   volume: string | null;
   sellingUnit: SellingUnit;
+  freeQuantity?: number;
+  fulfillmentQuantity?: number;
+  promotionNameSnapshot?: string | null;
+  promotionTypeSnapshot?: string | null;
+  isBuyOneGetOne?: boolean;
 };
 
 export type OrderConfirmation = {
@@ -99,12 +112,15 @@ export type OrderConfirmation = {
   discountMinor: number;
   totalMinor: number;
   promotionId: string | null;
+  promotionNameSnapshot: string | null;
   referralCode: string | null;
   campaignId: string | null;
   fulfillmentMethod: FulfillmentMethod;
   addressLine: string | null;
   cityOrArea: string | null;
   deliveryInstructions: string | null;
+  deliveryLatitude: number | null;
+  deliveryLongitude: number | null;
   pickupLocationKey: string | null;
   pickupLocationName: string | null;
   pickupLocationAddress: string | null;
@@ -130,6 +146,14 @@ export type CheckoutPreview = {
   deliveryEnabled: boolean;
   pickupEnabled: boolean;
   deliveryFeeMinor: number;
+  /** Server-resolved campaign discount for the current cart subtotal. */
+  discountMinor: number;
+  promotionName: string | null;
+  /** For storefront sale-price display when discount applies. */
+  promotionType: "percentage" | "fixed" | null;
+  promotionValue: number | null;
+  /** Empty means the discount applies to every cart line. */
+  promotionProductIds: string[];
   freeDeliveryThresholdMinor: number | null;
   deliveryNotes: string | null;
   pickupLocations: { id: string; name: string; address: string; instructions: string | null }[];
@@ -211,11 +235,15 @@ export type AdminOrderDetail = {
   deliveryFeeMinor: number;
   discountMinor: number;
   totalMinor: number;
+  promotionId: string | null;
+  promotionNameSnapshot: string | null;
   notes: string | null;
   fulfillmentMethod: FulfillmentMethod;
   addressLine: string | null;
   cityOrArea: string | null;
   deliveryInstructions: string | null;
+  deliveryLatitude: number | null;
+  deliveryLongitude: number | null;
   pickupLocationKey: string | null;
   pickupLocationName: string | null;
   pickupLocationAddress: string | null;

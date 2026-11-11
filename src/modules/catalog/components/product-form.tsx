@@ -52,6 +52,11 @@ export function ProductForm({
       </div>
 
       <div className="grid gap-2">
+        <Label htmlFor="nameKm">Name (Khmer)</Label>
+        <Input id="nameKm" name="nameKm" defaultValue={product?.nameKm ?? ""} />
+      </div>
+
+      <div className="grid gap-2">
         <Label htmlFor="slug" required>
           Slug
         </Label>
@@ -68,6 +73,16 @@ export function ProductForm({
           name="description"
           rows={4}
           defaultValue={product?.description ?? ""}
+        />
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="descriptionKm">Description (Khmer)</Label>
+        <Textarea
+          id="descriptionKm"
+          name="descriptionKm"
+          rows={4}
+          defaultValue={product?.descriptionKm ?? ""}
         />
       </div>
 
@@ -167,6 +182,25 @@ export function ProductForm({
         />
       </div>
 
+      <div className="grid gap-2">
+        <Label htmlFor="stockQuantity">Stock quantity (optional)</Label>
+        <Input
+          id="stockQuantity"
+          name="stockQuantity"
+          type="number"
+          min="0"
+          step="1"
+          defaultValue={product?.stockQuantity != null ? String(product.stockQuantity) : ""}
+          placeholder="e.g. 24"
+        />
+        <p className="text-xs text-muted-foreground">
+          Required for 1+1 promotions. Available promotional sets = floor(stock ÷ 2).
+        </p>
+        {state.fieldErrors?.stockQuantity ? (
+          <p className="text-xs text-destructive">{state.fieldErrors.stockQuantity[0]}</p>
+        ) : null}
+      </div>
+
       <ProductImageField initialUrl={primaryMedia} onUploadingChange={setImageUploading} />
       {state.fieldErrors?.mediaUrl ? (
         <p className="text-xs text-destructive">{state.fieldErrors.mediaUrl[0]}</p>
@@ -181,17 +215,38 @@ export function ProductForm({
             type="number"
             defaultValue={String(product?.sortOrder ?? 0)}
           />
+          <p className="text-xs text-muted-foreground">
+            Lower numbers appear first. Homepage shows up to 6 featured products.
+          </p>
         </div>
-        <div className="flex items-end gap-2 pb-2">
-          <input
-            id="isAvailable"
-            name="isAvailable"
-            type="checkbox"
-            value="true"
-            defaultChecked={product?.isAvailable ?? true}
-            className="size-4 rounded border"
-          />
-          <Label htmlFor="isAvailable">Available for sale</Label>
+        <div className="flex flex-col justify-end gap-3 pb-2">
+          <div className="flex items-center gap-2">
+            <input
+              id="isAvailable"
+              name="isAvailable"
+              type="checkbox"
+              value="true"
+              defaultChecked={product?.isAvailable ?? true}
+              className="size-4 rounded border"
+            />
+            <Label htmlFor="isAvailable">Available for sale</Label>
+          </div>
+          <div className="flex items-start gap-2">
+            <input
+              id="isFeatured"
+              name="isFeatured"
+              type="checkbox"
+              value="true"
+              defaultChecked={product?.isFeatured ?? false}
+              className="mt-0.5 size-4 rounded border"
+            />
+            <div>
+              <Label htmlFor="isFeatured">Featured product</Label>
+              <p className="text-xs text-muted-foreground">
+                Show this product in the Featured section on the storefront homepage.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -48,6 +48,8 @@ export type CreateOrderCommand = {
   addressLabel?: string;
   sourceAddressId?: string;
   deliveryInstructions?: string;
+  deliveryLatitude?: number | null;
+  deliveryLongitude?: number | null;
   pickupLocationKey?: string;
   pickupLocationName?: string;
   pickupLocationAddress?: string;
@@ -58,10 +60,13 @@ export type CreateOrderCommand = {
   deliveryFeeMinor: number;
   discountMinor: number;
   totalMinor: number;
-  /** Optional attribution placeholders — no promotion/referral logic yet. */
+  /** Optional attribution — promotionId + name snapshot set at checkout. */
   promotionId?: string;
+  promotionNameSnapshot?: string | null;
   referralCode?: string;
   campaignId?: string;
+  /** Snapshot of storefront locale at checkout (en|km) for notifications. */
+  customerLocale?: string | null;
   items: {
     productId: string;
     nameSnapshot: string;
@@ -70,6 +75,11 @@ export type CreateOrderCommand = {
     unitPriceMinor: number;
     quantity: number;
     lineTotalMinor: number;
+    freeQuantity?: number;
+    fulfillmentQuantity?: number;
+    promotionIdSnapshot?: string | null;
+    promotionNameSnapshot?: string | null;
+    promotionTypeSnapshot?: string | null;
   }[];
 };
 
@@ -158,6 +168,8 @@ export async function createOrderInTransaction(
     addressLabel: command.addressLabel,
     sourceAddressId: command.sourceAddressId,
     deliveryInstructions: command.deliveryInstructions,
+    deliveryLatitude: command.deliveryLatitude,
+    deliveryLongitude: command.deliveryLongitude,
     pickupLocationKey: command.pickupLocationKey,
     pickupLocationName: command.pickupLocationName,
     pickupLocationAddress: command.pickupLocationAddress,
@@ -169,8 +181,10 @@ export async function createOrderInTransaction(
     discountMinor: command.discountMinor,
     totalMinor: command.totalMinor,
     promotionId: command.promotionId,
+    promotionNameSnapshot: command.promotionNameSnapshot,
     referralCode: command.referralCode,
     campaignId: command.campaignId,
+    customerLocale: command.customerLocale ?? null,
     items: command.items,
   });
 

@@ -11,7 +11,7 @@ import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
 
 type CategoryFormProps = {
-  category?: Pick<Category, "name" | "slug" | "sortOrder" | "isActive">;
+  category?: Pick<Category, "name" | "nameKm" | "slug" | "sortOrder" | "isActive">;
   action: (prev: CategoryActionState, formData: FormData) => Promise<CategoryActionState>;
   submitLabel: string;
 };
@@ -51,6 +51,16 @@ export function CategoryForm({ category, action, submitLabel }: CategoryFormProp
         {state.fieldErrors?.name ? (
           <p className="text-xs text-destructive">{state.fieldErrors.name[0]}</p>
         ) : null}
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="nameKm">Name (Khmer)</Label>
+        <Input
+          id="nameKm"
+          name="nameKm"
+          maxLength={80}
+          defaultValue={category?.nameKm ?? ""}
+        />
       </div>
 
       <div className="grid gap-2">

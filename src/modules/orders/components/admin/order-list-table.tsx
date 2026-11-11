@@ -4,6 +4,7 @@ import type { AdminOrderListItem } from "@/modules/orders";
 import { CustomerTypeBadge } from "@/modules/customers/components/admin/customer-type-badge";
 import { formatMoney } from "@/shared/money/money";
 import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
+import { formatDateTimeInCambodia } from "@/shared/time/format-cambodia";
 import { Badge } from "@/ui/components/ui/badge";
 import {
   Table,
@@ -82,7 +83,7 @@ export function OrderListTable({ orders }: OrderListTableProps) {
                 {formatMoney(order.totalMinor, order.currency)}
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                {order.placedAt.toLocaleString()}
+                {formatDateTimeInCambodia(order.placedAt)}
               </TableCell>
             </TableRow>
           ))}

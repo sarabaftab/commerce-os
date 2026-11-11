@@ -27,6 +27,7 @@ const checkoutCartInclude = {
           name: true,
           priceMinor: true,
           isAvailable: true,
+          stockQuantity: true,
           deletedAt: true,
           volume: true,
           sellingUnit: true,
@@ -52,6 +53,7 @@ export type CheckoutCartWithItems = {
       name: string;
       priceMinor: number;
       isAvailable: boolean;
+      stockQuantity: number | null;
       deletedAt: Date | null;
       volume: string | null;
       sellingUnit: SellingUnit;
@@ -346,6 +348,7 @@ export async function findOpenCartLinesForMerge(
 ): Promise<{
   id: string;
   customerId: string | null;
+  guestToken: string | null;
   items: { id: string; productId: string; quantity: number }[];
 } | null> {
   if (input.customerId) {
@@ -354,6 +357,7 @@ export async function findOpenCartLinesForMerge(
       select: {
         id: true,
         customerId: true,
+        guestToken: true,
         items: {
           select: { id: true, productId: true, quantity: true },
           orderBy: { createdAt: "asc" },
@@ -367,6 +371,7 @@ export async function findOpenCartLinesForMerge(
       select: {
         id: true,
         customerId: true,
+        guestToken: true,
         items: {
           select: { id: true, productId: true, quantity: true },
           orderBy: { createdAt: "asc" },

@@ -1,18 +1,11 @@
 import Link from "next/link";
-import {
-  ArrowUpRight,
-  Package,
-  Plus,
-  Settings2,
-  Sparkles,
-} from "lucide-react";
+import { ArrowUpRight, Plus, Sparkles } from "lucide-react";
 
-import { getProductCountsForTenant } from "@/modules/catalog";
 import { DashboardLiveSections } from "@/modules/orders/components/admin/dashboard-live-sections";
 import { DashboardRangeSelector } from "@/modules/orders/components/admin/dashboard-range-selector";
 import {
-  dashboardRangeLabel,
-  parseDashboardRange,
+  dashboardWindowKey,
+  resolveDashboardWindow,
 } from "@/modules/orders/dashboard-range";
 import { getAdminDashboardLiveSnapshot } from "@/modules/orders/services/dashboard-stats-service";
 import { requireAdminSession } from "@/shared/auth/admin-session";
@@ -35,22 +28,19 @@ export default async function AdminDashboardPage({
   timer.mark("sessionMs");
 
   const rawParams = await searchParams;
-  const range = parseDashboardRange(rawParams.range);
+  const window = resolveDashboardWindow({
+    range: rawParams.range,
+    from: rawParams.from,
+    to: rawParams.to,
+  });
 
-  const [productCounts, liveSnapshot] = await Promise.all([
-    getProductCountsForTenant(session.tenantId),
-    getAdminDashboardLiveSnapshot(session.tenantId, range),
-  ]);
+  const liveSnapshot = await getAdminDashboardLiveSnapshot(session.tenantId, window);
 
   timer.mark("dataMs");
 
   const timings = timer.log({
-    productCount: productCounts.total,
     orderCount: liveSnapshot.ordersAllTime,
   });
-  const availableCount = productCounts.available;
-  const unavailableCount = productCounts.total - productCounts.available;
-  const rangeLabel = dashboardRangeLabel(range);
 
   return (
     <div className="space-y-8">
@@ -111,42 +101,18 @@ export default async function AdminDashboardPage({
         </div>
       </section>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <p className="text-sm text-[color:var(--admin-ink-muted)]">
-          Activity for <span className="font-medium text-[color:var(--admin-ink)]">{rangeLabel}</span>
+          Activity for{" "}
+          <span className="font-medium text-[color:var(--admin-ink)]">{window.label}</span>
         </p>
-        <DashboardRangeSelector range={range} />
+        <DashboardRangeSelector window={window} />
       </div>
 
       <DashboardLiveSections
-        key={range}
-        range={range}
+        key={dashboardWindowKey(window)}
+        window={window}
         initial={liveSnapshot}
-        middle={
-          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <MetricCard
-              label="Products"
-              value={String(productCounts.total)}
-              hint={`${availableCount} available`}
-              href="/admin/products"
-              icon={<Package className="size-4" />}
-            />
-            <MetricCard
-              label="Unavailable"
-              value={String(unavailableCount)}
-              hint="Hidden from storefront"
-              href="/admin/products"
-              icon={<Package className="size-4 opacity-60" />}
-            />
-            <MetricCard
-              label="Currency"
-              value={session.tenantCurrency}
-              hint="Tenant default"
-              href="/admin/settings"
-              icon={<Settings2 className="size-4" />}
-            />
-          </section>
-        }
         aside={
           <div className="space-y-3">
             <h2 className="px-1 font-[family-name:var(--font-admin-display)] text-lg tracking-tight">
@@ -181,42 +147,6 @@ export default async function AdminDashboardPage({
         }
       />
     </div>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  hint,
-  href,
-  icon,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-  href: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className="group rounded-2xl border border-[color:var(--admin-line)] bg-[color:var(--admin-surface-elevated)] p-4 shadow-[var(--admin-shadow)] transition hover:-translate-y-0.5 hover:border-[color:var(--admin-primary)]"
-    >
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium tracking-wide text-[color:var(--admin-ink-muted)] uppercase">
-          {label}
-        </p>
-        <span className="rounded-full bg-[color:var(--admin-surface)] p-2 text-[color:var(--admin-ink)]">
-          {icon}
-        </span>
-      </div>
-      <p className="mt-3 font-[family-name:var(--font-admin-display)] text-3xl tracking-tight">
-        {value}
-      </p>
-      <p className="mt-1 text-xs text-[color:var(--admin-ink-muted)] group-hover:text-[color:var(--admin-ink)]">
-        {hint}
-      </p>
-    </Link>
   );
 }
 

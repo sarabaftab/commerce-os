@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 
+import { t } from "@/shared/i18n";
 import {
   shouldShowStorefrontCheckoutCta,
-  STOREFRONT_CHECKOUT_CTA_LABEL,
   storefrontCheckoutCtaHref,
 } from "@/ui/storefront/storefront-checkout-cta-helpers";
 
 describe("storefront checkout CTA helpers", () => {
   const slug = "kin-a2";
 
-  it("labels the CTA Proceed to Checkout", () => {
-    expect(STOREFRONT_CHECKOUT_CTA_LABEL).toBe("Proceed to Checkout");
+  it("labels the CTA Proceed to Checkout (English message key)", () => {
+    expect(t("en", "proceedToCheckout")).toBe("Proceed to Checkout");
   });
 
   it("routes to the existing Cart page for review before checkout", () => {

@@ -20,6 +20,7 @@ export type StorefrontSettings = {
   phone: string | null;
   email: string | null;
   address: string | null;
+  telegramSupportUsername: string | null;
   businessHours: string | null;
   abaAccountName: string | null;
   abaAccountNumber: string | null;

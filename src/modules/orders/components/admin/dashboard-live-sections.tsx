@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowUpRight, ShoppingBag, Users } from "lucide-react";
+import { ArrowUpRight, CircleDollarSign, ShoppingBag, Users } from "lucide-react";
 
 import { CustomerTypeBadge } from "@/modules/customers/components/admin/customer-type-badge";
-import type { DashboardRangeDays } from "@/modules/orders/dashboard-range";
+import type { DashboardWindow } from "@/modules/orders/dashboard-range";
 import {
   buildAdminDashboardPollUrl,
   DASHBOARD_POLL_INTERVAL_MS,
@@ -14,6 +14,7 @@ import {
 import type { AdminDashboardLiveSnapshot } from "@/modules/orders/services/dashboard-stats-service";
 import { formatMoney } from "@/shared/money/money";
 import { formatPhoneForDisplay } from "@/shared/phone/normalize-phone";
+import { formatDateTimeInCambodia } from "@/shared/time/format-cambodia";
 import { Badge } from "@/ui/components/ui/badge";
 import { buttonVariants } from "@/ui/components/ui/button";
 import { cn } from "@/ui/lib/utils";
@@ -21,18 +22,15 @@ import { cn } from "@/ui/lib/utils";
 export { DASHBOARD_POLL_INTERVAL_MS } from "@/modules/orders/dashboard-live";
 
 type DashboardLiveSectionsProps = {
-  range: DashboardRangeDays;
+  window: DashboardWindow;
   initial: AdminDashboardLiveSnapshot;
-  /** Catalog/static metrics between period cards and recent orders. */
-  middle: ReactNode;
-  /** Right-column content (quick actions) beside Recent orders. */
-  aside: ReactNode;
+  /** Optional right-column content (quick actions) beside Recent orders. */
+  aside?: ReactNode;
 };
 
 export function DashboardLiveSections({
-  range,
+  window,
   initial,
-  middle,
   aside,
 }: DashboardLiveSectionsProps) {
   const [data, setData] = useState(initial);
@@ -40,8 +38,8 @@ export function DashboardLiveSections({
   const [updatedLabel, setUpdatedLabel] = useState<string | null>(null);
   const knownIdsRef = useRef(new Set(initial.recent.map((order) => order.id)));
   const inFlightRef = useRef(false);
-  const rangeRef = useRef(range);
-  rangeRef.current = range;
+  const windowRef = useRef(window);
+  windowRef.current = window;
 
   useEffect(() => {
     let cancelled = false;
@@ -75,7 +73,7 @@ export function DashboardLiveSections({
       const timeoutId = setTimeout(() => controller.abort(), DASHBOARD_POLL_TIMEOUT_MS);
 
       try {
-        const response = await fetch(buildAdminDashboardPollUrl(rangeRef.current), {
+        const response = await fetch(buildAdminDashboardPollUrl(windowRef.current), {
           credentials: "same-origin",
           headers: {
             Accept: "application/json",
@@ -86,7 +84,6 @@ export function DashboardLiveSections({
           signal: controller.signal,
         });
         if (!response.ok) {
-          // Keep existing UI; auth/network issues retry on the next interval.
           return;
         }
         const payload = (await response.json()) as { data?: AdminDashboardLiveSnapshot };
@@ -94,14 +91,13 @@ export function DashboardLiveSections({
           applySnapshot(payload.data);
         }
       } catch {
-        // Keep existing UI; retry on the next interval (includes abort/timeout).
+        // Keep existing UI; retry on the next interval.
       } finally {
         clearTimeout(timeoutId);
         inFlightRef.current = false;
       }
     };
 
-    // Fetch once on mount / range change, then on the quiet interval.
     void refresh();
 
     const intervalId = setInterval(() => {
@@ -121,7 +117,7 @@ export function DashboardLiveSections({
       clearTimeout(highlightTimer);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [range]);
+  }, [window.kind, window.rangeDays, window.fromParam, window.toParam]);
 
   const rangeLabel = data.rangeLabel;
 
@@ -131,45 +127,53 @@ export function DashboardLiveSections({
         {updatedLabel ?? "Auto-updates while this page is open"}
       </p>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <section
+        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        data-testid="dashboard-metric-cards"
+      >
         <MetricCard
-          label="Orders"
+          label="Total Sales"
+          value={formatMoney(data.salesInPeriodMinor, data.currency)}
+          hint={`${rangeLabel} · ${formatMoney(data.salesAllTimeMinor, data.currency)} all-time · excl. cancelled`}
+          href="/admin/orders"
+          icon={<CircleDollarSign className="size-4" />}
+        />
+        <MetricCard
+          label="Total Orders"
           value={String(data.ordersInPeriod)}
           hint={`${rangeLabel} · ${data.ordersAllTime} all-time`}
           href="/admin/orders"
           icon={<ShoppingBag className="size-4" />}
         />
         <MetricCard
-          label="Total customers"
+          label="Total Customers"
           value={String(data.customersAllTime)}
           hint="All-time accounts"
           href="/admin/customers"
           icon={<Users className="size-4" />}
         />
         <MetricCard
-          label="New customers"
+          label="New Customers"
           value={String(data.newCustomersInPeriod)}
           hint={`First order in ${rangeLabel.toLowerCase()}`}
           href="/admin/customers"
           icon={<Users className="size-4" />}
         />
         <MetricCard
-          label="Returning customers"
+          label="Returning Customers"
           value={String(data.returningCustomersInPeriod)}
           hint={`Ordered again in ${rangeLabel.toLowerCase()}`}
           href="/admin/customers"
           icon={<Users className="size-4" />}
         />
         <MetricCard
-          label="Active orders"
+          label="Active Orders"
           value={String(data.activeOrders)}
           hint="Open pipeline (all-time)"
           href="/admin/orders"
           icon={<ShoppingBag className="size-4" />}
         />
       </section>
-
-      {middle}
 
       <section className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
         <div className="overflow-hidden rounded-2xl border border-[color:var(--admin-line)] bg-[color:var(--admin-surface-elevated)] shadow-[var(--admin-shadow)]">
@@ -229,7 +233,7 @@ export function DashboardLiveSections({
                         {formatMoney(order.totalMinor, order.currency)}
                       </p>
                       <p className="text-[11px] text-[color:var(--admin-ink-muted)]">
-                        {new Date(order.placedAt).toLocaleString()}
+                        {formatDateTimeInCambodia(order.placedAt)}
                       </p>
                     </div>
                   </Link>

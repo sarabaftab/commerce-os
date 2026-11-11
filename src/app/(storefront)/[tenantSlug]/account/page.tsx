@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { AccountLoadError } from "@/modules/customers/components/account-load-error";
 import {
   getCustomerProfile,
   listCustomerAddresses,
@@ -7,6 +6,8 @@ import {
   loadAccountPageSession,
 } from "@/modules/customers";
 import { resolveStorefrontTenant } from "@/modules/storefront";
+import { isPrismaPoolTimeout } from "@/shared/db/prisma-errors";
+import { LocalizedAccountHome } from "@/ui/storefront/localized-text";
 
 export const dynamic = "force-dynamic";
 
@@ -21,81 +22,49 @@ export default async function AccountHomePage({ params }: PageProps) {
   if (!session) {
     return null;
   }
-  const [profile, addresses, orders] = await Promise.all([
-    getCustomerProfile(session.tenantId, session.customerId),
-    listCustomerAddresses(session.tenantId, session.customerId),
-    listCustomerOrders({
+
+  try {
+    // Sequential on purpose: Vercel Prisma uses connection_limit=1. Parallel
+    // Account queries + Next.js link prefetch previously caused P2024 crashes.
+    const profile = await getCustomerProfile(session.tenantId, session.customerId);
+    const addresses = await listCustomerAddresses(session.tenantId, session.customerId);
+    const orders = await listCustomerOrders({
       tenantId: session.tenantId,
       customerId: session.customerId,
       pageSize: 3,
-    }),
-  ]);
+    });
 
-  const base = `/${tenantSlug}/account`;
+    const base = `/${tenantSlug}/account`;
+    const displayName =
+      profile.displayName ||
+      [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
+      profile.phone ||
+      "Account";
 
-  return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="font-[family-name:var(--font-shop-display)] text-3xl tracking-tight">
-          Account
-        </h1>
-        <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
-          {profile.displayName ||
-            [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
-            "Your account"}
-        </p>
-      </div>
-
-      <ul className="space-y-3">
-        <li>
-          <Link
-            href={`${base}/profile`}
-            className="block rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]"
-          >
-            <p className="text-sm font-semibold">Profile</p>
-            <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
-              Name, phone, and email
-            </p>
-          </Link>
-        </li>
-        <li>
-          <Link
-            href={`${base}/addresses`}
-            className="block rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]"
-          >
-            <p className="text-sm font-semibold">Saved addresses</p>
-            <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
-              {addresses.length === 0
-                ? "No addresses yet"
-                : `${addresses.length} saved · ${addresses.find((a) => a.isDefault)?.label ?? "no default"}`}
-            </p>
-          </Link>
-        </li>
-        <li>
-          <Link
-            href={`${base}/orders`}
-            className="block rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]"
-          >
-            <p className="text-sm font-semibold">My orders</p>
-            <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
-              {orders.total === 0
-                ? "No orders yet"
-                : `${orders.total} order${orders.total === 1 ? "" : "s"}`}
-            </p>
-          </Link>
-        </li>
-        <li>
-          <Link
-            href={`/${tenantSlug}/faq`}
-            className="block rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]"
-          >
-            <p className="text-sm font-semibold">Help / FAQ</p>
-            <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
-              Common questions about ordering and delivery
-            </p>
-          </Link>
-        </li>
-      </ul>
-    </div>
-  );
+    return (
+      <LocalizedAccountHome
+        displayName={displayName}
+        profileHref={`${base}/profile`}
+        addressesHref={`${base}/addresses`}
+        ordersHref={`${base}/orders`}
+        faqHref={`/${tenantSlug}/faq`}
+        addressesCount={addresses.length}
+        defaultAddressLabel={addresses.find((a) => a.isDefault)?.label ?? null}
+        ordersTotal={orders.total}
+      />
+    );
+  } catch (error) {
+    if (isPrismaPoolTimeout(error)) {
+      console.error(
+        JSON.stringify({
+          event: "account.pool_timeout",
+          tenantId: session.tenantId,
+          customerId: session.customerId,
+          page: "home",
+        }),
+      );
+      return <AccountLoadError tenantSlug={tenantSlug} />;
+    }
+    throw error;
+  }
 }

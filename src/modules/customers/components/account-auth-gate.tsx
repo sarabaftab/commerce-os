@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { TELEGRAM_ACCOUNT_ACCESS_STORAGE_KEY } from "@/channels/telegram/account-access-constants";
 import { submitTelegramSessionForm } from "@/channels/telegram/client/submit-session-form";
 import { waitForTelegramInitData } from "@/channels/telegram/client/wait-for-init-data";
 import { useTelegram } from "@/channels/telegram/client/telegram-provider";
@@ -10,6 +11,7 @@ import {
   TELEGRAM_ACCOUNT_NAV_KEY,
   resolveAccountAuthGate,
 } from "@/modules/customers/account-auth-gate";
+import { useLocale } from "@/shared/i18n";
 import { shop } from "@/ui/storefront/shop-classes";
 
 type AccountAuthGateProps = {
@@ -17,6 +19,7 @@ type AccountAuthGateProps = {
 };
 
 export function AccountAuthGate({ tenantSlug }: AccountAuthGateProps) {
+  const { t } = useLocale();
   const router = useRouter();
   const { authStatus, isTelegram, retryAuth } = useTelegram();
   const [navigationAttempted, setNavigationAttempted] = useState(false);
@@ -68,7 +71,7 @@ export function AccountAuthGate({ tenantSlug }: AccountAuthGateProps) {
 
   if (view === "redirect-home") {
     return (
-      <p className="pt-6 text-sm text-[color:var(--shop-ink-muted)]">Taking you back to the shop…</p>
+      <p className="pt-6 text-sm text-[color:var(--shop-ink-muted)]">{t("takingYouBack")}</p>
     );
   }
 
@@ -76,23 +79,29 @@ export function AccountAuthGate({ tenantSlug }: AccountAuthGateProps) {
     return (
       <div className="space-y-4 pt-6">
         <h1 className="font-[family-name:var(--font-shop-display)] text-2xl tracking-tight">
-          Couldn’t open Account
+          {t("couldNotOpenAccount")}
         </h1>
         <p className="text-sm text-[color:var(--shop-ink-muted)]">
-          Telegram did not keep your login in this Mini App. Try again — if it still fails, ask
-          the shop owner to confirm the Mini App URL in BotFather matches this shop.
+          Telegram did not keep your login in this Mini App, or the secure connection expired.{" "}
+          {t("tryAgain")} — reopen Account from the shop menu if it still fails. Confirm the Mini
+          App URL in BotFather matches this shop.
         </p>
         <button
           type="button"
           className={shop.btnPrimary}
           onClick={() => {
-            sessionStorage.removeItem(TELEGRAM_ACCOUNT_NAV_KEY);
+            try {
+              sessionStorage.removeItem(TELEGRAM_ACCOUNT_NAV_KEY);
+              sessionStorage.removeItem(TELEGRAM_ACCOUNT_ACCESS_STORAGE_KEY);
+            } catch {
+              // ignore
+            }
             startedRef.current = false;
             setNavigationAttempted(false);
             retryAuth();
           }}
         >
-          Try again
+          {t("tryAgain")}
         </button>
       </div>
     );
@@ -101,7 +110,7 @@ export function AccountAuthGate({ tenantSlug }: AccountAuthGateProps) {
   return (
     <div className="space-y-3 pt-6">
       <h1 className="font-[family-name:var(--font-shop-display)] text-2xl tracking-tight">
-        Connecting your Telegram account…
+        {t("connectingTelegram")}
       </h1>
       <p className="text-sm text-[color:var(--shop-ink-muted)]">
         This only takes a moment. Account stays private until your session is ready.

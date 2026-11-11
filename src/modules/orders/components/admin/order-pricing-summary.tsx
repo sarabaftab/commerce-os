@@ -17,10 +17,19 @@ export function OrderPricingSummary({ order }: OrderPricingSummaryProps) {
           <span className="text-muted-foreground">Subtotal</span>
           <span>{formatMoney(order.subtotalMinor, order.currency)}</span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Discount</span>
-          <span>{formatMoney(order.discountMinor, order.currency)}</span>
-        </div>
+        {order.discountMinor > 0 ? (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">
+              {order.promotionNameSnapshot?.trim() || "Discount"}
+            </span>
+            <span>−{formatMoney(order.discountMinor, order.currency)}</span>
+          </div>
+        ) : (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Discount</span>
+            <span>{formatMoney(0, order.currency)}</span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="text-muted-foreground">Delivery fee</span>
           <span>{formatMoney(order.deliveryFeeMinor, order.currency)}</span>

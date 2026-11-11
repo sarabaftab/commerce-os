@@ -131,6 +131,7 @@ describe("product form mediaUrl compatibility", () => {
       priceMajor: 10,
       currency: "USD",
       isAvailable: true,
+      isFeatured: false,
       sortOrder: 0,
       mediaUrl: "https://cdn.example/legacy.jpg",
     });

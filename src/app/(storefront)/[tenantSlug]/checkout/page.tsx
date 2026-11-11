@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import {
@@ -11,6 +10,7 @@ import { getCheckoutPreview } from "@/modules/orders";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { readGuestTokenFromCookies } from "@/shared/cart/cart-cookie";
 import { createTimer } from "@/shared/observability/timing";
+import { LocalizedCheckoutHeader } from "@/ui/storefront/localized-text";
 
 export const dynamic = "force-dynamic";
 
@@ -72,20 +72,7 @@ export default async function StorefrontCheckoutPage({ params }: CheckoutPagePro
 
   return (
     <div className="space-y-6 pt-4">
-      <div>
-        <Link
-          href={`${basePath}/cart`}
-          className="inline-flex text-sm font-medium text-[color:var(--shop-ink)] underline decoration-[color:var(--shop-primary)] underline-offset-4"
-        >
-          ← Back to cart
-        </Link>
-        <h1 className="mt-3 font-[family-name:var(--font-shop-display)] text-3xl tracking-tight">
-          Checkout
-        </h1>
-        <p className="mt-1 text-sm text-[color:var(--shop-ink-muted)]">
-          {preview.cart.itemCount} {preview.cart.itemCount === 1 ? "item" : "items"}
-        </p>
-      </div>
+      <LocalizedCheckoutHeader cartHref={`${basePath}/cart`} itemCount={preview.cart.itemCount} />
 
       {preview.checkoutBlockedReason ? (
         <p className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive">

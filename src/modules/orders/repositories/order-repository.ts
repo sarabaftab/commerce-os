@@ -25,16 +25,26 @@ export function toOrderConfirmation(
   order: OrderWithRelations,
   options?: { includeConfirmationToken?: boolean },
 ): OrderConfirmation {
-  const items: OrderLineView[] = order.items.map((item) => ({
-    id: item.id,
-    productId: item.productId,
-    name: item.nameSnapshot,
-    quantity: item.quantity,
-    unitPriceMinor: item.unitPriceMinor,
-    lineTotalMinor: item.lineTotalMinor,
-    volume: item.volumeSnapshot,
-    sellingUnit: item.sellingUnitSnapshot ?? "item",
-  }));
+  const items: OrderLineView[] = order.items.map((item) => {
+    const freeQuantity = item.freeQuantity ?? 0;
+    const isBuyOneGetOne =
+      item.promotionTypeSnapshot === "buy_one_get_one" || freeQuantity > 0;
+    return {
+      id: item.id,
+      productId: item.productId,
+      name: item.nameSnapshot,
+      quantity: item.quantity,
+      unitPriceMinor: item.unitPriceMinor,
+      lineTotalMinor: item.lineTotalMinor,
+      volume: item.volumeSnapshot,
+      sellingUnit: item.sellingUnitSnapshot ?? "item",
+      freeQuantity,
+      fulfillmentQuantity: item.fulfillmentQuantity ?? item.quantity,
+      promotionNameSnapshot: item.promotionNameSnapshot,
+      promotionTypeSnapshot: item.promotionTypeSnapshot,
+      isBuyOneGetOne,
+    };
+  });
 
   return {
     id: order.id,
@@ -47,12 +57,15 @@ export function toOrderConfirmation(
     discountMinor: order.discountMinor,
     totalMinor: order.totalMinor,
     promotionId: order.promotionId,
+    promotionNameSnapshot: order.promotionNameSnapshot,
     referralCode: order.referralCode,
     campaignId: order.campaignId,
     fulfillmentMethod: order.fulfillmentMethod,
     addressLine: order.addressLine,
     cityOrArea: order.cityOrArea,
     deliveryInstructions: order.deliveryInstructions,
+    deliveryLatitude: order.deliveryLatitude,
+    deliveryLongitude: order.deliveryLongitude,
     pickupLocationKey: order.pickupLocationKey,
     pickupLocationName: order.pickupLocationName,
     pickupLocationAddress: order.pickupLocationAddress,
@@ -149,6 +162,8 @@ export type CreateOrderRecordInput = {
   addressLabel?: string;
   sourceAddressId?: string;
   deliveryInstructions?: string;
+  deliveryLatitude?: number | null;
+  deliveryLongitude?: number | null;
   pickupLocationKey?: string;
   pickupLocationName?: string;
   pickupLocationAddress?: string;
@@ -160,8 +175,10 @@ export type CreateOrderRecordInput = {
   discountMinor: number;
   totalMinor: number;
   promotionId?: string;
+  promotionNameSnapshot?: string | null;
   referralCode?: string;
   campaignId?: string;
+  customerLocale?: string | null;
   items: {
     productId: string;
     nameSnapshot: string;
@@ -170,6 +187,11 @@ export type CreateOrderRecordInput = {
     unitPriceMinor: number;
     quantity: number;
     lineTotalMinor: number;
+    freeQuantity?: number;
+    fulfillmentQuantity?: number;
+    promotionIdSnapshot?: string | null;
+    promotionNameSnapshot?: string | null;
+    promotionTypeSnapshot?: string | null;
   }[];
   confirmationToken?: string;
 };
@@ -201,6 +223,8 @@ export async function createOrderRecordInTransaction(
       addressLabel: input.addressLabel ?? null,
       sourceAddressId: input.sourceAddressId ?? null,
       deliveryInstructions: input.deliveryInstructions ?? null,
+      deliveryLatitude: input.deliveryLatitude ?? null,
+      deliveryLongitude: input.deliveryLongitude ?? null,
       pickupLocationKey: input.pickupLocationKey ?? null,
       pickupLocationName: input.pickupLocationName ?? null,
       pickupLocationAddress: input.pickupLocationAddress ?? null,
@@ -214,8 +238,10 @@ export async function createOrderRecordInTransaction(
       totalMinor: input.totalMinor,
       channel: input.channel,
       promotionId: input.promotionId ?? null,
+      promotionNameSnapshot: input.promotionNameSnapshot ?? null,
       referralCode: input.referralCode ?? null,
       campaignId: input.campaignId ?? null,
+      customerLocale: input.customerLocale ?? null,
       idempotencyKey: input.idempotencyKey ?? null,
       confirmationToken: input.confirmationToken ?? createOrderConfirmationToken(),
       items: {
@@ -227,7 +253,12 @@ export async function createOrderRecordInTransaction(
           sellingUnitSnapshot: item.sellingUnitSnapshot ?? null,
           unitPriceMinor: item.unitPriceMinor,
           quantity: item.quantity,
+          freeQuantity: item.freeQuantity ?? 0,
+          fulfillmentQuantity: item.fulfillmentQuantity ?? item.quantity,
           lineTotalMinor: item.lineTotalMinor,
+          promotionIdSnapshot: item.promotionIdSnapshot ?? null,
+          promotionNameSnapshot: item.promotionNameSnapshot ?? null,
+          promotionTypeSnapshot: item.promotionTypeSnapshot ?? null,
         })),
       },
     },
