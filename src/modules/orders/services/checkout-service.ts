@@ -23,7 +23,7 @@ import {
 import {
   convertCartInTransaction,
   findOrderByConfirmationToken,
-  findOrderByIdempotencyKey,
+  findOrderRecordByIdempotencyKey,
   findOwnedOrderByOrderNumber,
   toOrderConfirmation,
 } from "../repositories/order-repository";
@@ -31,6 +31,7 @@ import type { CheckoutInput } from "../schemas/checkout";
 import type { CheckoutPreview, OrderConfirmation } from "../types";
 import type { CartIdentity } from "./cart-service";
 import { getCartSummary } from "./cart-service";
+import { assertCheckoutIdempotencyReplayAllowed } from "./checkout-idempotency";
 import { createOrderInTransaction } from "./order-service";
 
 type PlaceStorefrontOrderContext = {
@@ -241,8 +242,21 @@ export async function placeGuestOrder(
   context: PlaceStorefrontOrderContext,
   input: CheckoutInput,
 ): Promise<OrderConfirmation> {
-  const existing = await findOrderByIdempotencyKey(context.tenantId, input.idempotencyKey);
-  if (existing) {
+  const existingRecord = await findOrderRecordByIdempotencyKey(
+    context.tenantId,
+    input.idempotencyKey,
+  );
+  if (existingRecord) {
+    await assertCheckoutIdempotencyReplayAllowed(
+      {
+        tenantId: context.tenantId,
+        customerId: context.cartIdentity.customerId,
+        guestToken: context.cartIdentity.guestToken,
+      },
+      existingRecord,
+    );
+    // Idempotent replay: cookie was set on the original response.
+    const existing = toOrderConfirmation(existingRecord);
     await notifyOrderPlacedAfterCommit({
       tenantId: context.tenantId,
       orderId: existing.id,
@@ -379,8 +393,20 @@ export async function placeGuestOrder(
     return order;
   } catch (error) {
     if (isAppError(error) && error.code === "CONFLICT") {
-      const replay = await findOrderByIdempotencyKey(context.tenantId, input.idempotencyKey);
-      if (replay) {
+      const replayRecord = await findOrderRecordByIdempotencyKey(
+        context.tenantId,
+        input.idempotencyKey,
+      );
+      if (replayRecord) {
+        await assertCheckoutIdempotencyReplayAllowed(
+          {
+            tenantId: context.tenantId,
+            customerId: context.cartIdentity.customerId,
+            guestToken: context.cartIdentity.guestToken,
+          },
+          replayRecord,
+        );
+        const replay = toOrderConfirmation(replayRecord);
         await notifyOrderPlacedAfterCommit({
           tenantId: context.tenantId,
           orderId: replay.id,
@@ -392,8 +418,20 @@ export async function placeGuestOrder(
       error instanceof PrismaNamespace.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
-      const replay = await findOrderByIdempotencyKey(context.tenantId, input.idempotencyKey);
-      if (replay) {
+      const replayRecord = await findOrderRecordByIdempotencyKey(
+        context.tenantId,
+        input.idempotencyKey,
+      );
+      if (replayRecord) {
+        await assertCheckoutIdempotencyReplayAllowed(
+          {
+            tenantId: context.tenantId,
+            customerId: context.cartIdentity.customerId,
+            guestToken: context.cartIdentity.guestToken,
+          },
+          replayRecord,
+        );
+        const replay = toOrderConfirmation(replayRecord);
         await notifyOrderPlacedAfterCommit({
           tenantId: context.tenantId,
           orderId: replay.id,

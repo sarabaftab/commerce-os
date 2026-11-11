@@ -291,6 +291,19 @@ model CustomerSession {
   @@map("customer_sessions")
 }
 
+/// One-time Telegram WebView cookie handoff (AUD-003). Code in the URL; session token stays server-side.
+model TelegramSessionHandoff {
+  id           String    @id @default(cuid())
+  codeHash     String    @unique @map("code_hash")
+  sessionToken String    @map("session_token")
+  expiresAt    DateTime  @map("expires_at")
+  consumedAt   DateTime? @map("consumed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([expiresAt])
+  @@map("telegram_session_handoffs")
+}
+
 model Order {
   id                        String            @id @default(cuid())
   tenantId                  String            @map("tenant_id")
@@ -333,7 +346,7 @@ model Order {
   referralCode              String?           @map("referral_code")
   campaignId                String?           @map("campaign_id")
   idempotencyKey            String?           @map("idempotency_key")
-  /** Opaque capability token for guest confirmation access — never use orderNumber alone. */
+  /** SHA-256 hex of the guest confirmation secret — never store plaintext (AUD-006). */
   confirmationToken         String            @unique @map("confirmation_token")
   placedAt                  DateTime          @default(now()) @map("placed_at")
   createdAt                 DateTime          @default(now()) @map("created_at")

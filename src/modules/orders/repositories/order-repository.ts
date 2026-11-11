@@ -8,7 +8,10 @@ import {
 
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
-import { createOrderConfirmationToken } from "@/shared/orders/confirmation-cookie";
+import {
+  createOrderConfirmationToken,
+  hashOrderConfirmationToken,
+} from "@/shared/orders/confirmation-cookie";
 import { normalizePhoneToE164 } from "@/shared/phone/normalize-phone";
 
 import type { OrderConfirmation, OrderLineView } from "../types";
@@ -23,7 +26,13 @@ export type OrderWithRelations = Prisma.OrderGetPayload<{ include: typeof orderI
 
 export function toOrderConfirmation(
   order: OrderWithRelations,
-  options?: { includeConfirmationToken?: boolean },
+  options?: {
+    /**
+     * Plaintext token for Set-Cookie on create only.
+     * Never pass the DB column — it is a SHA-256 hash (AUD-006).
+     */
+    confirmationTokenPlaintext?: string;
+  },
 ): OrderConfirmation {
   const items: OrderLineView[] = order.items.map((item) => ({
     id: item.id,
@@ -61,8 +70,8 @@ export function toOrderConfirmation(
     paymentProofStatus: order.paymentProofStatus,
     paymentProofRejectionReason: order.paymentProofRejectionReason,
     placedAt: order.placedAt,
-    ...(options?.includeConfirmationToken
-      ? { confirmationToken: order.confirmationToken }
+    ...(options?.confirmationTokenPlaintext
+      ? { confirmationToken: options.confirmationTokenPlaintext }
       : {}),
     customer: {
       displayName: order.customer.displayName,
@@ -87,11 +96,19 @@ export async function findOrderByIdempotencyKey(
   tenantId: string,
   idempotencyKey: string,
 ): Promise<OrderConfirmation | null> {
-  const order = await prisma.order.findFirst({
+  const order = await findOrderRecordByIdempotencyKey(tenantId, idempotencyKey);
+  // Never expose the stored hash as a cookie token (AUD-006).
+  return order ? toOrderConfirmation(order) : null;
+}
+
+export async function findOrderRecordByIdempotencyKey(
+  tenantId: string,
+  idempotencyKey: string,
+): Promise<OrderWithRelations | null> {
+  return prisma.order.findFirst({
     where: { tenantId, idempotencyKey },
     include: orderInclude,
   });
-  return order ? toOrderConfirmation(order, { includeConfirmationToken: true }) : null;
 }
 
 export async function findOrderByOrderNumber(
@@ -113,7 +130,7 @@ export async function findOrderByConfirmationToken(
     where: {
       tenantId,
       orderNumber,
-      confirmationToken,
+      confirmationToken: hashOrderConfirmationToken(confirmationToken),
     },
     include: orderInclude,
   });
@@ -181,8 +198,10 @@ export type CreateOrderRecordInput = {
 export async function createOrderRecordInTransaction(
   tx: Prisma.TransactionClient,
   input: CreateOrderRecordInput,
-): Promise<OrderWithRelations> {
-  return tx.order.create({
+): Promise<{ order: OrderWithRelations; confirmationToken: string }> {
+  const confirmationToken =
+    input.confirmationToken ?? createOrderConfirmationToken();
+  const order = await tx.order.create({
     data: {
       tenantId: input.tenantId,
       customerId: input.customerId,
@@ -217,7 +236,7 @@ export async function createOrderRecordInTransaction(
       referralCode: input.referralCode ?? null,
       campaignId: input.campaignId ?? null,
       idempotencyKey: input.idempotencyKey ?? null,
-      confirmationToken: input.confirmationToken ?? createOrderConfirmationToken(),
+      confirmationToken: hashOrderConfirmationToken(confirmationToken),
       items: {
         create: input.items.map((item) => ({
           tenantId: input.tenantId,
@@ -233,6 +252,7 @@ export async function createOrderRecordInTransaction(
     },
     include: orderInclude,
   });
+  return { order, confirmationToken };
 }
 
 export function formatOrderNumber(tenantSlug: string, sequence: number): string {
@@ -299,7 +319,9 @@ export async function convertCartInTransaction(
     data: {
       status: "converted",
       customerId,
-      guestToken: null,
+      // Keep guestToken so idempotent replay can prove the same browser/cart
+      // placed the order (AUD-007). Unique(tenantId, guestToken) still forces
+      // a rotated token when the shopper starts a new open cart.
     },
   });
 

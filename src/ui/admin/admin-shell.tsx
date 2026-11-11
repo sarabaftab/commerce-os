@@ -43,7 +43,7 @@ export function AdminShell({ session, children }: AdminShellProps) {
           </div>
 
           <div className="flex-1 overflow-y-auto px-1">
-            <AdminNav />
+            <AdminNav role={session.role} />
           </div>
 
           <div className="mt-4 space-y-3 border-t border-[color:var(--admin-line)] px-2 pt-4">
@@ -75,7 +75,7 @@ export function AdminShell({ session, children }: AdminShellProps) {
               <AdminSignOutButton compact />
             </div>
             <div className="px-3 pb-3">
-              <AdminNav orientation="horizontal" />
+              <AdminNav orientation="horizontal" role={session.role} />
             </div>
           </header>
 

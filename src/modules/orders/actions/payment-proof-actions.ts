@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 
 import { getOptionalCustomerSession } from "@/modules/customers";
 import { getTenantBySlug } from "@/modules/identity";
-import { requireAdminSession } from "@/shared/auth/admin-session";
+import {
+  ADMIN_MANAGER_ROLES,
+  assertAdminRole,
+  requireAdminSession,
+} from "@/shared/auth/admin-session";
 import { isAppError } from "@/shared/errors/app-error";
 import { readOrderConfirmationCookie } from "@/shared/orders/confirmation-cookie";
 import { PAYMENT_PROOF_MAX_BYTES } from "@/shared/storage/payment-proof-constants";
@@ -76,12 +80,13 @@ export async function verifyPaymentProofAction(
   _prev: PaymentProofActionState,
   formData: FormData,
 ): Promise<PaymentProofActionState> {
-  const session = await requireAdminSession();
   const orderId = String(formData.get("orderId") ?? "");
   if (!orderId) {
     return { error: "Order is required" };
   }
   try {
+    const session = await requireAdminSession();
+    assertAdminRole(session, ADMIN_MANAGER_ROLES);
     await verifyOrderPaymentProof({ tenantId: session.tenantId, orderId });
   } catch (error) {
     return {
@@ -97,13 +102,14 @@ export async function rejectPaymentProofAction(
   _prev: PaymentProofActionState,
   formData: FormData,
 ): Promise<PaymentProofActionState> {
-  const session = await requireAdminSession();
   const orderId = String(formData.get("orderId") ?? "");
   const reason = String(formData.get("reason") ?? "");
   if (!orderId) {
     return { error: "Order is required" };
   }
   try {
+    const session = await requireAdminSession();
+    assertAdminRole(session, ADMIN_MANAGER_ROLES);
     await rejectOrderPaymentProof({
       tenantId: session.tenantId,
       orderId,

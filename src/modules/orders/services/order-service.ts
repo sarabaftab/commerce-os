@@ -133,13 +133,14 @@ export async function createOrderInTransaction(
       include: orderInclude,
     });
     if (replay) {
-      return toOrderConfirmation(replay, { includeConfirmationToken: true });
+      // Cookie already set on the first response — do not re-emit the DB hash.
+      return toOrderConfirmation(replay);
     }
   }
 
   const orderNumber = await allocateOrderNumber(tx, command.tenantId, command.tenantSlug);
 
-  const record = await createOrderRecordInTransaction(tx, {
+  const { order: record, confirmationToken } = await createOrderRecordInTransaction(tx, {
     tenantId: command.tenantId,
     customerId: command.customerId,
     orderNumber,
@@ -185,7 +186,9 @@ export async function createOrderInTransaction(
     orderId: record.id,
   });
 
-  return toOrderConfirmation(record, { includeConfirmationToken: true });
+  return toOrderConfirmation(record, {
+    confirmationTokenPlaintext: confirmationToken,
+  });
 }
 
 /**

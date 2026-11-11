@@ -66,12 +66,18 @@ export async function handleTelegramSessionFormPost(request: Request, tenantSlug
       });
     }
 
-    const url = new URL(nextPath, request.url);
-    url.searchParams.set(
-      TELEGRAM_SESSION_HANDOFF_QUERY,
-      await createTelegramSessionHandoff(token),
+    // AUD-003: put a one-time code in the URL, never the session token.
+    // Cookie is still set on this response for WebViews that accept it;
+    // the handoff route covers clients that drop the first Set-Cookie.
+    const code = await createTelegramSessionHandoff(token);
+    const handoffUrl = new URL(
+      `/api/v1/${tenant.slug}/telegram/session-handoff`,
+      request.url,
     );
-    const response = htmlToAccount(`${url.pathname}${url.search}`);
+    handoffUrl.searchParams.set(TELEGRAM_SESSION_HANDOFF_QUERY, code);
+    handoffUrl.searchParams.set("next", nextPath);
+
+    const response = htmlToAccount(`${handoffUrl.pathname}${handoffUrl.search}`);
     attachCustomerSessionCookie(response, token);
     if (startParam) {
       attachAttributionCookie(response, startParam);

@@ -1,0 +1,50 @@
+# AUD-012: run the existing quality gates before merge.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Test / typecheck / lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      # Prisma generate/validate need a URL shape only — CI does not open a real DB.
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/commerce_os_ci?schema=public
+      DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/commerce_os_ci?schema=public
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma validate
+        run: npx prisma validate
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: ESLint
+        run: npx eslint . --max-warnings 0

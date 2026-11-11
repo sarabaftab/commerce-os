@@ -106,15 +106,17 @@ export async function upsertCustomerByPhone(
 
   let customer;
   if (existing) {
-    customer = await tx.customer.update({
-      where: { id: existing.id },
-      data: {
-        displayName: input.displayName,
-        phone: input.phone,
-        ...(e164 ? { phoneNormalized: e164 } : {}),
-        ...(input.email && !existing.email ? { email: input.email } : {}),
-      },
-    });
+    // Guest checkout must not rewrite another customer's profile (AUD-002).
+    // Keep displayName/email/phone as stored; only backfill phoneNormalized
+    // when missing so future phone lookups stay stable.
+    if (!existing.phoneNormalized && e164) {
+      customer = await tx.customer.update({
+        where: { id: existing.id },
+        data: { phoneNormalized: e164 },
+      });
+    } else {
+      customer = existing;
+    }
   } else {
     customer = await tx.customer.create({
       data: {

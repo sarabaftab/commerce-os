@@ -13,6 +13,12 @@ import { readGuestTokenFromRequest } from "@/shared/cart/cart-cookie";
 import { resolveTenantFromSlug } from "@/shared/cart/cart-request";
 import { AppError } from "@/shared/errors/app-error";
 import { jsonError, jsonOk } from "@/shared/http/json";
+import {
+  assertRateLimit,
+  getClientIp,
+  RATE_LIMITS,
+  telegramUserIdFromInitData,
+} from "@/shared/http/rate-limit";
 
 type RouteContext = {
   params: Promise<{ tenantSlug: string }>;
@@ -34,6 +40,12 @@ export async function POST(request: Request, context: RouteContext) {
         parsed.error.issues[0]?.message ?? "Invalid body",
       );
     }
+
+    const telegramUserId = telegramUserIdFromInitData(parsed.data.initData);
+    assertRateLimit(
+      `telegram-auth:${tenantSlug}:${telegramUserId ?? getClientIp(request)}`,
+      RATE_LIMITS.telegramAuth,
+    );
 
     const existingSession = await readCustomerSessionFromRequest(tenant.id, request);
 

@@ -1,0 +1,20 @@
+
+> commerce-os@0.1.0 perf:baseline
+> tsx scripts/perf-baseline.ts
+
+◇ injected env (18) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+◇ injected env (18) from .env.local // tip: ⌁ auth for agents [www.vestauth.com]
+Performance baseline · tenant=kin-a2
+HTTP skipped (set PERF_BASE_URL to measure TTFB against a running server)
+
+Results (ms):
+┌─────────┬──────────────────────────────┬─────┬─────┬──────┐
+│ (index) │ label                        │ p50 │ min │ max  │
+├─────────┼──────────────────────────────┼─────┼─────┼──────┤
+│ 0       │ 'db.homepage_catalog'        │ 549 │ 521 │ 2167 │
+│ 1       │ 'db.products_list'           │ 525 │ 524 │ 732  │
+│ 2       │ 'db.product_detail'          │ 524 │ 521 │ 1049 │
+│ 3       │ 'db.open_cart_lean'          │ 529 │ 518 │ 1047 │
+│ 4       │ 'db.admin_product_list_lean' │ 526 │ 302 │ 1050 │
+│ 5       │ 'db.admin_dashboard_counts'  │ 372 │ 296 │ 1794 │
+└─────────┴──────────────────────────────┴─────┴─────┴──────┘

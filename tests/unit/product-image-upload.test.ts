@@ -123,7 +123,7 @@ describe("uploadProductImageAction", () => {
 });
 
 describe("product form mediaUrl compatibility", () => {
-  it("still accepts an existing HTTPS media URL", () => {
+  it("accepts an existing Supabase HTTPS media URL", () => {
     const parsed = productFormSchema.safeParse({
       name: "Serum",
       slug: "serum",
@@ -132,11 +132,13 @@ describe("product form mediaUrl compatibility", () => {
       currency: "USD",
       isAvailable: true,
       sortOrder: 0,
-      mediaUrl: "https://cdn.example/legacy.jpg",
+      mediaUrl: "https://abc.supabase.co/storage/v1/object/public/tenant-assets/x.jpg",
     });
     expect(parsed.success).toBe(true);
     if (parsed.success) {
-      expect(parsed.data.mediaUrl).toBe("https://cdn.example/legacy.jpg");
+      expect(parsed.data.mediaUrl).toBe(
+        "https://abc.supabase.co/storage/v1/object/public/tenant-assets/x.jpg",
+      );
     }
   });
 });

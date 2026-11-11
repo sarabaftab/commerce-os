@@ -1,0 +1,38 @@
+-- AUD-001: Close the Supabase Data API door on app tables.
+-- Prisma uses the database role (bypasses RLS). Do not FORCE RLS.
+-- anon / authenticated get no table privileges and no policies.
+
+REVOKE ALL ON SCHEMA public FROM anon, authenticated;
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
+REVOKE ALL ON ALL ROUTINES IN SCHEMA public FROM anon, authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  REVOKE ALL ON TABLES FROM anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  REVOKE ALL ON SEQUENCES FROM anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  REVOKE ALL ON ROUTINES FROM anon, authenticated;
+
+ALTER TABLE "tenants" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "users" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "user_tenant_memberships" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "categories" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "products" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "product_media" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "customers" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "customer_addresses" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "customer_identities" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "customer_sessions" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "telegram_session_handoffs" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "orders" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "order_items" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "order_status_history" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "customer_notifications" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "carts" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "cart_items" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "tenant_settings" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "pickup_locations" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "faqs" ENABLE ROW LEVEL SECURITY;

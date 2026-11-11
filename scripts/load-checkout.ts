@@ -110,15 +110,12 @@ async function main() {
   const { PrismaClient } = await import("@prisma/client");
   const prisma = new PrismaClient();
 
-  const checkoutMod = await import(
-    "../src/modules/orders/services/checkout-service.ts"
+  const { placeGuestOrder } = await import(
+    "../src/modules/orders/services/checkout-service"
   );
-  const placeGuestOrder =
-    checkoutMod.placeGuestOrder ?? checkoutMod.default?.placeGuestOrder;
-  if (typeof placeGuestOrder !== "function") {
-    console.error("Could not import placeGuestOrder");
-    process.exit(1);
-  }
+  const { checkoutInputSchema } = await import(
+    "../src/modules/orders/schemas/checkout"
+  );
 
   const tenant = await prisma.tenant.findFirst({
     where: { slug: TENANT, isActive: true },
@@ -191,6 +188,17 @@ async function main() {
   async function oneCheckout(prepared: Prepared): Promise<{ ok: boolean; ms: number; err?: string }> {
     const t0 = performance.now();
     try {
+      const checkoutInput = checkoutInputSchema.parse({
+        idempotencyKey: randomUUID(),
+        displayName: `${TAG}-${prepared.index}`,
+        phone: prepared.phone,
+        fulfillmentMethod: "pickup",
+        pickupLocationKey: pickup!.id,
+        paymentMethod: "cod",
+        addressMode: "new",
+        saveAddress: false,
+        setAddressAsDefault: false,
+      });
       await placeGuestOrder(
         {
           tenantId: tenant!.id,
@@ -200,17 +208,7 @@ async function main() {
           channel: "web",
           referralCode: TAG,
         },
-        {
-          idempotencyKey: randomUUID(),
-          displayName: `${TAG}-${prepared.index}`,
-          phone: prepared.phone,
-          fulfillmentMethod: "pickup",
-          pickupLocationKey: pickup!.id,
-          paymentMethod: "cod",
-          addressMode: "new",
-          saveAddress: false,
-          setAddressAsDefault: false,
-        },
+        checkoutInput,
       );
       return { ok: true, ms: performance.now() - t0 };
     } catch (error) {

@@ -11,7 +11,10 @@ import { OrderPricingSummary } from "@/modules/orders/components/admin/order-pri
 import { OrderStatusForm } from "@/modules/orders/components/admin/order-status-form";
 import { OrderStatusTimeline } from "@/modules/orders/components/admin/order-status-timeline";
 import { getOrderDetailForAdmin } from "@/modules/orders/services/order-admin-service";
-import { requireAdminSession } from "@/shared/auth/admin-session";
+import {
+  isAdminManagerRole,
+  requireAdminSession,
+} from "@/shared/auth/admin-session";
 import { isAppError } from "@/shared/errors/app-error";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/components/ui/card";
 
@@ -49,7 +52,10 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
           <div className="grid gap-4 md:grid-cols-3">
             <OrderCustomerPanel order={order} />
             <OrderFulfillmentPanel order={order} />
-            <OrderPaymentPanel order={order} />
+            <OrderPaymentPanel
+              order={order}
+              canReviewPayment={isAdminManagerRole(session.role)}
+            />
           </div>
 
           <div className="space-y-2">

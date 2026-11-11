@@ -75,6 +75,31 @@ function serviceClient(): SupabaseClient {
   });
 }
 
+/** AUD-011: never expose payment proofs via a public Storage URL. */
+export async function ensurePrivatePaymentProofBucket(
+  supabase: SupabaseClient = serviceClient(),
+): Promise<void> {
+  const { data } = await supabase.storage.getBucket(PAYMENT_PROOF_BUCKET);
+  if (data) {
+    if (data.public) {
+      const { error } = await supabase.storage.updateBucket(PAYMENT_PROOF_BUCKET, {
+        public: false,
+      });
+      if (error) {
+        throw new AppError("INTERNAL", "Could not lock down payment proof storage");
+      }
+    }
+    return;
+  }
+  const { error } = await supabase.storage.createBucket(PAYMENT_PROOF_BUCKET, {
+    public: false,
+    fileSizeLimit: PAYMENT_PROOF_MAX_BYTES,
+  });
+  if (error && !/already exists/i.test(error.message)) {
+    throw new AppError("INTERNAL", "Could not initialize payment proof storage");
+  }
+}
+
 export async function uploadPaymentProofObject(input: {
   tenantId: string;
   orderId: string;
@@ -83,6 +108,7 @@ export async function uploadPaymentProofObject(input: {
   const { mime, ext } = validatePaymentProofBytes(input.bytes);
   const path = buildPaymentProofObjectPath(input.tenantId, input.orderId, ext);
   const supabase = serviceClient();
+  await ensurePrivatePaymentProofBucket(supabase);
   const { error } = await supabase.storage.from(PAYMENT_PROOF_BUCKET).upload(path, input.bytes, {
     contentType: mime,
     upsert: false,
@@ -113,6 +139,7 @@ export async function downloadPaymentProofObject(path: string): Promise<{
   contentType: string | null;
 }> {
   const supabase = serviceClient();
+  await ensurePrivatePaymentProofBucket(supabase);
   const { data, error } = await supabase.storage.from(PAYMENT_PROOF_BUCKET).download(path);
   if (error || !data) {
     throw new AppError("INTERNAL", "Could not retrieve the transfer screenshot");

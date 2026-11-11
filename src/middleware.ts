@@ -1,47 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-import {
-  readTelegramSessionHandoff,
-  TELEGRAM_SESSION_HANDOFF_QUERY,
-} from "@/channels/telegram/server/session-handoff";
 import { updateSession } from "@/shared/auth/supabase/middleware";
 
-const CUSTOMER_SESSION_COOKIE = "commerceos_customer";
-
-async function applyHandoffCookie(request: NextRequest): Promise<NextResponse | null> {
-  const { pathname, searchParams } = request.nextUrl;
-  if (!pathname.includes("/account")) {
-    return null;
-  }
-  const raw = searchParams.get(TELEGRAM_SESSION_HANDOFF_QUERY);
-  if (!raw) {
-    return null;
-  }
-  const sessionToken = await readTelegramSessionHandoff(raw);
-  const url = request.nextUrl.clone();
-  url.searchParams.delete(TELEGRAM_SESSION_HANDOFF_QUERY);
-  const response = NextResponse.redirect(url);
-  if (sessionToken) {
-    const crossSite = process.env.TELEGRAM_FORCE_SECURE_COOKIES === "1";
-    const isProd = process.env.NODE_ENV === "production";
-    response.cookies.set(CUSTOMER_SESSION_COOKIE, sessionToken, {
-      httpOnly: true,
-      path: "/",
-      sameSite: crossSite ? "none" : "lax",
-      secure: crossSite || isProd,
-      maxAge: 60 * 60 * 24 * 30,
-    });
-  }
-  return response;
-}
-
 export async function middleware(request: NextRequest) {
-  const handoffResponse = await applyHandoffCookie(request);
-  if (handoffResponse) {
-    return handoffResponse;
-  }
-
+  // AUD-003: Telegram session handoff no longer runs in Edge middleware
+  // (one-time codes are exchanged via /api/v1/.../telegram/session-handoff).
   const { pathname } = request.nextUrl;
 
   const isAdminApiRoute = pathname.startsWith("/api/admin");

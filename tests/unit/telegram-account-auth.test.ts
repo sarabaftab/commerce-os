@@ -2,10 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { customerSessionCookiePolicy } from "@/channels/telegram/server/customer-session";
 import { decodeTelegramInitDataField } from "@/channels/telegram/server/session-form";
-import {
-  createTelegramSessionHandoff,
-  readTelegramSessionHandoff,
-} from "@/channels/telegram/server/session-handoff";
 import { safeTelegramAccountPath } from "@/channels/telegram/server/account-session-path";
 import { waitForTelegramInitData } from "@/channels/telegram/client/wait-for-init-data";
 import {
@@ -170,14 +166,5 @@ describe("decodeTelegramInitDataField", () => {
     const form = new FormData();
     form.set("initDataB64", Buffer.from(raw, "utf8").toString("base64"));
     expect(decodeTelegramInitDataField(form)).toBe(raw);
-  });
-});
-
-describe("telegram session handoff", () => {
-  it("accepts a fresh signed session token and rejects a tampered one", async () => {
-    const token = "session-token-example";
-    const handoff = await createTelegramSessionHandoff(token);
-    await expect(readTelegramSessionHandoff(handoff)).resolves.toBe(token);
-    await expect(readTelegramSessionHandoff(`${handoff}x`)).resolves.toBeNull();
   });
 });
