@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import { isOptimizableMediaSrc } from "@/shared/media/allowed-media-url";
 import { cn } from "@/ui/lib/utils";
 
 type ProductImageProps = {
@@ -14,13 +15,9 @@ type ProductImageProps = {
   height?: number;
 };
 
-function isOptimizableSrc(src: string) {
-  return src.startsWith("/") || src.startsWith("http://") || src.startsWith("https://");
-}
-
 /**
- * Storefront product image with next/image when the URL is optimizable.
- * Falls back to a plain img for unusual schemes so existing URLs never break.
+ * Storefront product image with next/image when the URL is on an allowed host.
+ * Falls back to a plain img for unusual/legacy schemes (AUD-009).
  */
 export function ProductImage({
   src,
@@ -32,7 +29,7 @@ export function ProductImage({
   width,
   height,
 }: ProductImageProps) {
-  if (!isOptimizableSrc(src)) {
+  if (!isOptimizableMediaSrc(src)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img src={src} alt={alt} className={cn("object-contain", className)} loading="lazy" />

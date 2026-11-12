@@ -2,7 +2,10 @@ import Link from "next/link";
 
 import { SettingsSectionForm } from "@/modules/settings/components/settings-section-form";
 import { getSettingsForAdmin } from "@/modules/settings";
-import { requireAdminSession } from "@/shared/auth/admin-session";
+import {
+  ADMIN_MANAGER_ROLES,
+  requireAdminSessionWithRoles,
+} from "@/shared/auth/admin-session";
 import { AdminPageHeader } from "@/ui/admin/admin-page-header";
 import { cn } from "@/ui/lib/utils";
 
@@ -18,7 +21,7 @@ type SettingsPageProps = {
 };
 
 export default async function AdminSettingsPage({ searchParams }: SettingsPageProps) {
-  const session = await requireAdminSession();
+  const session = await requireAdminSessionWithRoles(ADMIN_MANAGER_ROLES);
   const { tab: rawTab } = await searchParams;
   const tab = tabs.some((t) => t.id === rawTab) ? (rawTab as (typeof tabs)[number]["id"]) : "general";
   const bundle = await getSettingsForAdmin(session.tenantId);

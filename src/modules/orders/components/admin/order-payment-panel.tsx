@@ -17,6 +17,8 @@ import { cn } from "@/ui/lib/utils";
 
 type OrderPaymentPanelProps = {
   order: AdminOrderDetail;
+  /** owner/admin may verify or reject ABA proofs; staff can only view (AUD-010). */
+  canReviewPayment?: boolean;
 };
 
 function formatPayment(method: AdminOrderDetail["paymentMethod"]) {
@@ -25,7 +27,10 @@ function formatPayment(method: AdminOrderDetail["paymentMethod"]) {
 
 const initial: PaymentProofActionState = {};
 
-export function OrderPaymentPanel({ order }: OrderPaymentPanelProps) {
+export function OrderPaymentPanel({
+  order,
+  canReviewPayment = false,
+}: OrderPaymentPanelProps) {
   const [verifyState, verifyAction, verifyPending] = useActionState(
     verifyPaymentProofAction,
     initial,
@@ -41,7 +46,8 @@ export function OrderPaymentPanel({ order }: OrderPaymentPanelProps) {
     : rejectState.success
       ? "rejected"
       : order.paymentProofStatus;
-  const canReview = isAba && effectiveStatus === "submitted";
+  const canReview =
+    canReviewPayment && isAba && effectiveStatus === "submitted";
   const hasProof =
     isAba &&
     (effectiveStatus === "submitted" ||

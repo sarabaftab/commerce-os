@@ -1,0 +1,25 @@
+
+> commerce-os@0.1.0 perf:baseline
+> tsx scripts/perf-baseline.ts
+
+◇ injected env (18) from .env // tip: ⌘ override existing { override: true }
+◇ injected env (18) from .env.local // tip: ⌘ suppress logs { quiet: true }
+Performance baseline · tenant=kin-a2
+HTTP base: http://localhost:3000
+
+Results (ms):
+┌─────────┬──────────────────────────────┬──────┬──────┬──────┐
+│ (index) │ label                        │ p50  │ min  │ max  │
+├─────────┼──────────────────────────────┼──────┼──────┼──────┤
+│ 0       │ 'db.homepage_catalog'        │ 1722 │ 563  │ 5557 │
+│ 1       │ 'db.products_list'           │ 1285 │ 1048 │ 1666 │
+│ 2       │ 'db.product_detail'          │ 863  │ 849  │ 1346 │
+│ 3       │ 'db.open_cart_lean'          │ 149  │ 148  │ 908  │
+│ 4       │ 'db.admin_product_list_lean' │ 950  │ 297  │ 1031 │
+│ 5       │ 'db.admin_dashboard_counts'  │ 646  │ 289  │ 4054 │
+│ 6       │ 'http/kin-a2'                │ 163  │ 153  │ 5130 │
+│ 7       │ 'http/kin-a2/products'       │ 208  │ 174  │ 240  │
+│ 8       │ 'http/kin-a2/cart'           │ 159  │ 155  │ 5914 │
+│ 9       │ 'http/kin-a2/checkout'       │ 110  │ 83   │ 1501 │
+│ 10      │ 'http/admin'                 │ 4    │ 3    │ 72   │
+└─────────┴──────────────────────────────┴──────┴──────┴──────┘

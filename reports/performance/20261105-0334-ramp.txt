@@ -1,0 +1,24 @@
+
+> commerce-os@0.1.0 load:ramp
+> tsx scripts/load-ramp.ts
+
+Load ramp · env=staging · base=http://localhost:3000 · tenant=kin-a2
+Levels=1,5,10,20 · duration/level=8000ms
+Paths: /kin-a2, /kin-a2/products, /kin-a2/cart, /api/v1/health
+
+Running 1 VU… req=24 ok=24 fail=0 p50=230ms p95=1231ms rps=3
+Running 5 VU… req=75 ok=75 fail=0 p50=415ms p95=1244ms rps=9.1
+Running 10 VU… req=90 ok=90 fail=0 p50=888ms p95=1478ms rps=11.2
+Running 20 VU… req=56 ok=56 fail=0 p50=3642ms p95=4357ms rps=6.2
+
+Summary:
+┌─────────┬────┬──────────┬────┬──────┬──────┬──────┬──────┬──────┐
+│ (index) │ vu │ requests │ ok │ fail │ p50  │ p95  │ max  │ rps  │
+├─────────┼────┼──────────┼────┼──────┼──────┼──────┼──────┼──────┤
+│ 0       │ 1  │ 24       │ 24 │ 0    │ 230  │ 1231 │ 1312 │ 3    │
+│ 1       │ 5  │ 75       │ 75 │ 0    │ 415  │ 1244 │ 1249 │ 9.1  │
+│ 2       │ 10 │ 90       │ 90 │ 0    │ 888  │ 1478 │ 1499 │ 11.2 │
+│ 3       │ 20 │ 56       │ 56 │ 0    │ 3642 │ 4357 │ 4358 │ 6.2  │
+└─────────┴────┴──────────┴────┴──────┴──────┴──────┴──────┴──────┘
+
+No level exceeded 5% failures. Raise LOAD_LEVELS or duration for a harder test.

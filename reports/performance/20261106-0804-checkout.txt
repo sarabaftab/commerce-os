@@ -1,0 +1,514 @@
+
+> commerce-os@0.1.0 load:checkout
+> tsx scripts/load-checkout.ts
+
+◇ injected env (18) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (18) from .env.local // tip: ⌘ suppress logs { quiet: true }
+Checkout load · env=staging · tenant=kin-a2
+DB host=aws-0-ap-northeast-1.pooler.supabase.com · client_pool=15
+Product=KIN A2 Fresh Milk 1L · pickup=kin-showroom
+Serial=5 · levels=1,3,5,8,10
+
+Preparing 5 carts for serial hold-time…
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4owco9000p9tqkd5hqyazy',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4owco9000p9tqkd5hqyazy',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4owhxm00119tqkamoxj5px',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4owhxm00119tqkamoxj5px',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4owlsm001d9tqk5c7eo1oj',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4owlsm001d9tqk5c7eo1oj',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4owpjt001p9tqkm3t5er09',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4owpjt001p9tqkm3t5er09',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4owtb500219tqkq1ah7lpt',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4owtb500219tqkq1ah7lpt',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+Serial hold-time (placeGuestOrder wall ms): p50=4880 p95=10447 max=10447 mean=6013 ok=5 fail=0
+Idealized checkouts/sec ≈ pool(15) / hold_p50(4.88s) = 3.1/s (hypothesis, not measured concurrency)
+
+Parallel 1… [notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4owxuc002h9tqklulxkhhy',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4owxuc002h9tqklulxkhhy',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+ok=1 fail=0 p50=5014ms p95=5014ms wall=5014ms rps=0.2
+Parallel 3… [notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4ox39o00359tqkmfagf4c8',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4ox39o00359tqkmfagf4c8',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4ox5u3003l9tqkfddzuqmo',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4ox5u3003l9tqkfddzuqmo',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4ox7xc003t9tqk6qaxmw0z',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4ox7xc003t9tqk6qaxmw0z',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+ok=3 fail=0 p50=10009ms p95=12741ms wall=12741ms rps=0.2
+Parallel 5… [notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxg09004x9tqkcoytd6lt',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxg09004x9tqkcoytd6lt',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxh0200559tqk3q07ewc8',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxh0200559tqk3q07ewc8',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxi07005l9tqkwf2dsef8',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxi07005l9tqkwf2dsef8',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxj4s005t9tqkjmrw3cwh',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxj4s005t9tqkjmrw3cwh',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxl8i00619tqkri12cc93',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxl8i00619tqkri12cc93',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+ok=5 fail=0 p50=7514ms p95=13551ms wall=13552ms rps=0.4
+Parallel 8… [notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxuze007p9tqkmbbeddxf',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxuze007p9tqkmbbeddxf',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxvz7007x9tqkrpxqjjc7',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxvz7007x9tqkrpxqjjc7',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxwzp008h9tqk92gplmxu',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxwzp008h9tqk92gplmxu',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxy1p008p9tqkycgprkcw',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxy1p008p9tqkycgprkcw',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxz1o008x9tqkdrnuz621',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oxz1o008x9tqkdrnuz621',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oy06f00959tqklnz0d2ho',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oy06f00959tqklnz0d2ho',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oy2ak009d9tqk9520xi34',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oy2ak009d9tqk9520xi34',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oy4go009l9tqkb50ipdut',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oy4go009l9tqkb50ipdut',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+ok=8 fail=0 p50=8855ms p95=19317ms wall=19318ms rps=0.4
+Parallel 10… [notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oyfjw00bt9tqkqt0i5oel',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oyfjw00bt9tqkqt0i5oel',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oygml00c19tqkzwbuorqy',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oygml00c19tqkzwbuorqy',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oyhni00ch9tqk2lb8ab56',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oyhni00ch9tqk2lb8ab56',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oyio800cp9tqkdpbet343',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oyio800cp9tqkdpbet343',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oyjo400cx9tqkto6uh3b7',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oyjo400cx9tqkto6uh3b7',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oykru00d59tqkgdv5o41w',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oykru00d59tqkgdv5o41w',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oymrk00dd9tqkds3h190w',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oymrk00dd9tqkds3h190w',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oynwj00dl9tqkeu0cf0lo',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oynwj00dl9tqkeu0cf0lo',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oypy700dt9tqksr3rsifj',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oypy700dt9tqksr3rsifj',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oyqyh00e19tqkxnpsuvbv',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw4oyqyh00e19tqkxnpsuvbv',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+ok=10 fail=0 p50=10237ms p95=19836ms wall=19838ms rps=0.5
+
+Parallel summary:
+┌─────────┬────┬────┬──────┬───────┬───────┬───────┬────────┬─────┐
+│ (index) │ vu │ ok │ fail │ p50   │ p95   │ max   │ wallMs │ rps │
+├─────────┼────┼────┼──────┼───────┼───────┼───────┼────────┼─────┤
+│ 0       │ 1  │ 1  │ 0    │ 5014  │ 5014  │ 5014  │ 5014   │ 0.2 │
+│ 1       │ 3  │ 3  │ 0    │ 10009 │ 12741 │ 12741 │ 12741  │ 0.2 │
+│ 2       │ 5  │ 5  │ 0    │ 7514  │ 13551 │ 13551 │ 13552  │ 0.4 │
+│ 3       │ 8  │ 8  │ 0    │ 8855  │ 19317 │ 19317 │ 19318  │ 0.4 │
+│ 4       │ 10 │ 10 │ 0    │ 10237 │ 19836 │ 19836 │ 19838  │ 0.5 │
+└─────────┴────┴────┴──────┴───────┴───────┴───────┴────────┴─────┘
+
+Cleaning LOADTEST orders…
+Removed 32 tagged orders (and related rows).

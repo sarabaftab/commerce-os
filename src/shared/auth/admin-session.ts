@@ -1,3 +1,4 @@
+import type { MembershipRole } from "@prisma/client";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 
@@ -6,6 +7,17 @@ import { AppError } from "@/shared/errors/app-error";
 import { createTimer, timeAsync } from "@/shared/observability/timing";
 
 import { createSupabaseServerClient } from "./supabase/server";
+
+export { ADMIN_MANAGER_ROLES, isAdminManagerRole } from "./admin-roles";
+
+export function assertAdminRole(
+  session: AdminSession,
+  allowed: readonly MembershipRole[],
+): void {
+  if (!allowed.includes(session.role)) {
+    throw new AppError("FORBIDDEN", "You do not have permission for this action");
+  }
+}
 
 /** Cached per request — Auth getUser is relatively expensive over the network. */
 export const getAuthUser = cache(async () => {
@@ -66,5 +78,16 @@ export async function requireAdminSession(): Promise<AdminSession> {
     redirect("/admin/login");
   }
 
+  return session;
+}
+
+/** Page-level gate: signed-in staff without the role are sent to the dashboard. */
+export async function requireAdminSessionWithRoles(
+  allowed: readonly MembershipRole[],
+): Promise<AdminSession> {
+  const session = await requireAdminSession();
+  if (!allowed.includes(session.role)) {
+    redirect("/admin?error=forbidden");
+  }
   return session;
 }

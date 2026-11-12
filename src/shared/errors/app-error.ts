@@ -4,6 +4,7 @@ export type AppErrorCode =
   | "UNAUTHORIZED"
   | "FORBIDDEN"
   | "CONFLICT"
+  | "RATE_LIMIT"
   | "INTERNAL";
 
 export class AppError extends Error {
@@ -23,6 +24,7 @@ export class AppError extends Error {
           UNAUTHORIZED: 401,
           FORBIDDEN: 403,
           CONFLICT: 409,
+          RATE_LIMIT: 429,
           INTERNAL: 500,
         } as const
       )[code];

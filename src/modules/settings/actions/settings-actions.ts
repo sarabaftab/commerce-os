@@ -11,7 +11,11 @@ import {
   updatePaymentSettings,
   upsertPickupLocationForTenant,
 } from "@/modules/settings";
-import { requireAdminSession } from "@/shared/auth/admin-session";
+import {
+  ADMIN_MANAGER_ROLES,
+  assertAdminRole,
+  requireAdminSession,
+} from "@/shared/auth/admin-session";
 import { isAppError } from "@/shared/errors/app-error";
 import {
   removeAbaQrObjectByUrl,
@@ -24,6 +28,12 @@ export type SettingsActionState = {
   success?: boolean;
 };
 
+async function requireSettingsAdmin() {
+  const session = await requireAdminSession();
+  assertAdminRole(session, ADMIN_MANAGER_ROLES);
+  return session;
+}
+
 function boolFromForm(formData: FormData, key: string) {
   const v = formData.get(key);
   return v === "on" || v === "true" || v === "1";
@@ -33,8 +43,8 @@ export async function saveGeneralSettingsAction(
   _prev: SettingsActionState,
   formData: FormData,
 ): Promise<SettingsActionState> {
-  const session = await requireAdminSession();
   try {
+    const session = await requireSettingsAdmin();
     await updateGeneralSettings(session.tenantId, {
       displayName: String(formData.get("displayName") ?? ""),
       phone: String(formData.get("phone") ?? ""),
@@ -45,24 +55,24 @@ export async function saveGeneralSettingsAction(
       currency: String(formData.get("currency") ?? "USD"),
       telegramSupportUsername: String(formData.get("telegramSupportUsername") ?? ""),
     });
+    revalidatePath("/admin/settings");
+    revalidatePath(`/${session.tenantSlug}`, "layout");
+    revalidatePath(`/${session.tenantSlug}/faq`);
+    return { success: true };
   } catch (error) {
     if (isAppError(error)) {
       return { error: error.message };
     }
     return { error: error instanceof Error ? error.message : "Failed to save" };
   }
-  revalidatePath("/admin/settings");
-  revalidatePath(`/${session.tenantSlug}`, "layout");
-  revalidatePath(`/${session.tenantSlug}/faq`);
-  return { success: true };
 }
 
 export async function saveDeliverySettingsAction(
   _prev: SettingsActionState,
   formData: FormData,
 ): Promise<SettingsActionState> {
-  const session = await requireAdminSession();
   try {
+    const session = await requireSettingsAdmin();
     const { toMinor } = await import("@/shared/money/money");
     const currency = session.tenantCurrency;
     const feeMajor = Number(formData.get("deliveryFeeMajor") ?? 0);
@@ -76,20 +86,23 @@ export async function saveDeliverySettingsAction(
         thresholdRaw === "" ? "" : toMinor(Number(thresholdRaw), currency),
       deliveryNotes: String(formData.get("deliveryNotes") ?? ""),
     });
+    revalidatePath("/admin/settings");
+    return { success: true };
   } catch (error) {
+    if (isAppError(error)) {
+      return { error: error.message };
+    }
     return { error: error instanceof Error ? error.message : "Failed to save" };
   }
-  revalidatePath("/admin/settings");
-  return { success: true };
 }
 
 export async function savePaymentSettingsAction(
   _prev: SettingsActionState,
   formData: FormData,
 ): Promise<SettingsActionState> {
-  const session = await requireAdminSession();
   let uploadedQrUrl: string | undefined;
   try {
+    const session = await requireSettingsAdmin();
     const current = await getSettingsForAdmin(session.tenantId);
     const currentQrUrl = current.settings.abaQrImageUrl;
     const qrFile = formData.get("abaQrImage");
@@ -123,43 +136,49 @@ export async function savePaymentSettingsAction(
     if (currentQrUrl && currentQrUrl !== abaQrImageUrl) {
       await removeAbaQrObjectByUrl(currentQrUrl);
     }
+    revalidatePath("/admin/settings");
+    revalidatePath(`/${session.tenantSlug}`, "layout");
+    return { success: true };
   } catch (error) {
     if (uploadedQrUrl) {
       await removeAbaQrObjectByUrl(uploadedQrUrl);
     }
+    if (isAppError(error)) {
+      return { error: error.message };
+    }
     return { error: error instanceof Error ? error.message : "Failed to save" };
   }
-  revalidatePath("/admin/settings");
-  revalidatePath(`/${session.tenantSlug}`, "layout");
-  return { success: true };
 }
 
 export async function saveBrandingSettingsAction(
   _prev: SettingsActionState,
   formData: FormData,
 ): Promise<SettingsActionState> {
-  const session = await requireAdminSession();
   try {
+    const session = await requireSettingsAdmin();
     await updateBrandingSettings(session.tenantId, {
       displayName: String(formData.get("displayName") ?? ""),
       logoUrl: String(formData.get("logoUrl") ?? ""),
       primaryColor: String(formData.get("primaryColor") ?? ""),
     });
+    revalidatePath("/admin/settings");
+    revalidatePath(`/${session.tenantSlug}`, "layout");
+    return { success: true };
   } catch (error) {
+    if (isAppError(error)) {
+      return { error: error.message };
+    }
     return { error: error instanceof Error ? error.message : "Failed to save" };
   }
-  revalidatePath("/admin/settings");
-  revalidatePath(`/${session.tenantSlug}`, "layout");
-  return { success: true };
 }
 
 export async function savePickupLocationAction(
   _prev: SettingsActionState,
   formData: FormData,
 ): Promise<SettingsActionState> {
-  const session = await requireAdminSession();
-  const id = String(formData.get("id") ?? "").trim();
   try {
+    const session = await requireSettingsAdmin();
+    const id = String(formData.get("id") ?? "").trim();
     await upsertPickupLocationForTenant(session.tenantId, {
       id: id || undefined,
       name: String(formData.get("name") ?? ""),
@@ -168,20 +187,23 @@ export async function savePickupLocationAction(
       isActive: boolFromForm(formData, "isActive"),
       sortOrder: Number(formData.get("sortOrder") ?? 0),
     });
+    revalidatePath("/admin/settings");
+    return { success: true };
   } catch (error) {
+    if (isAppError(error)) {
+      return { error: error.message };
+    }
     return { error: error instanceof Error ? error.message : "Failed to save location" };
   }
-  revalidatePath("/admin/settings");
-  return { success: true };
 }
 
 export async function deletePickupLocationAction(locationId: string) {
-  const session = await requireAdminSession();
   try {
+    const session = await requireSettingsAdmin();
     await removePickupLocationForTenant(session.tenantId, locationId);
+    revalidatePath("/admin/settings");
+    return { success: true };
   } catch (error) {
     return { error: isAppError(error) ? error.message : "Failed to delete" };
   }
-  revalidatePath("/admin/settings");
-  return { success: true };
 }

@@ -1,0 +1,493 @@
+
+> commerce-os@0.1.0 load:checkout
+> tsx scripts/load-checkout.ts
+
+◇ injected env (18) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (18) from .env.local // tip: ⌘ enable debugging { debug: true }
+Checkout load · env=staging · tenant=kin-a2
+DB host=aws-0-ap-northeast-1.pooler.supabase.com · client_pool=15
+Product=KIN A2 Fresh Milk 1L · pickup=kin-showroom
+Serial=8 · levels=1,3,5,8,10
+
+Preparing 8 carts for serial hold-time…
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zx9va00119t9fubgekzaq',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zx9va00119t9fubgekzaq',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zxiyq001d9t9fmcuv0g0c',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zxiyq001d9t9fmcuv0g0c',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zxnxd001p9t9fcwls5us7',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zxnxd001p9t9fcwls5us7',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zxw7z00219t9fhfj1p8zy',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zxw7z00219t9fhfj1p8zy',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zy4nj002d9t9f1bg4d6hm',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zy4nj002d9t9f1bg4d6hm',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zy9ro002p9t9faet0o2a7',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zy9ro002p9t9faet0o2a7',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zyf0e00319t9fzexn7opc',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zyf0e00319t9fzexn7opc',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zyl8q003d9t9fy5ttho2f',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zyl8q003d9t9fy5ttho2f',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+Serial hold-time (placeGuestOrder wall ms): p50=7466 p95=18986 max=18986 mean=9373 ok=8 fail=0
+Idealized checkouts/sec ≈ pool(15) / hold_p50(7.466s) = 2/s (hypothesis, not measured concurrency)
+
+Parallel 1… [notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zyroa003t9t9f1okqe1ak',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zyroa003t9t9f1okqe1ak',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+ok=1 fail=0 p50=8296ms p95=8296ms wall=8296ms rps=0.1
+Parallel 3… [notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zyzte004h9t9fatl3aps2',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zyzte004h9t9fatl3aps2',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zz5yz004x9t9fm1bo4ulk',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zz5yz004x9t9fm1bo4ulk',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+ok=2 fail=1 p50=6790ms p95=18775ms wall=18775ms rps=0.1
+  first error: 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+
+Parallel 5… prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zzltm00619t9fo1enfhmb',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zzltm00619t9fo1enfhmb',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zzs5t006t9t9faycfbmuu',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw2zzs5t006t9t9faycfbmuu',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+ok=2 fail=3 p50=11971ms p95=19957ms wall=19960ms rps=0.1
+  first error: 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+
+Parallel 8… [notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw300858008d9t9f9jdl058c',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw300858008d9t9f9jdl058c',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw3009uw008x9t9ft3i8lkod',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw3009uw008x9t9ft3i8lkod',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw300c5d009h9t9ffnuyt78q',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw300c5d009h9t9ffnuyt78q',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw300fy1009x9t9f92v2ud8n',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw300fy1009x9t9f92v2ud8n',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+ok=4 fail=4 p50=9458ms p95=19841ms wall=20049ms rps=0.2
+  first error: 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+
+Parallel 10… [notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw300xi800c59t9ftrgt6idh',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw300xi800c59t9ftrgt6idh',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw3010b600d19t9fk8nw3t84',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw3010b600d19t9fk8nw3t84',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+prisma:error 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+  183   input: CreateOrderRecordInput,
+  184 ): Promise<OrderWithRelations> {
+→ 185   return tx.order.create(
+Unique constraint failed on the fields: (`tenant_id`,`order_number`)
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw3015gt00dl9t9f1abp3wgj',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'attempted'
+}
+[notifications] {
+  tenantId: 'cmw2zph9900009tbp7knogsy3',
+  orderId: 'cmw3015gt00dl9t9f1abp3wgj',
+  type: 'order_status',
+  channel: 'telegram',
+  outcome: 'skipped',
+  reason: 'disabled'
+}
+ok=3 fail=7 p50=14403ms p95=22154ms wall=22159ms rps=0.1
+  first error: 
+Invalid `tx.order.create()` invocation in
+/Users/nipun/sarab/src/modules/orders/repositories/order-repository.ts:185:19
+
+  182   tx: Prisma.TransactionClient,
+
+
+Parallel summary:
+┌─────────┬────┬────┬──────┬───────┬───────┬───────┬────────┬─────┐
+│ (index) │ vu │ ok │ fail │ p50   │ p95   │ max   │ wallMs │ rps │
+├─────────┼────┼────┼──────┼───────┼───────┼───────┼────────┼─────┤
+│ 0       │ 1  │ 1  │ 0    │ 8296  │ 8296  │ 8296  │ 8296   │ 0.1 │
+│ 1       │ 3  │ 2  │ 1    │ 6790  │ 18775 │ 18775 │ 18775  │ 0.1 │
+│ 2       │ 5  │ 2  │ 3    │ 11971 │ 19957 │ 19957 │ 19960  │ 0.1 │
+│ 3       │ 8  │ 4  │ 4    │ 9458  │ 19841 │ 19841 │ 20049  │ 0.2 │
+│ 4       │ 10 │ 3  │ 7    │ 14403 │ 22154 │ 22154 │ 22159  │ 0.1 │
+└─────────┴────┴────┴──────┴───────┴───────┴───────┴────────┴─────┘
+
+Cleaning LOADTEST orders…
+Removed 20 tagged orders (and related rows).

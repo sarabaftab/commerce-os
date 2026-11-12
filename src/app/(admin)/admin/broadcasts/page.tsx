@@ -1,12 +1,15 @@
 import { publishBroadcastAction } from "@/modules/broadcasts/actions/broadcast-actions";
 import { BroadcastForm } from "@/modules/broadcasts/components/broadcast-form";
 import { getBroadcastChannelForAdmin } from "@/modules/broadcasts/services/broadcast-service";
-import { requireAdminSession } from "@/shared/auth/admin-session";
+import {
+  ADMIN_MANAGER_ROLES,
+  requireAdminSessionWithRoles,
+} from "@/shared/auth/admin-session";
 import { env } from "@/shared/config/env";
 import { AdminPageHeader } from "@/ui/admin/admin-page-header";
 
 export default async function AdminBroadcastsPage() {
-  const session = await requireAdminSession();
+  const session = await requireAdminSessionWithRoles(ADMIN_MANAGER_ROLES);
   const channel = getBroadcastChannelForAdmin(session.tenantSlug);
   const defaultStoreUrl = `${env().NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/${session.tenantSlug}`;
 

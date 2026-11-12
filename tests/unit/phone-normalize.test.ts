@@ -97,7 +97,6 @@ describe("upsertCustomerByPhone identity matching", () => {
       displayName: "Existing",
     };
     findFirst.mockResolvedValue(existing);
-    update.mockResolvedValue({ ...existing, displayName: "Local format" });
 
     const tx = {
       customer: { findFirst, findMany, create, update },
@@ -111,18 +110,15 @@ describe("upsertCustomerByPhone identity matching", () => {
     });
 
     expect(customer.id).toBe("cust-1");
+    expect(customer.displayName).toBe("Existing");
     expect(create).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
     expect(findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
           tenantId: "tenant-a",
           phoneNormalized: "+85512345678",
         }),
-      }),
-    );
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ phoneNormalized: "+85512345678" }),
       }),
     );
   });
@@ -169,10 +165,10 @@ describe("upsertCustomerByPhone identity matching", () => {
     update.mockResolvedValue({
       id: "legacy-1",
       tenantId: "tenant-a",
-      phone: "+85512345678",
+      phone: "012345678",
       phoneNormalized: "+85512345678",
       email: null,
-      displayName: "Backfill path",
+      displayName: "Legacy",
     });
 
     const tx = {
@@ -187,12 +183,12 @@ describe("upsertCustomerByPhone identity matching", () => {
     });
 
     expect(customer.id).toBe("legacy-1");
+    expect(customer.displayName).toBe("Legacy");
     expect(create).not.toHaveBeenCalled();
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ phoneNormalized: "+85512345678" }),
-      }),
-    );
+    expect(update).toHaveBeenCalledWith({
+      where: { id: "legacy-1" },
+      data: { phoneNormalized: "+85512345678" },
+    });
   });
 
   it("logs phone conflicts without merging when session customer differs", async () => {

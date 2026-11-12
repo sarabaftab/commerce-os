@@ -23,14 +23,25 @@ const nextConfig: NextConfig = {
     middlewareClientMaxBodySize: UPLOAD_BODY_SIZE_LIMIT,
   },
   images: {
-    // Product media may live on Supabase Storage or arbitrary HTTPS CDNs.
+    // AUD-009: only fetch/optimize images from known hosts (no wildcard "**").
     remotePatterns: [
       { protocol: "https", hostname: "**.supabase.co", pathname: "/**" },
       { protocol: "https", hostname: "**.supabase.in", pathname: "/**" },
-      { protocol: "https", hostname: "**", pathname: "/**" },
       { protocol: "http", hostname: "localhost", pathname: "/**" },
       { protocol: "http", hostname: "127.0.0.1", pathname: "/**" },
     ],
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+        ],
+      },
+    ];
   },
 };
 

@@ -1,6 +1,10 @@
 "use server";
 
-import { requireAdminSession } from "@/shared/auth/admin-session";
+import {
+  ADMIN_MANAGER_ROLES,
+  assertAdminRole,
+  requireAdminSession,
+} from "@/shared/auth/admin-session";
 import { isAppError } from "@/shared/errors/app-error";
 
 import {
@@ -19,13 +23,14 @@ export async function publishBroadcastAction(
   _prev: PublishBroadcastActionState,
   formData: FormData,
 ): Promise<PublishBroadcastActionState> {
-  const session = await requireAdminSession();
-  const parsed = broadcastInputSchema.safeParse(broadcastFormDataToObject(formData));
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid broadcast" };
-  }
-
   try {
+    const session = await requireAdminSession();
+    assertAdminRole(session, ADMIN_MANAGER_ROLES);
+    const parsed = broadcastInputSchema.safeParse(broadcastFormDataToObject(formData));
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message ?? "Invalid broadcast" };
+    }
+
     const result = await publishTelegramBroadcast({
       tenantId: session.tenantId,
       tenantSlug: session.tenantSlug,
