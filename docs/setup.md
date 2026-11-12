@@ -39,7 +39,7 @@ Also copy the same vars into `.env` if you want Prisma CLI to pick them up witho
 2. Create a user with email `admin@kina2.com` (or your `SEED_ADMIN_EMAIL`).
 3. Copy that user’s UUID into `SEED_ADMIN_SUPABASE_USER_ID`.
 
-If you seed before setting the UUID, the first successful admin login will link the user by email automatically (as long as `users.supabase_user_id` is still null).
+If you seed before setting the UUID, set `ALLOW_ADMIN_EMAIL_LINK=1` in `.env.local` for a one-time link of the seed email to the Supabase user (leave that flag unset in production).
 
 ## 4. Migrate and seed
 
@@ -78,9 +78,12 @@ Open [http://localhost:3000/admin/login](http://localhost:3000/admin/login).
 
 ## Notes
 
-- Product media in Phase 1 uses a **URL field** (no Storage upload yet).
-- Orders tables exist in the schema but checkout UI is not built yet.
-- Telegram lives under `src/channels/telegram` and is intentionally empty for now.
+- Product and ABA QR images upload to a public Supabase Storage bucket; payment proofs use a private bucket and are served only through an authenticated admin route.
+- Guest and authenticated checkout are live on the storefront; orders are managed under `/admin/orders`.
+- Telegram Mini App auth and channel broadcasts live under `src/channels/telegram` (set `TELEGRAM_BOT_TOKEN` and related env vars to enable them).
+- Stock is an `isAvailable` flag, not a quantity. Account deletion and retention flows are not implemented yet.
+- `GET /api/v1/health` runs `SELECT 1` against Postgres and returns **503** when the database is unreachable.
+- Migrations revoke Supabase `anon` / `authenticated` table privileges and enable RLS on app tables (Prisma still uses the database role). The `payment-proofs` Storage bucket is private; proofs are never served via `getPublicUrl`.
 
 ## Timing / performance checks
 

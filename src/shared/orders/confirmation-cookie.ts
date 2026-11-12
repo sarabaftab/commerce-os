@@ -10,6 +10,11 @@ export function createOrderConfirmationToken(): string {
   return randomBytes(32).toString("base64url");
 }
 
+/** SHA-256 hex hash for storing confirmation tokens at rest (AUD-006). */
+export function hashOrderConfirmationToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
 function cookieSecure() {
   return (
     process.env.NODE_ENV === "production" ||
@@ -102,12 +107,7 @@ export function readOrderConfirmationTokenFromRequest(
   request: Request,
   orderNumber: string,
 ): string | null {
-  const url = new URL(request.url);
-  const queryToken = url.searchParams.get("token")?.trim();
-  if (queryToken) {
-    return queryToken;
-  }
-
+  // AUD-006: accept the secret only from the HttpOnly cookie — never ?token=.
   const cookieHeader = request.headers.get("cookie");
   if (!cookieHeader) {
     return null;

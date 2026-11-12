@@ -26,27 +26,29 @@ export async function resolveAdminSession(input: {
   });
   timer.mark("lookupMs");
 
-  // First login after seed: link by email ONLY when explicitly allowed.
-  // Disabled in production unless ALLOW_ADMIN_EMAIL_LINK=1 to prevent account takeover.
-  if (!membership) {
-    const allowEmailLink =
-      process.env.ALLOW_ADMIN_EMAIL_LINK === "1" ||
-      process.env.NODE_ENV !== "production";
+  // First login after seed: link by email ONLY when ALLOW_ADMIN_EMAIL_LINK=1.
+  // Never imply this from NODE_ENV — mis-set Vercel envs used to enable takeover (AUD-004).
+  // Production must not enable the flag at all.
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.ALLOW_ADMIN_EMAIL_LINK === "1"
+  ) {
+    throw new Error("ALLOW_ADMIN_EMAIL_LINK must not be enabled in production");
+  }
 
-    if (allowEmailLink) {
-      const byEmail = await findUserByEmail(input.email);
-      if (byEmail && !byEmail.supabaseUserId) {
-        await linkSupabaseUserId(byEmail.id, input.supabaseUserId);
-        membership = await prisma.userTenantMembership.findFirst({
-          where: { userId: byEmail.id },
-          include: {
-            tenant: true,
-            user: true,
-          },
-          orderBy: { createdAt: "asc" },
-        });
-        timer.mark("linkMs");
-      }
+  if (!membership && process.env.ALLOW_ADMIN_EMAIL_LINK === "1") {
+    const byEmail = await findUserByEmail(input.email);
+    if (byEmail && !byEmail.supabaseUserId) {
+      await linkSupabaseUserId(byEmail.id, input.supabaseUserId);
+      membership = await prisma.userTenantMembership.findFirst({
+        where: { userId: byEmail.id },
+        include: {
+          tenant: true,
+          user: true,
+        },
+        orderBy: { createdAt: "asc" },
+      });
+      timer.mark("linkMs");
     }
   }
 

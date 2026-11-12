@@ -1,9 +1,32 @@
 import { z } from "zod";
 
+/** Reject placeholders that pass `min(1)` but are not parseable Postgres URLs (AUD-013). */
+export function postgresConnectionUrl(label: string) {
+  return z
+    .string()
+    .min(1, `${label} is required`)
+    .superRefine((value, ctx) => {
+      try {
+        const url = new URL(value);
+        if (url.protocol !== "postgres:" && url.protocol !== "postgresql:") {
+          ctx.addIssue({
+            code: "custom",
+            message: `${label} must use postgres:// or postgresql://`,
+          });
+        }
+      } catch {
+        ctx.addIssue({
+          code: "custom",
+          message: `${label} must be a valid postgres:// or postgresql:// URL`,
+        });
+      }
+    });
+}
+
 const serverSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
-  DIRECT_URL: z.string().min(1, "DIRECT_URL is required"),
+  DATABASE_URL: postgresConnectionUrl("DATABASE_URL"),
+  DIRECT_URL: postgresConnectionUrl("DIRECT_URL"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   DEFAULT_TENANT_SLUG: z.string().min(1).default("kin-a2"),
   /** Phase 1: single bot mapped to one tenant slug. Optional until Telegram is used. */

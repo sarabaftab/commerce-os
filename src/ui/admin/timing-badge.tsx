@@ -3,7 +3,7 @@ type TimingBadgeProps = {
   timings: Record<string, number>;
 };
 
-/** Visible only when TIMING_DEBUG=1 (or true). Safe for Cambodia remote tests. */
+/** Visible only when TIMING_DEBUG=1 (or true). Safe for Singapore remote tests. */
 export function TimingBadge({ route, timings }: TimingBadgeProps) {
   const enabled =
     process.env.TIMING_DEBUG === "1" || process.env.TIMING_DEBUG === "true";

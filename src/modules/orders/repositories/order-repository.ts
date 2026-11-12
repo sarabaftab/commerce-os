@@ -8,7 +8,10 @@ import {
 
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
-import { createOrderConfirmationToken } from "@/shared/orders/confirmation-cookie";
+import {
+  createOrderConfirmationToken,
+  hashOrderConfirmationToken,
+} from "@/shared/orders/confirmation-cookie";
 import { normalizePhoneToE164 } from "@/shared/phone/normalize-phone";
 
 import type { OrderConfirmation, OrderLineView } from "../types";
@@ -23,7 +26,13 @@ export type OrderWithRelations = Prisma.OrderGetPayload<{ include: typeof orderI
 
 export function toOrderConfirmation(
   order: OrderWithRelations,
-  options?: { includeConfirmationToken?: boolean },
+  options?: {
+    /**
+     * Plaintext token for Set-Cookie on create only.
+     * Never pass the DB column — it is a SHA-256 hash (AUD-006).
+     */
+    confirmationTokenPlaintext?: string;
+  },
 ): OrderConfirmation {
   const items: OrderLineView[] = order.items.map((item) => {
     const freeQuantity = item.freeQuantity ?? 0;
@@ -74,8 +83,8 @@ export function toOrderConfirmation(
     paymentProofStatus: order.paymentProofStatus,
     paymentProofRejectionReason: order.paymentProofRejectionReason,
     placedAt: order.placedAt,
-    ...(options?.includeConfirmationToken
-      ? { confirmationToken: order.confirmationToken }
+    ...(options?.confirmationTokenPlaintext
+      ? { confirmationToken: options.confirmationTokenPlaintext }
       : {}),
     customer: {
       displayName: order.customer.displayName,
@@ -100,11 +109,19 @@ export async function findOrderByIdempotencyKey(
   tenantId: string,
   idempotencyKey: string,
 ): Promise<OrderConfirmation | null> {
-  const order = await prisma.order.findFirst({
+  const order = await findOrderRecordByIdempotencyKey(tenantId, idempotencyKey);
+  // Never expose the stored hash as a cookie token (AUD-006).
+  return order ? toOrderConfirmation(order) : null;
+}
+
+export async function findOrderRecordByIdempotencyKey(
+  tenantId: string,
+  idempotencyKey: string,
+): Promise<OrderWithRelations | null> {
+  return prisma.order.findFirst({
     where: { tenantId, idempotencyKey },
     include: orderInclude,
   });
-  return order ? toOrderConfirmation(order, { includeConfirmationToken: true }) : null;
 }
 
 export async function findOrderByOrderNumber(
@@ -126,7 +143,7 @@ export async function findOrderByConfirmationToken(
     where: {
       tenantId,
       orderNumber,
-      confirmationToken,
+      confirmationToken: hashOrderConfirmationToken(confirmationToken),
     },
     include: orderInclude,
   });
@@ -203,8 +220,10 @@ export type CreateOrderRecordInput = {
 export async function createOrderRecordInTransaction(
   tx: Prisma.TransactionClient,
   input: CreateOrderRecordInput,
-): Promise<OrderWithRelations> {
-  return tx.order.create({
+): Promise<{ order: OrderWithRelations; confirmationToken: string }> {
+  const confirmationToken =
+    input.confirmationToken ?? createOrderConfirmationToken();
+  const order = await tx.order.create({
     data: {
       tenantId: input.tenantId,
       customerId: input.customerId,
@@ -243,7 +262,7 @@ export async function createOrderRecordInTransaction(
       campaignId: input.campaignId ?? null,
       customerLocale: input.customerLocale ?? null,
       idempotencyKey: input.idempotencyKey ?? null,
-      confirmationToken: input.confirmationToken ?? createOrderConfirmationToken(),
+      confirmationToken: hashOrderConfirmationToken(confirmationToken),
       items: {
         create: input.items.map((item) => ({
           tenantId: input.tenantId,
@@ -264,35 +283,53 @@ export async function createOrderRecordInTransaction(
     },
     include: orderInclude,
   });
+  return { order, confirmationToken };
 }
 
 export function formatOrderNumber(tenantSlug: string, sequence: number): string {
   return `${tenantSlug.toUpperCase()}-${String(sequence).padStart(6, "0")}`;
 }
 
+/**
+ * Atomically claim the next order sequence for this tenant.
+ * Must run inside an interactive transaction so concurrent checkouts serialize
+ * on the tenants row instead of racing read→write on orderSequence.
+ */
 export async function allocateOrderNumber(
   tx: Prisma.TransactionClient,
   tenantId: string,
   tenantSlug: string,
 ): Promise<string> {
-  const tenant = await tx.tenant.findUniqueOrThrow({ where: { id: tenantId } });
-  let sequence = tenant.orderSequence > 0 ? tenant.orderSequence : 1;
-
   // Skip numbers that already exist (e.g. after seed reset orderSequence).
   for (let attempt = 0; attempt < 50; attempt += 1) {
+    // Claim one sequence under a row lock (UPDATE … RETURNING).
+    // order_sequence means "next number to issue"; we advance it and use previous.
+    const rows = await tx.$queryRaw<Array<{ order_sequence: number }>>`
+      UPDATE tenants
+      SET
+        order_sequence = CASE
+          WHEN order_sequence < 1 THEN 2
+          ELSE order_sequence + 1
+        END,
+        updated_at = NOW()
+      WHERE id = ${tenantId}
+      RETURNING order_sequence
+    `;
+
+    const nextSequence = rows[0]?.order_sequence;
+    if (nextSequence == null) {
+      throw new Error("Tenant not found while allocating order number");
+    }
+
+    const sequence = nextSequence - 1;
     const orderNumber = formatOrderNumber(tenantSlug, sequence);
     const exists = await tx.order.findFirst({
       where: { tenantId, orderNumber },
       select: { id: true },
     });
     if (!exists) {
-      await tx.tenant.update({
-        where: { id: tenantId },
-        data: { orderSequence: sequence + 1 },
-      });
       return orderNumber;
     }
-    sequence += 1;
   }
 
   throw new Error("Unable to allocate a unique order number");
@@ -313,7 +350,9 @@ export async function convertCartInTransaction(
     data: {
       status: "converted",
       customerId,
-      guestToken: null,
+      // Keep guestToken so idempotent replay can prove the same browser/cart
+      // placed the order (AUD-007). Unique(tenantId, guestToken) still forces
+      // a rotated token when the shopper starts a new open cart.
     },
   });
 

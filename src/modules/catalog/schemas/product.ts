@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { isAllowedProductMediaUrl } from "@/shared/media/allowed-media-url";
 import { toMinor } from "@/shared/money/money";
 
 export const productFormSchema = z.object({
@@ -31,7 +32,13 @@ export const productFormSchema = z.object({
     z.union([z.null(), z.coerce.number().int().nonnegative()]),
   ),
   sortOrder: z.coerce.number().int().default(0),
-  mediaUrl: z.union([z.literal(""), z.string().trim().url("Media URL must be valid")]).optional(),
+  mediaUrl: z
+    .union([z.literal(""), z.string().trim()])
+    .optional()
+    .refine(
+      (value) => value === undefined || value === "" || isAllowedProductMediaUrl(value),
+      "Media URL must be an https:// link on Supabase Storage",
+    ),
 });
 
 export type ProductFormValues = z.infer<typeof productFormSchema>;
