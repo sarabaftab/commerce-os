@@ -26,15 +26,34 @@ function baseProduct(mediaUrl: string) {
  * AUD-009: security headers + restrict Next image optimizer / product media hosts.
  */
 describe("AUD-009 security headers and media host lockdown", () => {
-  it("sends clickjacking and content-type headers on all routes", async () => {
+  it("sends security headers while allowing Telegram Mini App framing", async () => {
     expect(typeof nextConfig.headers).toBe("function");
     const headerGroups = await nextConfig.headers!();
-    const flat = headerGroups.flatMap((group) => group.headers);
-    expect(flat).toEqual(
+    const globalHeaders =
+      headerGroups.find((group) => group.source === "/:path*")?.headers ?? [];
+    const adminHeaders =
+      headerGroups.find((group) => group.source === "/admin/:path*")
+        ?.headers ?? [];
+
+    expect(globalHeaders).toEqual(
       expect.arrayContaining([
-        { key: "X-Frame-Options", value: "DENY" },
         { key: "Referrer-Policy", value: "no-referrer" },
         { key: "X-Content-Type-Options", value: "nosniff" },
+        {
+          key: "Content-Security-Policy",
+          value:
+            "frame-ancestors 'self' https://web.telegram.org https://telegram.org;",
+        },
+      ]),
+    );
+    // Must not blanket-DENY framing — breaks Telegram Desktop Mini Apps.
+    expect(globalHeaders).not.toEqual(
+      expect.arrayContaining([{ key: "X-Frame-Options", value: "DENY" }]),
+    );
+    expect(adminHeaders).toEqual(
+      expect.arrayContaining([
+        { key: "X-Frame-Options", value: "DENY" },
+        { key: "Content-Security-Policy", value: "frame-ancestors 'none';" },
       ]),
     );
   });
