@@ -9,7 +9,9 @@ type ProductGridProps = {
   products: ProductWithRelations[];
   basePath: string;
   emptyMessage?: ReactNode;
+  /** @deprecated Prefer campaignByProductId so disjoint product sales all show. */
   campaign?: StorefrontCampaignDisplay | null;
+  campaignByProductId?: Record<string, StorefrontCampaignDisplay>;
   bogoByProductId?: Record<string, { promotionName: string }>;
 };
 
@@ -18,6 +20,7 @@ export function ProductGrid({
   basePath,
   emptyMessage = "No products available right now.",
   campaign = null,
+  campaignByProductId,
   bogoByProductId,
 }: ProductGridProps) {
   if (products.length === 0) {
@@ -35,7 +38,7 @@ export function ProductGrid({
           key={product.id}
           product={product}
           href={`${basePath}/products/${product.slug}`}
-          campaign={campaign}
+          campaign={campaignByProductId?.[product.id] ?? campaign}
           bogo={bogoByProductId?.[product.id] ?? null}
         />
       ))}

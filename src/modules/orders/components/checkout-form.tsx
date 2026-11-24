@@ -169,6 +169,7 @@ export function CheckoutForm({ tenantSlug, preview }: CheckoutFormProps) {
             promotionType={preview.promotionType}
             promotionValue={preview.promotionValue}
             promotionProductIds={preview.promotionProductIds}
+            promotionByProductId={preview.promotionByProductId}
             fulfillmentMethod={fulfillmentMethod}
             freeDeliveryThresholdMinor={preview.freeDeliveryThresholdMinor}
           />

@@ -149,11 +149,16 @@ export type CheckoutPreview = {
   /** Server-resolved campaign discount for the current cart subtotal. */
   discountMinor: number;
   promotionName: string | null;
-  /** For storefront sale-price display when discount applies. */
+  /** For storefront sale-price display when discount applies (primary campaign). */
   promotionType: "percentage" | "fixed" | null;
   promotionValue: number | null;
-  /** Empty means the discount applies to every cart line. */
+  /** Empty means an unscoped whole-cart campaign participated. */
   promotionProductIds: string[];
+  /** Per-product money campaign for accurate mixed-% sale display. */
+  promotionByProductId: Record<
+    string,
+    { type: "percentage" | "fixed"; value: number }
+  >;
   freeDeliveryThresholdMinor: number | null;
   deliveryNotes: string | null;
   pickupLocations: { id: string; name: string; address: string; instructions: string | null }[];

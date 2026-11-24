@@ -339,6 +339,12 @@ export async function getCheckoutPreview(
         : null,
     promotionValue: campaign?.value ?? null,
     promotionProductIds: campaign?.productIds ?? [],
+    promotionByProductId: Object.fromEntries(
+      (campaign?.lineCampaigns ?? []).map((line) => [
+        line.productId,
+        { type: line.type, value: line.value },
+      ]),
+    ),
     freeDeliveryThresholdMinor: settings.freeDeliveryThresholdMinor,
     deliveryNotes: settings.deliveryNotes,
     pickupLocations: settings.activePickupLocations,

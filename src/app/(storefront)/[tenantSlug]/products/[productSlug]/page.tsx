@@ -5,9 +5,8 @@ import { formatPackSizeLine } from "@/modules/catalog/selling-unit";
 import { AddToCartButton } from "@/modules/orders/components/add-to-cart-button";
 import { isProductPurchasable } from "@/modules/orders/line-promotion";
 import {
-  campaignAppliesToProduct,
   getActiveBuyOneGetOneMap,
-  getActiveStorefrontCampaign,
+  getActiveStorefrontCampaignForProduct,
 } from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { isAppError } from "@/shared/errors/app-error";
@@ -41,12 +40,10 @@ export default async function StorefrontProductDetailPage({
   timer.mark("tenantMs");
 
   let product;
-  let campaign;
   let bogoMap;
   try {
-    [product, campaign, bogoMap] = await Promise.all([
+    [product, bogoMap] = await Promise.all([
       getStorefrontProductBySlug(tenant.id, productSlug),
-      getActiveStorefrontCampaign(tenant.id),
       getActiveBuyOneGetOneMap(tenant.id),
     ]);
   } catch (error) {
@@ -55,14 +52,16 @@ export default async function StorefrontProductDetailPage({
     }
     throw error;
   }
+  const pricedCampaign = await getActiveStorefrontCampaignForProduct(
+    tenant.id,
+    product.id,
+  );
   timer.mark("productMs");
   timer.log({ tenantSlug, productSlug });
 
   const imageUrl = product.media[0]?.url;
   const imageAlt = product.media[0]?.alt ?? product.name;
   const bogo = bogoMap.get(product.id) ?? null;
-  const pricedCampaign =
-    campaign && campaignAppliesToProduct(campaign.productIds, product.id) ? campaign : null;
   const purchasable = isProductPurchasable(
     {
       isAvailable: product.isAvailable,

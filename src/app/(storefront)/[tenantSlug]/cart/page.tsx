@@ -1,7 +1,7 @@
 import { getCartAction } from "@/modules/orders/actions/cart-actions";
 import { CartLineItem } from "@/modules/orders/components/cart-line-item";
 import { CartSummaryPanel } from "@/modules/orders/components/cart-summary";
-import { getActiveStorefrontCampaign } from "@/modules/promotions";
+import { getActiveStorefrontCampaignMap } from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { createTimer } from "@/shared/observability/timing";
 import {
@@ -20,10 +20,11 @@ export default async function StorefrontCartPage({ params }: CartPageProps) {
   const { tenantSlug } = await params;
   const { tenant, basePath } = await resolveStorefrontTenant(tenantSlug);
   timer.mark("tenantMs");
-  const [summary, campaign] = await Promise.all([
-    getCartAction(tenantSlug),
-    getActiveStorefrontCampaign(tenant.id),
-  ]);
+  const summary = await getCartAction(tenantSlug);
+  const campaignMap = await getActiveStorefrontCampaignMap(
+    tenant.id,
+    summary.items.map((line) => line.productId),
+  );
   timer.mark("cartMs");
   timer.log({ tenantSlug, itemCount: summary.itemCount });
 
@@ -46,7 +47,7 @@ export default async function StorefrontCartPage({ params }: CartPageProps) {
                 tenantSlug={tenantSlug}
                 basePath={basePath}
                 line={line}
-                campaign={campaign}
+                campaign={campaignMap.get(line.productId) ?? null}
               />
             ))}
           </div>

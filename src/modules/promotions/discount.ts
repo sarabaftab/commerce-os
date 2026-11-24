@@ -18,6 +18,12 @@ export type PromotionDiscountInput = {
   bannerText?: string | null;
 };
 
+export type ResolvedLineCampaign = {
+  productId: string;
+  type: "percentage" | "fixed";
+  value: number;
+};
+
 export type ResolvedCampaignDiscount = {
   promotionId: string;
   promotionName: string;
@@ -25,8 +31,13 @@ export type ResolvedCampaignDiscount = {
   type: PromotionDiscountType;
   value: number;
   discountMinor: number;
-  /** Empty means the discount applies to the whole cart (legacy money promotions). */
+  /**
+   * Product ids that received a money discount.
+   * Empty means a whole-cart (unscoped) campaign covered the order.
+   */
   productIds: string[];
+  /** Per-product money campaign used for line sale-price display. */
+  lineCampaigns: ResolvedLineCampaign[];
 };
 
 export type DiscountLine = {
@@ -140,49 +151,163 @@ export function computeCampaignDiscountMinor(
   return Math.max(0, Math.min(raw, subtotalMinor));
 }
 
-/**
- * Among eligible money promotions, apply exactly one: most recently created.
- * buy_one_get_one is excluded (resolved per product).
- */
-export function pickEligibleCampaignDiscount(
-  promotions: Array<Promotion & { products?: PromotionProductLink[] }>,
-  input: { subtotalMinor: number; lines?: readonly DiscountLine[]; now?: Date },
-): ResolvedCampaignDiscount | null {
-  const eligible = promotions
+type MoneyPromotion = Promotion & { products?: PromotionProductLink[] };
+
+function sortedEligibleMoneyPromotions(
+  promotions: MoneyPromotion[],
+  input: { subtotalMinor: number; now?: Date },
+): MoneyPromotion[] {
+  return promotions
     .filter((promo) => isMoneyDiscountType(promo.type))
     .filter((promo) => isPromotionEligible(promo, input))
     .slice()
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
 
-  for (const chosen of eligible) {
-    const productIds = linkedPromotionProductIds(chosen);
-    const baseMinor =
-      input.lines == null
-        ? input.subtotalMinor
-        : eligibleMerchandiseSubtotalMinor(input.lines, productIds);
-    // A product-scoped campaign with none of those products in the cart does not
-    // block an older whole-cart campaign.
-    if (input.lines != null && productIds.length > 0 && baseMinor <= 0) {
-      continue;
+function toResolvedCampaignDiscount(
+  chosen: MoneyPromotion,
+  discountMinor: number,
+  productIds: string[],
+  lineCampaigns: ResolvedLineCampaign[] = [],
+): ResolvedCampaignDiscount {
+  return {
+    promotionId: chosen.id,
+    promotionName: chosen.name,
+    bannerText: chosen.bannerText,
+    type: chosen.type,
+    value: chosen.value,
+    discountMinor,
+    productIds,
+    lineCampaigns,
+  };
+}
+
+/**
+ * Resolve money discounts for checkout.
+ * - Without cart lines: newest eligible money campaign wins (legacy / whole-order).
+ * - With cart lines: each product gets the newest money campaign that applies to it;
+ *   disjoint product-scoped campaigns can combine; the same SKU never stacks.
+ * buy_one_get_one is excluded (resolved per product elsewhere).
+ */
+export function pickEligibleCampaignDiscount(
+  promotions: MoneyPromotion[],
+  input: { subtotalMinor: number; lines?: readonly DiscountLine[]; now?: Date },
+): ResolvedCampaignDiscount | null {
+  const eligible = sortedEligibleMoneyPromotions(promotions, input);
+
+  if (input.lines == null) {
+    for (const chosen of eligible) {
+      const productIds = linkedPromotionProductIds(chosen);
+      const discountMinor = computeCampaignDiscountMinor(input.subtotalMinor, chosen);
+      if (discountMinor <= 0) {
+        continue;
+      }
+      return toResolvedCampaignDiscount(chosen, discountMinor, productIds);
     }
-
-    const discountMinor = computeCampaignDiscountMinor(baseMinor, chosen);
-    if (discountMinor <= 0) {
-      continue;
-    }
-
-    return {
-      promotionId: chosen.id,
-      promotionName: chosen.name,
-      bannerText: chosen.bannerText,
-      type: chosen.type,
-      value: chosen.value,
-      discountMinor,
-      productIds,
-    };
+    return null;
   }
 
-  return null;
+  // Aggregate lines by product (one winner per SKU).
+  const merchandiseByProductId = new Map<string, number>();
+  for (const line of input.lines) {
+    const prev = merchandiseByProductId.get(line.productId) ?? 0;
+    merchandiseByProductId.set(
+      line.productId,
+      prev + Math.max(0, line.lineTotalMinor),
+    );
+  }
+
+  type AppliedGroup = {
+    promo: MoneyPromotion;
+    baseMinor: number;
+    productIds: string[];
+  };
+  const groups = new Map<string, AppliedGroup>();
+  const lineCampaigns: ResolvedLineCampaign[] = [];
+
+  for (const [productId, lineTotalMinor] of merchandiseByProductId) {
+    if (lineTotalMinor <= 0) {
+      continue;
+    }
+    const winner = eligible.find((promo) =>
+      campaignAppliesToProduct(linkedPromotionProductIds(promo), productId),
+    );
+    if (!winner || !isMoneyDiscountType(winner.type)) {
+      continue;
+    }
+
+    lineCampaigns.push({
+      productId,
+      type: winner.type,
+      value: winner.value,
+    });
+
+    const existing = groups.get(winner.id);
+    if (existing) {
+      existing.baseMinor += lineTotalMinor;
+      existing.productIds.push(productId);
+    } else {
+      groups.set(winner.id, {
+        promo: winner,
+        baseMinor: lineTotalMinor,
+        productIds: [productId],
+      });
+    }
+  }
+
+  if (groups.size === 0) {
+    return null;
+  }
+
+  let discountMinor = 0;
+  const applied: Array<{
+    promo: MoneyPromotion;
+    discountMinor: number;
+    productIds: string[];
+  }> = [];
+
+  for (const group of groups.values()) {
+    const groupDiscount = computeCampaignDiscountMinor(group.baseMinor, group.promo);
+    if (groupDiscount <= 0) {
+      continue;
+    }
+    discountMinor += groupDiscount;
+    applied.push({
+      promo: group.promo,
+      discountMinor: groupDiscount,
+      productIds: group.productIds,
+    });
+  }
+
+  if (applied.length === 0 || discountMinor <= 0) {
+    return null;
+  }
+
+  applied.sort((a, b) => {
+    if (b.discountMinor !== a.discountMinor) {
+      return b.discountMinor - a.discountMinor;
+    }
+    return b.promo.createdAt.getTime() - a.promo.createdAt.getTime();
+  });
+
+  const primary = applied[0]!;
+  const scopedProductIds = applied.flatMap((row) => row.productIds);
+  const anyUnscoped = applied.some(
+    (row) => linkedPromotionProductIds(row.promo).length === 0,
+  );
+
+  return {
+    promotionId: primary.promo.id,
+    promotionName: applied.map((row) => row.promo.name).join(", "),
+    bannerText: primary.promo.bannerText,
+    type: primary.promo.type,
+    value: primary.promo.value,
+    discountMinor,
+    // Empty productIds keeps the legacy "whole cart" signal when an unscoped
+    // campaign participated; otherwise list every discounted SKU.
+    productIds: anyUnscoped ? [] : scopedProductIds,
+    lineCampaigns,
+  };
 }
 
 /** Active + in date window (ignores minimum subtotal — browsing/banner display). */
@@ -242,9 +367,25 @@ export type StorefrontCampaignDisplay = {
   productIds: string[];
 };
 
-/** Newest active-window money campaign for storefront sale-price display. */
+function toStorefrontCampaignDisplay(
+  chosen: MoneyPromotion,
+): StorefrontCampaignDisplay {
+  return {
+    id: chosen.id,
+    name: chosen.name,
+    type: chosen.type,
+    value: chosen.value,
+    productIds: linkedPromotionProductIds(chosen),
+  };
+}
+
+/**
+ * Newest active-window money campaign overall (banner / legacy callers).
+ * Prefer {@link pickStorefrontCampaignForProduct} / {@link buildStorefrontCampaignByProductId}
+ * for sale badges so disjoint product-scoped campaigns can all show.
+ */
 export function pickStorefrontCampaignDisplay(
-  promotions: Array<Promotion & { products?: PromotionProductLink[] }>,
+  promotions: MoneyPromotion[],
   now: Date = new Date(),
 ): StorefrontCampaignDisplay | null {
   const chosen = promotions
@@ -255,13 +396,47 @@ export function pickStorefrontCampaignDisplay(
   if (!chosen) {
     return null;
   }
-  return {
-    id: chosen.id,
-    name: chosen.name,
-    type: chosen.type,
-    value: chosen.value,
-    productIds: linkedPromotionProductIds(chosen),
-  };
+  return toStorefrontCampaignDisplay(chosen);
+}
+
+/** Newest active-window money campaign that applies to this product. */
+export function pickStorefrontCampaignForProduct(
+  promotions: MoneyPromotion[],
+  productId: string,
+  now: Date = new Date(),
+): StorefrontCampaignDisplay | null {
+  const chosen = promotions
+    .filter((promo) => isMoneyDiscountType(promo.type))
+    .filter((promo) => isPromotionInActiveWindow(promo, now))
+    .filter((promo) =>
+      campaignAppliesToProduct(linkedPromotionProductIds(promo), productId),
+    )
+    .slice()
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+  if (!chosen) {
+    return null;
+  }
+  return toStorefrontCampaignDisplay(chosen);
+}
+
+/**
+ * Map productId → money campaign for storefront sale display (newest wins per SKU).
+ * Only products that appear on at least one scoped campaign (or every product when an
+ * unscoped campaign exists) are keyed — callers look up by product id.
+ */
+export function buildStorefrontCampaignByProductId(
+  promotions: MoneyPromotion[],
+  productIds: readonly string[],
+  now: Date = new Date(),
+): Map<string, StorefrontCampaignDisplay> {
+  const map = new Map<string, StorefrontCampaignDisplay>();
+  for (const productId of productIds) {
+    const campaign = pickStorefrontCampaignForProduct(promotions, productId, now);
+    if (campaign) {
+      map.set(productId, campaign);
+    }
+  }
+  return map;
 }
 
 export type PromotionWithProducts = Promotion & {

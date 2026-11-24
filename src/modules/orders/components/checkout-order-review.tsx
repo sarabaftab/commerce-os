@@ -18,6 +18,10 @@ type CheckoutOrderReviewProps = {
   promotionType?: "percentage" | "fixed" | null;
   promotionValue?: number | null;
   promotionProductIds?: string[];
+  promotionByProductId?: Record<
+    string,
+    { type: "percentage" | "fixed"; value: number }
+  >;
   fulfillmentMethod: "delivery" | "pickup";
   freeDeliveryThresholdMinor?: number | null;
 };
@@ -30,6 +34,7 @@ export function CheckoutOrderReview({
   promotionType = null,
   promotionValue = null,
   promotionProductIds = [],
+  promotionByProductId = {},
   fulfillmentMethod,
   freeDeliveryThresholdMinor,
 }: CheckoutOrderReviewProps) {
@@ -37,7 +42,7 @@ export function CheckoutOrderReview({
   const fee = fulfillmentMethod === "delivery" ? deliveryFeeMinor : 0;
   const discount = Math.max(0, discountMinor);
   const totalMinor = cart.subtotalMinor - discount + fee;
-  const percentCampaign =
+  const fallbackPercentCampaign =
     promotionType === "percentage" &&
     promotionValue != null &&
     promotionValue > 0
@@ -58,12 +63,15 @@ export function CheckoutOrderReview({
         {availableItems.map((item) => {
             const isBogo = Boolean(item.isBuyOneGetOne || (item.freeQuantity ?? 0) > 0);
             const receiveCount = item.fulfillmentQuantity ?? item.quantity * (isBogo ? 2 : 1);
+            const perProduct = promotionByProductId[item.productId];
             const lineCampaign =
-              !isBogo &&
-              percentCampaign != null &&
-              campaignAppliesToProduct(promotionProductIds, item.productId)
-                ? percentCampaign
-                : null;
+              !isBogo && perProduct?.type === "percentage" && perProduct.value > 0
+                ? { type: "percentage" as const, value: perProduct.value }
+                : !isBogo &&
+                    fallbackPercentCampaign != null &&
+                    campaignAppliesToProduct(promotionProductIds, item.productId)
+                  ? fallbackPercentCampaign
+                  : null;
             const saleUnit = lineCampaign
               ? computeUnitSalePriceMinor(item.unitPriceMinor, lineCampaign)
               : null;

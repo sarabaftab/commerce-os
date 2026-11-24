@@ -3,9 +3,11 @@ import { AppError } from "@/shared/errors/app-error";
 import { isBuyOneGetOneType } from "../buy-one-get-one";
 import {
   buildActiveBuyOneGetOneByProductId,
+  buildStorefrontCampaignByProductId,
   isPromotionVisibleForBanner,
   pickEligibleCampaignDiscount,
   pickStorefrontCampaignDisplay,
+  pickStorefrontCampaignForProduct,
   type ActiveBuyOneGetOne,
   type ResolvedCampaignDiscount,
   type StorefrontCampaignDisplay,
@@ -111,8 +113,8 @@ export async function updatePromotionForTenant(input: UpdatePromotionInput) {
 }
 
 /**
- * Resolve the single campaign discount for a cart/order subtotal.
- * Deterministic: most recently created eligible money promotion wins.
+ * Resolve money campaign discount(s) for a cart/order subtotal.
+ * With line items, disjoint product-scoped campaigns can combine (newest wins per SKU).
  * buy_one_get_one is never selected here.
  */
 export async function resolveCampaignDiscountForCheckout(input: {
@@ -152,9 +154,8 @@ export async function getStorefrontPromotionBanner(tenantId: string): Promise<{
 }
 
 /**
- * Active money campaign for storefront sale-price display (date window; ignores min subtotal).
- * Percentage campaigns drive strikethrough unit prices; fixed is badge-only.
- * buy_one_get_one is excluded — resolve per product via getActiveBuyOneGetOneMap.
+ * Newest active-window money campaign overall (legacy / callers that only need one).
+ * Prefer {@link getActiveStorefrontCampaignMap} so disjoint product sales all show.
  */
 export async function getActiveStorefrontCampaign(
   tenantId: string,
@@ -162,6 +163,40 @@ export async function getActiveStorefrontCampaign(
 ): Promise<StorefrontCampaignDisplay | null> {
   const promotions = await listActivePromotionsForTenant(tenantId);
   return pickStorefrontCampaignDisplay(promotions, now ?? new Date());
+}
+
+/** Money campaign for one product (newest applicable active-window campaign). */
+export async function getActiveStorefrontCampaignForProduct(
+  tenantId: string,
+  productId: string,
+  now?: Date,
+): Promise<StorefrontCampaignDisplay | null> {
+  const promotions = await listActivePromotionsForTenant(tenantId);
+  return pickStorefrontCampaignForProduct(
+    promotions,
+    productId,
+    now ?? new Date(),
+  );
+}
+
+/**
+ * Money campaigns keyed by productId for storefront sale display.
+ * Disjoint product-scoped percentage/fixed campaigns can all appear at once.
+ */
+export async function getActiveStorefrontCampaignMap(
+  tenantId: string,
+  productIds: readonly string[],
+  now?: Date,
+): Promise<Map<string, StorefrontCampaignDisplay>> {
+  if (productIds.length === 0) {
+    return new Map();
+  }
+  const promotions = await listActivePromotionsForTenant(tenantId);
+  return buildStorefrontCampaignByProductId(
+    promotions,
+    productIds,
+    now ?? new Date(),
+  );
 }
 
 /** Active buy_one_get_one campaigns keyed by eligible productId. */

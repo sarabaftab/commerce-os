@@ -622,7 +622,8 @@ model Faq {
 
 /**
  * Tenant-scoped campaign.
- * Money discounts (percentage/fixed): only one eligible applies per order (newest wins).
+ * Money discounts (percentage/fixed): newest wins per product; disjoint product-scoped
+ * campaigns can combine on one order. Same SKU never stacks two money campaigns.
  * buy_one_get_one: product-scoped same-SKU free units; mutually exclusive with product-level
  * sale display on that SKU; may coexist with a cart-level money discount on paid subtotal.
  */

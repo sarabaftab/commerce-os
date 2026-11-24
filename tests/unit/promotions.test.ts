@@ -9,6 +9,7 @@ import {
   isPromotionEligible,
   isPromotionVisibleForBanner,
   pickEligibleCampaignDiscount,
+  pickStorefrontCampaignForProduct,
 } from "@/modules/promotions/discount";
 import {
   promotionFormSchema,
@@ -134,7 +135,7 @@ describe("isPromotionEligible", () => {
 describe("pickEligibleCampaignDiscount", () => {
   const now = new Date("2026-06-15T12:00:00.000Z");
 
-  it("chooses the most recently created eligible promotion (no stacking)", () => {
+  it("chooses the most recently created eligible promotion when lines are omitted", () => {
     const older = promo({
       id: "old",
       name: "Old 20%",
@@ -156,6 +157,81 @@ describe("pickEligibleCampaignDiscount", () => {
     });
     expect(chosen?.promotionId).toBe("new");
     expect(chosen?.discountMinor).toBe(300);
+  });
+
+  it("combines disjoint product-scoped percentage campaigns on one cart", () => {
+    const lines = [
+      { productId: "milk", lineTotalMinor: 3000 },
+      { productId: "yogurt", lineTotalMinor: 2000 },
+    ];
+    const milk30 = {
+      ...promo({
+        id: "milk-30",
+        name: "Milk 30%",
+        type: "percentage" as const,
+        value: 30,
+        createdAt: new Date("2026-06-01T00:00:00.000Z"),
+      }),
+      products: [{ productId: "milk" }],
+    };
+    const yogurt10 = {
+      ...promo({
+        id: "yogurt-10",
+        name: "Yogurt 10%",
+        type: "percentage" as const,
+        value: 10,
+        createdAt: new Date("2026-05-01T00:00:00.000Z"),
+      }),
+      products: [{ productId: "yogurt" }],
+    };
+
+    const chosen = pickEligibleCampaignDiscount([milk30, yogurt10], {
+      subtotalMinor: 5000,
+      lines,
+      now,
+    });
+    // 30% of 3000 + 10% of 2000
+    expect(chosen?.discountMinor).toBe(900 + 200);
+    expect(chosen?.promotionName).toContain("Milk 30%");
+    expect(chosen?.promotionName).toContain("Yogurt 10%");
+    expect(chosen?.lineCampaigns).toEqual(
+      expect.arrayContaining([
+        { productId: "milk", type: "percentage", value: 30 },
+        { productId: "yogurt", type: "percentage", value: 10 },
+      ]),
+    );
+  });
+
+  it("does not stack two money campaigns on the same product", () => {
+    const lines = [{ productId: "milk", lineTotalMinor: 3000 }];
+    const older = {
+      ...promo({
+        id: "milk-10",
+        name: "Milk 10%",
+        type: "percentage" as const,
+        value: 10,
+        createdAt: new Date("2026-05-01T00:00:00.000Z"),
+      }),
+      products: [{ productId: "milk" }],
+    };
+    const newer = {
+      ...promo({
+        id: "milk-30",
+        name: "Milk 30%",
+        type: "percentage" as const,
+        value: 30,
+        createdAt: new Date("2026-06-01T00:00:00.000Z"),
+      }),
+      products: [{ productId: "milk" }],
+    };
+
+    const chosen = pickEligibleCampaignDiscount([older, newer], {
+      subtotalMinor: 3000,
+      lines,
+      now,
+    });
+    expect(chosen?.discountMinor).toBe(900);
+    expect(chosen?.promotionId).toBe("milk-30");
   });
 
   it("ignores promotions from other tenants when caller only passes tenant-scoped rows", () => {
@@ -219,6 +295,43 @@ describe("pickEligibleCampaignDiscount", () => {
     expect(
       pickEligibleCampaignDiscount([legacy], { subtotalMinor: 5000, lines, now })?.discountMinor,
     ).toBe(500);
+  });
+});
+
+describe("pickStorefrontCampaignForProduct", () => {
+  const now = new Date("2026-06-15T12:00:00.000Z");
+
+  it("lets disjoint product-scoped campaigns each win on their own SKUs", () => {
+    const milk30 = {
+      ...promo({
+        id: "milk-30",
+        name: "Milk 30%",
+        type: "percentage" as const,
+        value: 30,
+        createdAt: new Date("2026-06-01T00:00:00.000Z"),
+      }),
+      products: [{ productId: "milk" }],
+    };
+    const yogurt10 = {
+      ...promo({
+        id: "yogurt-10",
+        name: "Yogurt 10%",
+        type: "percentage" as const,
+        value: 10,
+        createdAt: new Date("2026-05-01T00:00:00.000Z"),
+      }),
+      products: [{ productId: "yogurt" }],
+    };
+
+    expect(
+      pickStorefrontCampaignForProduct([milk30, yogurt10], "milk", now)?.id,
+    ).toBe("milk-30");
+    expect(
+      pickStorefrontCampaignForProduct([milk30, yogurt10], "yogurt", now)?.id,
+    ).toBe("yogurt-10");
+    expect(
+      pickStorefrontCampaignForProduct([milk30, yogurt10], "bread", now),
+    ).toBeNull();
   });
 });
 

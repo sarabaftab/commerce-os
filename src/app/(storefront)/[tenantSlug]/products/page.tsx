@@ -4,7 +4,8 @@ import {
 } from "@/modules/catalog";
 import {
   getActiveBuyOneGetOneMap,
-  getActiveStorefrontCampaign,
+  getActiveStorefrontCampaignMap,
+  type StorefrontCampaignDisplay,
 } from "@/modules/promotions";
 import { resolveStorefrontTenant } from "@/modules/storefront";
 import { isAppError } from "@/shared/errors/app-error";
@@ -32,6 +33,12 @@ function bogoRecordFromMap(
   return record;
 }
 
+function campaignRecordFromMap(
+  map: Map<string, StorefrontCampaignDisplay>,
+): Record<string, StorefrontCampaignDisplay> {
+  return Object.fromEntries(map);
+}
+
 export default async function StorefrontProductsPage({
   params,
   searchParams,
@@ -44,15 +51,13 @@ export default async function StorefrontProductsPage({
 
   let products;
   let categories;
-  let campaign;
   let bogoMap;
   try {
-    [categories, products, campaign, bogoMap] = await Promise.all([
+    [categories, products, bogoMap] = await Promise.all([
       getStorefrontCategories(tenant.id),
       getStorefrontProducts(tenant.id, {
         categorySlug: categorySlug || undefined,
       }),
-      getActiveStorefrontCampaign(tenant.id),
       getActiveBuyOneGetOneMap(tenant.id),
     ]);
   } catch (error) {
@@ -61,6 +66,10 @@ export default async function StorefrontProductsPage({
     }
     throw error;
   }
+  const campaignMap = await getActiveStorefrontCampaignMap(
+    tenant.id,
+    products.map((product) => product.id),
+  );
   timer.mark("catalogMs");
   timer.log({
     tenantSlug,
@@ -70,6 +79,7 @@ export default async function StorefrontProductsPage({
 
   const activeCategory = categories.find((category) => category.slug === categorySlug);
   const bogoByProductId = bogoRecordFromMap(bogoMap);
+  const campaignByProductId = campaignRecordFromMap(campaignMap);
 
   return (
     <div className="space-y-6 pt-5">
@@ -92,7 +102,7 @@ export default async function StorefrontProductsPage({
       <ProductGrid
         products={products}
         basePath={basePath}
-        campaign={campaign}
+        campaignByProductId={campaignByProductId}
         bogoByProductId={bogoByProductId}
         emptyMessage={<LocalizedText messageKey="noProducts" />}
       />

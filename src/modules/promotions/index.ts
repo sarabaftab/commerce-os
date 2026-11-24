@@ -10,6 +10,7 @@ export {
 export type { BogoLineQuantities, BuyOneGetOneType } from "./buy-one-get-one";
 export {
   buildActiveBuyOneGetOneByProductId,
+  buildStorefrontCampaignByProductId,
   campaignAppliesToProduct,
   computeCampaignDiscountMinor,
   computeUnitSalePriceMinor,
@@ -19,16 +20,20 @@ export {
   isPromotionVisibleForBanner,
   pickEligibleCampaignDiscount,
   pickStorefrontCampaignDisplay,
+  pickStorefrontCampaignForProduct,
 } from "./discount";
 export type {
   ActiveBuyOneGetOne,
   ResolvedCampaignDiscount,
+  ResolvedLineCampaign,
   StorefrontCampaignDisplay,
 } from "./discount";
 export {
   createPromotionForTenant,
   getActiveBuyOneGetOneMap,
   getActiveStorefrontCampaign,
+  getActiveStorefrontCampaignForProduct,
+  getActiveStorefrontCampaignMap,
   getAdminPromotions,
   getPromotionForTenant,
   getStorefrontPromotionBanner,
