@@ -118,6 +118,16 @@ export const brandingSettingsSchema = z.object({
   primaryColor: optionalHexColorSchema,
 });
 
+/** Reminders stay off until enabled; interval is provisional (7–90 days). */
+export const reorderReminderSettingsSchema = z.object({
+  reorderRemindersEnabled: z.boolean(),
+  reorderReminderIntervalDays: z.coerce
+    .number()
+    .int()
+    .min(7, "Interval must be at least 7 days")
+    .max(90, "Interval must be at most 90 days"),
+});
+
 export const pickupLocationInputSchema = z.object({
   id: z.string().min(1).optional(),
   name: z.string().trim().min(1).max(120),
@@ -131,6 +141,9 @@ export type GeneralSettingsInput = z.infer<typeof generalSettingsSchema>;
 export type DeliverySettingsInput = z.infer<typeof deliverySettingsSchema>;
 export type PaymentSettingsInput = z.infer<typeof paymentSettingsSchema>;
 export type BrandingSettingsInput = z.infer<typeof brandingSettingsSchema>;
+export type ReorderReminderSettingsInput = z.infer<
+  typeof reorderReminderSettingsSchema
+>;
 export type PickupLocationInput = z.infer<typeof pickupLocationInputSchema>;
 
 export function normalizeOptionalString(value: string | undefined | null) {

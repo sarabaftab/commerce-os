@@ -57,6 +57,18 @@ enum NotificationDeliveryStatus {
   failed
 }
 
+enum ScheduledJobRunStatus {
+  running
+  completed
+  failed
+}
+
+enum ReorderReminderStatus {
+  sent
+  failed
+  skipped
+}
+
 enum CartStatus {
   open
   converted
@@ -109,6 +121,8 @@ model Tenant {
   faqs                      Faq[]
   notifications             CustomerNotification[]
   promotions                Promotion[]
+  scheduledJobRuns          ScheduledJobRun[]
+  reorderReminders          ReorderReminder[]
 
   @@map("tenants")
 }
@@ -255,6 +269,7 @@ model Customer {
   accountAccesses TelegramAccountAccess[]
   addresses     CustomerAddress[]
   notifications CustomerNotification[]
+  reorderReminders ReorderReminder[]
 
   @@index([tenantId])
   @@index([tenantId, phone])
@@ -435,6 +450,7 @@ model Order {
   statusHistory OrderStatusHistory[]
   notifications CustomerNotification[]
   feedback      OrderFeedback?
+  reorderReminders ReorderReminder[]
 
   @@unique([tenantId, orderNumber])
   @@unique([tenantId, idempotencyKey])
@@ -602,12 +618,67 @@ model TenantSettings {
   telegramOrderNotificationsEnabled    Boolean  @default(true) @map("telegram_order_notifications_enabled")
   /** Public Telegram username customers open from FAQ. Bare name, no @. */
   telegramSupportUsername              String?  @map("telegram_support_username")
+  /**
+   * Reorder reminders are off by default until the client approves an interval.
+   * Interval days are stored provisionally (default 14) and unused while disabled.
+   */
+  reorderRemindersEnabled              Boolean  @default(false) @map("reorder_reminders_enabled")
+  reorderReminderIntervalDays          Int      @default(14) @map("reorder_reminder_interval_days")
   createdAt                  DateTime @default(now()) @map("created_at")
   updatedAt                  DateTime @updatedAt @map("updated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("tenant_settings")
+}
+
+/** Durable claim for a calendar-day job execution (Asia/Phnom_Penh date key). */
+model ScheduledJobRun {
+  id             String                @id @default(cuid())
+  jobKey         String                @map("job_key")
+  tenantId       String                @map("tenant_id")
+  /** Business calendar day YYYY-MM-DD in Asia/Phnom_Penh. */
+  runDateKey     String                @map("run_date_key") @db.VarChar(10)
+  status         ScheduledJobRunStatus @default(running)
+  processedCount Int                   @default(0) @map("processed_count")
+  successCount   Int                   @default(0) @map("success_count")
+  failureCount   Int                   @default(0) @map("failure_count")
+  skippedCount   Int                   @default(0) @map("skipped_count")
+  errorMessage   String?               @map("error_message")
+  startedAt      DateTime              @default(now()) @map("started_at")
+  finishedAt     DateTime?             @map("finished_at")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
+
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reorderReminders ReorderReminder[]
+
+  @@unique([jobKey, tenantId, runDateKey])
+  @@index([tenantId, startedAt])
+  @@map("scheduled_job_runs")
+}
+
+/** One Telegram reorder reminder attempt tied to a prior completed order. */
+model ReorderReminder {
+  id            String                @id @default(cuid())
+  tenantId      String                @map("tenant_id")
+  customerId    String                @map("customer_id")
+  sourceOrderId String                @map("source_order_id")
+  jobRunId      String?               @map("job_run_id")
+  status        ReorderReminderStatus
+  errorCode     String?               @map("error_code") @db.VarChar(64)
+  sentAt        DateTime?             @map("sent_at")
+  createdAt     DateTime              @default(now()) @map("created_at")
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer    Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  sourceOrder Order            @relation(fields: [sourceOrderId], references: [id], onDelete: Cascade)
+  jobRun      ScheduledJobRun? @relation(fields: [jobRunId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, customerId, sentAt])
+  @@index([tenantId, createdAt])
+  @@index([jobRunId])
+  @@map("reorder_reminders")
 }
 
 model PickupLocation {

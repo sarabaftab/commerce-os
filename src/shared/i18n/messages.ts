@@ -200,6 +200,14 @@ const en = {
   noFeedbackComment: "No comment left.",
   feedbackFixFields: "Please fix the highlighted fields",
 
+  // Reorder
+  reorderCartReady: "Your reorder cart is ready",
+  reorderCartAllAdded: "{added} item(s) added from your previous order.",
+  reorderCartPartial:
+    "{added} item(s) added. {skipped} item(s) were skipped because they are unavailable or out of stock.",
+  reorderCartReviewHint:
+    "Review quantities and pricing below, then continue to checkout when you are ready. Nothing has been ordered yet.",
+
   // Payment proof
   paymentConfirmationNeeded: "Payment Confirmation Needed",
   paymentConfirmationNeededBody:
@@ -471,6 +479,13 @@ const km: Record<MessageKey, string> = {
   feedbackThanks: "អរគុណសម្រាប់មតិតបត្ររបស់អ្នក",
   noFeedbackComment: "គ្មានមតិសរសេរ។",
   feedbackFixFields: "សូមកែវាលដែលបានសម្គាល់",
+
+  reorderCartReady: "រទេះបញ្ជាទិញម្ដងទៀតរបស់អ្នករួចរាល់ហើយ",
+  reorderCartAllAdded: "បានបន្ថែមទំនិញ {added} ពីការបញ្ជាទិញមុន។",
+  reorderCartPartial:
+    "បានបន្ថែមទំនិញ {added}។ ទំនិញ {skipped} ត្រូវបានរំលង ព្រោះមិនមាន ឬអស់ស្តុក។",
+  reorderCartReviewHint:
+    "សូមពិនិត្យបរិមាណ និងតម្លៃខាងក្រោម រួចបន្តទៅការទូទាត់នៅពេលអ្នករួចរាល់។ មិនទាន់បានបញ្ជាទិញទេ។",
 
   paymentConfirmationNeeded: "ត្រូវការបញ្ជាក់ការបង់ប្រាក់",
   paymentConfirmationNeededBody:

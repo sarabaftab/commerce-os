@@ -52,6 +52,8 @@ const serverSchema = z.object({
     .regex(/^[A-Za-z]{2}$/)
     .default("KH"),
   PHOTON_BIAS_CITY: z.string().trim().max(120).default("Phnom Penh"),
+  /** Secures /api/cron/* . Required in production; optional locally. */
+  CRON_SECRET: z.string().min(16).optional(),
 });
 
 const publicSchema = z.object({
@@ -81,6 +83,7 @@ function getServerEnv(): ServerEnv {
     PHOTON_BASE_URL: process.env.PHOTON_BASE_URL,
     PHOTON_COUNTRY_CODE: process.env.PHOTON_COUNTRY_CODE,
     PHOTON_BIAS_CITY: process.env.PHOTON_BIAS_CITY,
+    CRON_SECRET: process.env.CRON_SECRET?.trim() || undefined,
   });
 
   if (!parsed.success) {

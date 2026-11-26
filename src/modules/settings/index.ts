@@ -8,6 +8,7 @@ export {
   updateDeliverySettings,
   updatePaymentSettings,
   updateBrandingSettings,
+  updateReorderReminderSettings,
   upsertPickupLocationForTenant,
   removePickupLocationForTenant,
   listPickupLocationsForAdmin,
@@ -24,5 +25,6 @@ export {
   deliverySettingsSchema,
   paymentSettingsSchema,
   brandingSettingsSchema,
+  reorderReminderSettingsSchema,
   pickupLocationInputSchema,
 } from "./schemas/settings";

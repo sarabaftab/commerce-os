@@ -9,10 +9,12 @@ import {
   saveGeneralSettingsAction,
   savePaymentSettingsAction,
   savePickupLocationAction,
+  saveReorderReminderSettingsAction,
   deletePickupLocationAction,
   type SettingsActionState,
 } from "@/modules/settings/actions/settings-actions";
 import type { TenantSettingsBundle } from "@/modules/settings";
+import { formatDateTimeInCambodia } from "@/shared/time/format-cambodia";
 import { fromMinor } from "@/shared/money/money";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
@@ -32,12 +34,31 @@ function Status({ state }: { state: SettingsActionState }) {
   return null;
 }
 
-type Props = {
-  bundle: TenantSettingsBundle;
-  section: "general" | "fulfillment" | "payments" | "branding";
+export type ReminderSettingsSummary = {
+  enabled: boolean;
+  intervalDays: number;
+  telegramOrderNotificationsEnabled: boolean;
+  recentFailureCount: number;
+  lastRun: {
+    status: string;
+    runDateKey: string;
+    processedCount: number;
+    successCount: number;
+    failureCount: number;
+    skippedCount: number;
+    errorMessage: string | null;
+    startedAt: Date;
+    finishedAt: Date | null;
+  } | null;
 };
 
-export function SettingsSectionForm({ bundle, section }: Props) {
+type Props = {
+  bundle: TenantSettingsBundle;
+  section: "general" | "fulfillment" | "payments" | "branding" | "reminders";
+  reminderSummary?: ReminderSettingsSummary;
+};
+
+export function SettingsSectionForm({ bundle, section, reminderSummary }: Props) {
   if (section === "general") {
     return <GeneralSection bundle={bundle} />;
   }
@@ -46,6 +67,23 @@ export function SettingsSectionForm({ bundle, section }: Props) {
   }
   if (section === "payments") {
     return <PaymentsSection bundle={bundle} />;
+  }
+  if (section === "reminders") {
+    return (
+      <RemindersSection
+        bundle={bundle}
+        summary={
+          reminderSummary ?? {
+            enabled: bundle.settings.reorderRemindersEnabled,
+            intervalDays: bundle.settings.reorderReminderIntervalDays,
+            telegramOrderNotificationsEnabled:
+              bundle.settings.telegramOrderNotificationsEnabled,
+            recentFailureCount: 0,
+            lastRun: null,
+          }
+        }
+      />
+    );
   }
   return <BrandingSection bundle={bundle} />;
 }
@@ -385,5 +423,83 @@ function Checkbox({
       />
       {label}
     </label>
+  );
+}
+
+function RemindersSection({
+  bundle,
+  summary,
+}: {
+  bundle: TenantSettingsBundle;
+  summary: ReminderSettingsSummary;
+}) {
+  const s = bundle.settings;
+  const [state, action, pending] = useActionState(
+    saveReorderReminderSettingsAction,
+    initial,
+  );
+  const lastRun = summary.lastRun;
+
+  return (
+    <div className="max-w-xl space-y-6">
+      <form action={action} className="space-y-4">
+        <div className="space-y-1">
+          <h3 className="text-sm font-semibold">Reorder reminders</h3>
+          <p className="text-sm text-muted-foreground">
+            Sends a Telegram message with a one-tap Mini App reorder link after a
+            customer&apos;s last completed order is older than the interval. Left
+            disabled by default until the interval is approved. Uses existing
+            cart/checkout — never places an order automatically.
+          </p>
+        </div>
+        <Checkbox
+          name="reorderRemindersEnabled"
+          label="Enable reorder reminders"
+          defaultChecked={s.reorderRemindersEnabled}
+        />
+        <Field
+          label="Reminder interval (days)"
+          name="reorderReminderIntervalDays"
+          type="number"
+          defaultValue={String(s.reorderReminderIntervalDays)}
+          required
+          hint="Provisional default is 14 days (allowed range 7–90). No client-approved interval was found in settings/docs."
+        />
+        {!summary.telegramOrderNotificationsEnabled ? (
+          <p className="text-sm text-amber-700">
+            Telegram order notifications are disabled for this tenant, so reorder
+            reminders will not send even if enabled here.
+          </p>
+        ) : null}
+        <Status state={state} />
+        <Button type="submit" disabled={pending}>
+          {pending ? "Saving…" : "Save reminder settings"}
+        </Button>
+      </form>
+
+      <div className="space-y-2 rounded-xl border border-[color:var(--admin-line)] p-4 text-sm">
+        <h4 className="font-medium">Latest scheduled run</h4>
+        {lastRun ? (
+          <ul className="space-y-1 text-muted-foreground">
+            <li>
+              {lastRun.runDateKey} · {lastRun.status} · started{" "}
+              {formatDateTimeInCambodia(lastRun.startedAt)}
+            </li>
+            <li>
+              Processed {lastRun.processedCount} · sent {lastRun.successCount} ·
+              failed {lastRun.failureCount} · skipped {lastRun.skippedCount}
+            </li>
+            {lastRun.errorMessage ? (
+              <li className="text-destructive">{lastRun.errorMessage}</li>
+            ) : null}
+          </ul>
+        ) : (
+          <p className="text-muted-foreground">No reorder reminder job has run yet.</p>
+        )}
+        <p className="text-muted-foreground">
+          Failed deliveries in the last 7 days: {summary.recentFailureCount}
+        </p>
+      </div>
+    </div>
   );
 }

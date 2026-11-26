@@ -28,6 +28,8 @@ import {
   pickupLocationInputSchema,
   type BrandingSettingsInput,
   type GeneralSettingsInput,
+  type ReorderReminderSettingsInput,
+  reorderReminderSettingsSchema,
   type PaymentSettingsInput,
   type PickupLocationInput,
 } from "../schemas/settings";
@@ -297,6 +299,18 @@ export async function updateBrandingSettings(
     displayName: normalizeOptionalString(parsed.displayName),
     logoUrl: normalizeOptionalString(parsed.logoUrl ?? undefined),
     primaryColor: normalizeOptionalString(parsed.primaryColor ?? undefined),
+  });
+  invalidateSettingsCache(tenantId);
+}
+
+export async function updateReorderReminderSettings(
+  tenantId: string,
+  raw: ReorderReminderSettingsInput,
+) {
+  const parsed = reorderReminderSettingsSchema.parse(raw);
+  await updateSettings(tenantId, {
+    reorderRemindersEnabled: parsed.reorderRemindersEnabled,
+    reorderReminderIntervalDays: parsed.reorderReminderIntervalDays,
   });
   invalidateSettingsCache(tenantId);
 }

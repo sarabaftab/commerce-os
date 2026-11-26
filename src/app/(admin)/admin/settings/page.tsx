@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { getReorderReminderAdminSummary } from "@/modules/notifications/services/reorder-reminder-service";
 import { SettingsSectionForm } from "@/modules/settings/components/settings-section-form";
 import { getSettingsForAdmin } from "@/modules/settings";
 import {
@@ -14,6 +15,7 @@ const tabs = [
   { id: "fulfillment", label: "Delivery & Pickup" },
   { id: "payments", label: "Payments" },
   { id: "branding", label: "Branding" },
+  { id: "reminders", label: "Reminders" },
 ] as const;
 
 type SettingsPageProps = {
@@ -24,7 +26,10 @@ export default async function AdminSettingsPage({ searchParams }: SettingsPagePr
   const session = await requireAdminSessionWithRoles(ADMIN_MANAGER_ROLES);
   const { tab: rawTab } = await searchParams;
   const tab = tabs.some((t) => t.id === rawTab) ? (rawTab as (typeof tabs)[number]["id"]) : "general";
-  const bundle = await getSettingsForAdmin(session.tenantId);
+  const [bundle, reminderSummary] = await Promise.all([
+    getSettingsForAdmin(session.tenantId),
+    getReorderReminderAdminSummary(session.tenantId),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -51,7 +56,11 @@ export default async function AdminSettingsPage({ searchParams }: SettingsPagePr
       </div>
 
       <div className="rounded-2xl border border-[color:var(--admin-line)] bg-[color:var(--admin-surface-elevated)] p-5 shadow-[var(--admin-shadow)] sm:p-6">
-        <SettingsSectionForm bundle={bundle} section={tab} />
+        <SettingsSectionForm
+          bundle={bundle}
+          section={tab}
+          reminderSummary={reminderSummary}
+        />
       </div>
     </div>
   );

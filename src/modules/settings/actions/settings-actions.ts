@@ -9,6 +9,7 @@ import {
   updateDeliverySettings,
   updateGeneralSettings,
   updatePaymentSettings,
+  updateReorderReminderSettings,
   upsertPickupLocationForTenant,
 } from "@/modules/settings";
 import {
@@ -163,6 +164,28 @@ export async function saveBrandingSettingsAction(
     });
     revalidatePath("/admin/settings");
     revalidatePath(`/${session.tenantSlug}`, "layout");
+    return { success: true };
+  } catch (error) {
+    if (isAppError(error)) {
+      return { error: error.message };
+    }
+    return { error: error instanceof Error ? error.message : "Failed to save" };
+  }
+}
+
+export async function saveReorderReminderSettingsAction(
+  _prev: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  try {
+    const session = await requireSettingsAdmin();
+    await updateReorderReminderSettings(session.tenantId, {
+      reorderRemindersEnabled: boolFromForm(formData, "reorderRemindersEnabled"),
+      reorderReminderIntervalDays: Number(
+        formData.get("reorderReminderIntervalDays") ?? 14,
+      ),
+    });
+    revalidatePath("/admin/settings");
     return { success: true };
   } catch (error) {
     if (isAppError(error)) {
