@@ -4,6 +4,8 @@ import { listOrderNotifications } from "@/modules/notifications/services/notific
 import { AppError } from "@/shared/errors/app-error";
 import { normalizePhone } from "@/shared/phone/normalize-phone";
 
+import { getOrderFeedbackForAdmin } from "./order-feedback-service";
+
 import { resolveOrderCustomerType } from "../customer-type";
 import {
   findFirstOrdersByCustomerIds,
@@ -131,13 +133,14 @@ export async function getOrderDetailForAdmin(
     };
   });
 
-  const [telegramIdentity, notifications, firstByCustomer] = await Promise.all([
+  const [telegramIdentity, notifications, firstByCustomer, feedback] = await Promise.all([
     findTelegramIdentityForCustomer({
       tenantId,
       customerId: order.customer.id,
     }),
     listOrderNotifications(tenantId, orderId),
     findFirstOrdersByCustomerIds(tenantId, [order.customer.id]),
+    getOrderFeedbackForAdmin(tenantId, orderId),
   ]);
 
   return {
@@ -206,6 +209,13 @@ export async function getOrderDetailForAdmin(
       status: row.status,
       errorCode: row.errorCode,
     })),
+    feedback: feedback
+      ? {
+          rating: feedback.rating,
+          comment: feedback.comment,
+          createdAt: feedback.createdAt,
+        }
+      : null,
   };
 }
 

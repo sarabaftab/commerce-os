@@ -35,6 +35,7 @@ export function CustomerListTable({ customers }: CustomerListTableProps) {
             <TableHead>Customer</TableHead>
             <TableHead>Phone</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Source</TableHead>
             <TableHead className="text-right">Orders</TableHead>
             <TableHead className="text-right">Lifetime spend</TableHead>
             <TableHead>Last order</TableHead>
@@ -59,6 +60,9 @@ export function CustomerListTable({ customers }: CustomerListTableProps) {
               </TableCell>
               <TableCell>
                 <CustomerLifecycleBadge lifecycle={customer.lifecycle} />
+              </TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                {customer.sourceLabel}
               </TableCell>
               <TableCell className="text-right tabular-nums">{customer.totalOrders}</TableCell>
               <TableCell className="text-right tabular-nums">

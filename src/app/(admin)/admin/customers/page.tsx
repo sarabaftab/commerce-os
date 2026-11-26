@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { CustomerListTable } from "@/modules/customers/components/admin/customer-list-table";
 import { listCustomersForAdminTenant } from "@/modules/customers/services/customer-admin-service";
+import { summarizeCustomerSources } from "@/modules/customers/services/customer-source-service";
 import { requireAdminSession } from "@/shared/auth/admin-session";
 import { AdminPageHeader } from "@/ui/admin/admin-page-header";
 import { Button } from "@/ui/components/ui/button";
@@ -17,11 +18,14 @@ export default async function AdminCustomersPage({ searchParams }: AdminCustomer
   const page = Math.max(1, Number.parseInt(String(raw.page ?? "1"), 10) || 1);
   const q = typeof raw.q === "string" ? raw.q : "";
 
-  const result = await listCustomersForAdminTenant(session.tenantId, {
-    page,
-    pageSize: 20,
-    q,
-  });
+  const [result, sources] = await Promise.all([
+    listCustomersForAdminTenant(session.tenantId, {
+      page,
+      pageSize: 20,
+      q,
+    }),
+    summarizeCustomerSources(session.tenantId),
+  ]);
 
   const paginationParams = new URLSearchParams();
   if (q) {
@@ -34,6 +38,12 @@ export default async function AdminCustomersPage({ searchParams }: AdminCustomer
         title="Customers"
         description={`Customer profiles and order history for ${session.tenantName}`}
       />
+
+      {sources.length > 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {sources.map((source) => `${source.label} ${source.count}`).join(" · ")}
+        </p>
+      ) : null}
 
       <form className="flex flex-wrap gap-2" method="get">
         <Input

@@ -256,6 +256,8 @@ describe("Customer and Admin display of persisted pin address", () => {
       timeline: [],
       supportPhone: null,
       supportEmail: null,
+      canLeaveFeedback: false,
+      feedback: null,
     };
 
     const html = renderToStaticMarkup(

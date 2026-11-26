@@ -4,10 +4,12 @@ import type { MembershipRole } from "@prisma/client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ChartColumn,
   CircleHelp,
   FolderTree,
   LayoutDashboard,
   Megaphone,
+  MessageSquareHeart,
   Package,
   Percent,
   Settings2,
@@ -20,8 +22,10 @@ import { cn } from "@/ui/lib/utils";
 
 const links = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/insights", label: "Insights", icon: ChartColumn },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { href: "/admin/customers", label: "Customers", icon: Users },
+  { href: "/admin/feedback", label: "Feedback", icon: MessageSquareHeart },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
   { href: "/admin/promotions", label: "Promotions", icon: Percent },

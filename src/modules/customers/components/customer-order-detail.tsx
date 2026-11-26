@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AbaPaymentDetails } from "@/modules/orders/components/aba-payment-details";
 import { AbaProofUpload } from "@/modules/orders/components/aba-proof-upload";
 import { BogoCartBanner, BogoLineCallout } from "@/modules/orders/components/bogo-line-callout";
+import { CustomerOrderFeedback } from "@/modules/orders/components/customer-order-feedback";
 import { CUSTOMER_ORDER_STATUS_MESSAGE_KEYS } from "@/modules/customers/types";
 import { openStreetMapPinUrl, parseOptionalLatLng } from "@/modules/locations/coordinates";
 import { useLocale } from "@/shared/i18n";
@@ -43,8 +44,15 @@ export function CustomerOrderDetail({ tenantSlug, order }: Props) {
         </p>
       </div>
 
+      <CustomerOrderFeedback
+        tenantSlug={tenantSlug}
+        orderNumber={order.orderNumber}
+        canLeaveFeedback={order.canLeaveFeedback}
+        feedback={order.feedback}
+      />
+
       <section className="rounded-2xl bg-[color:var(--shop-surface-elevated)] p-4 ring-1 ring-[color:var(--shop-line)]">
-<h2 className="text-sm font-semibold">{t("status")}</h2>
+        <h2 className="text-sm font-semibold">{t("status")}</h2>
         <ol className="mt-3 space-y-3">
           {order.timeline.map((entry) => (
             <li key={`${entry.status}-${entry.createdAt.toISOString()}`} className="flex gap-3">

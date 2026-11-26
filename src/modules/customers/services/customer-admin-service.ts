@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 
 import { composeDisplayName } from "@/modules/customers";
+import { customerSourceLabel } from "@/modules/customers/source";
 import {
   customerLifecycleLabel,
   resolveOrderCustomerType,
@@ -27,6 +28,7 @@ export type AdminCustomerListItem = {
   lastOrderAt: Date | null;
   lastOrderNumber: string | null;
   telegramLinked: boolean;
+  sourceLabel: string;
 };
 
 export type AdminCustomerListResult = {
@@ -66,6 +68,7 @@ export type AdminCustomerProfile = {
   lastOrderId: string | null;
   lastOrderNumber: string | null;
   lastOrderStatus: string | null;
+  sourceLabel: string;
   orders: AdminCustomerOrderHistoryItem[];
   orderPage: number;
   orderPageSize: number;
@@ -117,6 +120,8 @@ export async function listCustomersForAdminTenant(
         lastName: true,
         phone: true,
         email: true,
+        sourceKind: true,
+        sourceKey: true,
         identities: {
           where: { channel: "telegram" },
           select: { id: true },
@@ -146,6 +151,7 @@ export async function listCustomersForAdminTenant(
       lastOrderAt: s?.lastOrderAt ?? null,
       lastOrderNumber: s?.lastOrderNumber ?? null,
       telegramLinked: row.identities.length > 0,
+      sourceLabel: customerSourceLabel(row.sourceKind, row.sourceKey),
     };
   });
 
@@ -173,6 +179,8 @@ export async function getCustomerProfileForAdmin(
       phone: true,
       email: true,
       createdAt: true,
+      sourceKind: true,
+      sourceKey: true,
       identities: {
         where: { channel: "telegram" },
         select: { id: true },
@@ -268,6 +276,7 @@ export async function getCustomerProfileForAdmin(
     lastOrderId: latestOrder?.id ?? null,
     lastOrderNumber: latestOrder?.orderNumber ?? null,
     lastOrderStatus: latestOrder?.status ?? null,
+    sourceLabel: customerSourceLabel(customer.sourceKind, customer.sourceKey),
     orders,
     orderPage,
     orderPageSize,

@@ -104,3 +104,13 @@ export function toCambodiaDatetimeLocalValue(
 
   return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
 }
+
+/** YYYY-MM-DD for an instant in Asia/Phnom_Penh. */
+export function cambodiaDateKey(value: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: CAMBODIA_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(value);
+}

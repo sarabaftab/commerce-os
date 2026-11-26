@@ -113,6 +113,13 @@ export type CustomerOrderDetailDto = {
   timeline: CustomerOrderTimelineEntryDto[];
   supportPhone: string | null;
   supportEmail: string | null;
+  /** Present when the order is completed and eligible for feedback. */
+  canLeaveFeedback: boolean;
+  feedback: {
+    rating: number;
+    comment: string | null;
+    createdAt: Date;
+  } | null;
 };
 
 export const CUSTOMER_ORDER_STATUS_LABELS: Record<string, string> = {

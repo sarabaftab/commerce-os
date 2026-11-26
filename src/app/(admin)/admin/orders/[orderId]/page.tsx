@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { OrderCustomerPanel } from "@/modules/orders/components/admin/order-customer-panel";
 import { OrderDetailHeader } from "@/modules/orders/components/admin/order-detail-header";
+import { OrderFeedbackPanel } from "@/modules/orders/components/admin/order-feedback-panel";
 import { OrderFulfillmentPanel } from "@/modules/orders/components/admin/order-fulfillment-panel";
 import { OrderItemsTable } from "@/modules/orders/components/admin/order-items-table";
 import { OrderNotificationPanel } from "@/modules/orders/components/admin/order-notification-panel";
@@ -79,6 +80,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
 
         <div className="space-y-4">
           <OrderPricingSummary order={order} />
+          <OrderFeedbackPanel feedback={order.feedback} />
           <OrderNotificationPanel
             orderId={order.id}
             telegramLinked={order.telegramLinked}

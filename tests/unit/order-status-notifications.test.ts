@@ -175,6 +175,37 @@ describe("order status telegram copy (English)", () => {
   });
 });
 
+
+describe("completed order feedback prompt", () => {
+  it("mentions in-app feedback on completed orders without changing the View Order CTA", () => {
+    const message = buildOrderStatusTelegramMessage({
+      orderNumber: "BIL-1042",
+      storeName: "KIN A2",
+      toStatus: "completed",
+      fulfillmentMethod: "delivery",
+      pickupLocationName: null,
+      pickupLocationAddress: null,
+      locale: "en",
+    });
+    expect(message.text.toLowerCase()).toContain("feedback");
+    expect(message.buttonText).toBe("View Order");
+  });
+
+  it("mentions feedback in Khmer completed copy", () => {
+    const message = buildOrderStatusTelegramMessage({
+      orderNumber: "BIL-1042",
+      storeName: "KIN A2",
+      toStatus: "completed",
+      fulfillmentMethod: "delivery",
+      pickupLocationName: null,
+      pickupLocationAddress: null,
+      locale: "km",
+    });
+    expect(message.text).toContain("មតិតបត្រ");
+    expect(message.buttonText).toBe("មើលការបញ្ជាទិញ");
+  });
+});
+
 describe("localized order status telegram copy", () => {
   const statuses = [
     "confirmed",

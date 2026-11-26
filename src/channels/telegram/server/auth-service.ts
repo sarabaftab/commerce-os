@@ -1,3 +1,4 @@
+import { recordFirstTouchCustomerSource } from "@/modules/customers/services/customer-source-service";
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
 
@@ -125,6 +126,26 @@ export async function authenticateTelegramInitData(input: {
     tenantId: input.tenantId,
     user: validated.user,
   });
+
+  // First-touch source from the signed start_param. Never block sign-in.
+  if (validated.startParam) {
+    try {
+      await recordFirstTouchCustomerSource({
+        tenantId: input.tenantId,
+        customerId: customer.id,
+        startParam: validated.startParam,
+      });
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          event: "customer.source_record_failed",
+          tenantId: input.tenantId,
+          customerId: customer.id,
+          message: error instanceof Error ? error.message : "unknown",
+        }),
+      );
+    }
+  }
 
   const canReuse =
     input.existingSession &&

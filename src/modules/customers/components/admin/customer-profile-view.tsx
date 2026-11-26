@@ -42,6 +42,7 @@ export function CustomerProfileView({ profile }: CustomerProfileViewProps) {
             <p className="text-base font-semibold">{profile.displayName ?? "—"}</p>
             <p className="text-muted-foreground">{profile.phoneDisplay || "No phone"}</p>
             <p className="text-muted-foreground">{profile.email ?? "No email"}</p>
+            <p className="text-muted-foreground">Source: {profile.sourceLabel}</p>
             {profile.telegramLinked ? (
               <Badge variant="secondary" className="mt-2 rounded-full">
                 Telegram connected

@@ -187,6 +187,19 @@ const en = {
   previous: "Previous",
   next: "Next",
 
+  // Order feedback
+  yourFeedback: "Your feedback",
+  leaveFeedback: "Leave feedback",
+  leaveFeedbackHint: "How was your order? Rate 1–5 stars and optionally leave a comment.",
+  feedbackRating: "Rating",
+  feedbackCommentOptional: "Comment (optional)",
+  feedbackCommentPlaceholder: "Tell us what went well or what we can improve",
+  submitFeedback: "Submit feedback",
+  submittingFeedback: "Submitting…",
+  feedbackThanks: "Thank you for your feedback",
+  noFeedbackComment: "No comment left.",
+  feedbackFixFields: "Please fix the highlighted fields",
+
   // Payment proof
   paymentConfirmationNeeded: "Payment Confirmation Needed",
   paymentConfirmationNeededBody:
@@ -446,6 +459,18 @@ const km: Record<MessageKey, string> = {
   filterCancelled: "បានលុបចោល",
   previous: "មុន",
   next: "បន្ទាប់",
+
+  yourFeedback: "មតិតបត្ររបស់អ្នក",
+  leaveFeedback: "ផ្តល់មតិតបត្រ",
+  leaveFeedbackHint: "តើការបញ្ជាទិញរបស់អ្នកយ៉ាងម៉េចដែរ? វាយតម្លៃ ១–៥ ផ្កាយ និងសរសេរមតិបន្ថែមបាន។",
+  feedbackRating: "ការវាយតម្លៃ",
+  feedbackCommentOptional: "មតិ (ស្រេចចិត្ត)",
+  feedbackCommentPlaceholder: "ប្រាប់ពីអ្វីដែលល្អ ឬអ្វីដែលយើងអាចកែលម្អ",
+  submitFeedback: "ដាក់ស្នើមតិតបត្រ",
+  submittingFeedback: "កំពុងដាក់ស្នើ…",
+  feedbackThanks: "អរគុណសម្រាប់មតិតបត្ររបស់អ្នក",
+  noFeedbackComment: "គ្មានមតិសរសេរ។",
+  feedbackFixFields: "សូមកែវាលដែលបានសម្គាល់",
 
   paymentConfirmationNeeded: "ត្រូវការបញ្ជាក់ការបង់ប្រាក់",
   paymentConfirmationNeededBody:

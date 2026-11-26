@@ -58,6 +58,20 @@ export {
   listOrdersForAdminTenant,
 } from "./services/order-admin-service";
 export {
+  getOrderFeedbackForAdmin,
+  listOrderFeedbackForAdminTenant,
+  submitOrderFeedback,
+} from "./services/order-feedback-service";
+export type {
+  AdminOrderFeedbackListItem,
+  AdminOrderFeedbackListResult,
+  OrderFeedbackDto,
+} from "./services/order-feedback-service";
+export {
+  FEEDBACK_ELIGIBLE_ORDER_STATUS,
+  submitOrderFeedbackSchema,
+} from "./schemas/feedback";
+export {
   ALLOWED_ORDER_STATUS_TRANSITIONS,
   getAllowedNextStatuses,
   transitionOrderStatus,

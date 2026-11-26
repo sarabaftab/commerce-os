@@ -98,6 +98,7 @@ model Tenant {
   customers          Customer[]
   customerIdentities CustomerIdentity[]
   orders             Order[]
+  orderFeedback      OrderFeedback[]
   carts              Cart[]
   settings           TenantSettings?
   pickupLocations    PickupLocation[]
@@ -240,10 +241,15 @@ model Customer {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
   deletedAt       DateTime? @map("deleted_at")
+  /** First reliably identified source. Null means unattributed (shown as Unknown). */
+  sourceKind          String?   @map("source_kind")
+  sourceKey           String?   @map("source_key")
+  sourceAttributedAt  DateTime? @map("source_attributed_at")
 
   tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   identities CustomerIdentity[]
   orders     Order[]
+  orderFeedback OrderFeedback[]
   carts      Cart[]
   sessions   CustomerSession[]
   accountAccesses TelegramAccountAccess[]
@@ -253,6 +259,7 @@ model Customer {
   @@index([tenantId])
   @@index([tenantId, phone])
   @@index([tenantId, phoneNormalized])
+  @@index([tenantId, sourceKind])
   @@map("customers")
 }
 
@@ -427,6 +434,7 @@ model Order {
   items         OrderItem[]
   statusHistory OrderStatusHistory[]
   notifications CustomerNotification[]
+  feedback      OrderFeedback?
 
   @@unique([tenantId, orderNumber])
   @@unique([tenantId, idempotencyKey])
@@ -437,6 +445,26 @@ model Order {
   @@index([tenantId, promotionId])
   @@index([tenantId, campaignId])
   @@map("orders")
+}
+
+/** One customer rating per order. Eligible only when order status is completed. */
+model OrderFeedback {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  orderId    String   @unique @map("order_id")
+  customerId String   @map("customer_id")
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, rating])
+  @@index([tenantId, customerId])
+  @@map("order_feedback")
 }
 
 model OrderItem {

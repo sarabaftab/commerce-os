@@ -199,7 +199,7 @@ export function buildLocalizedOrderStatusMessage(input: {
         };
       case "completed":
         return {
-          text: `ការបញ្ជាទិញ #${n} បានបញ្ចប់\n\nការបញ្ជាទិញរបស់អ្នកបានបញ្ចប់។ អរគុណសម្រាប់ការបញ្ជាទិញ។`,
+          text: `ការបញ្ជាទិញ #${n} បានបញ្ចប់\n\nការបញ្ជាទិញរបស់អ្នកបានបញ្ចប់។ អរគុណសម្រាប់ការបញ្ជាទិញ។\n\nអ្នកអាចផ្តល់មតិតបត្រពីទំព័រការបញ្ជាទិញ។`,
           buttonText,
         };
       case "cancelled":
@@ -237,7 +237,7 @@ export function buildLocalizedOrderStatusMessage(input: {
       };
     case "completed":
       return {
-        text: `Order #${n} completed\n\nYour order has been completed. Thank you for ordering with us.`,
+        text: `Order #${n} completed\n\nYour order has been completed. Thank you for ordering with us.\n\nYou can leave feedback from the order page.`,
         buttonText,
       };
     case "cancelled":

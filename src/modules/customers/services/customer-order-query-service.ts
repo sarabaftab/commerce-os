@@ -1,5 +1,6 @@
 import type { OrderStatus, Prisma } from "@prisma/client";
 
+import { FEEDBACK_ELIGIBLE_ORDER_STATUS } from "@/modules/orders/schemas/feedback";
 import { getStorefrontSettings } from "@/modules/settings";
 import { prisma } from "@/shared/db/prisma";
 import { AppError } from "@/shared/errors/app-error";
@@ -130,6 +131,13 @@ export async function getCustomerOrderByNumber(input: {
         },
       },
       statusHistory: { orderBy: { createdAt: "asc" } },
+      feedback: {
+        select: {
+          rating: true,
+          comment: true,
+          createdAt: true,
+        },
+      },
     },
   });
 
@@ -219,5 +227,14 @@ export async function getCustomerOrderByNumber(input: {
     })),
     supportPhone: settings.phone,
     supportEmail: settings.email,
+    canLeaveFeedback:
+      order.status === FEEDBACK_ELIGIBLE_ORDER_STATUS && order.feedback == null,
+    feedback: order.feedback
+      ? {
+          rating: order.feedback.rating,
+          comment: order.feedback.comment,
+          createdAt: order.feedback.createdAt,
+        }
+      : null,
   };
 }

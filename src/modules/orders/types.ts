@@ -274,4 +274,9 @@ export type AdminOrderDetail = {
     status: import("@prisma/client").NotificationDeliveryStatus;
     errorCode: string | null;
   }[];
+  feedback: {
+    rating: number;
+    comment: string | null;
+    createdAt: Date;
+  } | null;
 };

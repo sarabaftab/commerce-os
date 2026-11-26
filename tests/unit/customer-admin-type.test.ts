@@ -152,5 +152,6 @@ describe("getCustomerProfileForAdmin", () => {
     expect(profile.orders[1]?.customerType).toBe("new");
     expect(profile.lastOrderNumber).toBe("ORD-2");
     expect(profile.customerSince).toEqual(t1);
+    expect(profile.sourceLabel).toBe("Unknown");
   });
 });
