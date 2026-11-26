@@ -177,27 +177,32 @@ export function PromotionForm({
         </div>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="startsAt">Starts at (optional)</Label>
-          <Input
-            id="startsAt"
-            name="startsAt"
-            type="datetime-local"
-            defaultValue={toDatetimeLocalValue(promotion?.startsAt)}
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="endsAt">Ends at (optional)</Label>
-          <Input
-            id="endsAt"
-            name="endsAt"
-            type="datetime-local"
-            defaultValue={toDatetimeLocalValue(promotion?.endsAt)}
-          />
-          {state.fieldErrors?.endsAt ? (
-            <p className="text-xs text-destructive">{state.fieldErrors.endsAt[0]}</p>
-          ) : null}
+      <div className="grid gap-2">
+        <p className="text-xs text-[color:var(--admin-ink-muted)]">
+          Schedule times are Cambodia time (Asia/Phnom_Penh, UTC+7).
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="startsAt">Starts at (optional)</Label>
+            <Input
+              id="startsAt"
+              name="startsAt"
+              type="datetime-local"
+              defaultValue={toDatetimeLocalValue(promotion?.startsAt)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="endsAt">Ends at (optional)</Label>
+            <Input
+              id="endsAt"
+              name="endsAt"
+              type="datetime-local"
+              defaultValue={toDatetimeLocalValue(promotion?.endsAt)}
+            />
+            {state.fieldErrors?.endsAt ? (
+              <p className="text-xs text-destructive">{state.fieldErrors.endsAt[0]}</p>
+            ) : null}
+          </div>
         </div>
       </div>
 

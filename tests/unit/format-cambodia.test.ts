@@ -5,7 +5,9 @@ import {
   endOfCambodiaDayFromParam,
   formatDateInCambodia,
   formatDateTimeInCambodia,
+  parseCambodiaDateTimeLocal,
   startOfCambodiaDayFromParam,
+  toCambodiaDatetimeLocalValue,
 } from "@/shared/time/format-cambodia";
 
 describe("format Cambodia timestamps", () => {
@@ -34,5 +36,27 @@ describe("Cambodia calendar day bounds", () => {
     expect(endOfCambodiaDayFromParam("2026-09-14").toISOString()).toBe(
       "2026-09-14T16:59:59.999Z",
     );
+  });
+});
+
+describe("Cambodia datetime-local parse/format", () => {
+  it("parses 8:00 Cambodia as 01:00 UTC (not 08:00 UTC / 15:00 Cambodia)", () => {
+    const parsed = parseCambodiaDateTimeLocal("2026-11-26T08:00");
+    expect(parsed?.toISOString()).toBe("2026-11-26T01:00:00.000Z");
+    expect(formatDateTimeInCambodia(parsed!)).toContain("08:00");
+  });
+
+  it("round-trips an instant through datetime-local in Cambodia time", () => {
+    const instant = new Date("2026-11-26T01:00:00.000Z"); // 08:00 Phnom Penh
+    expect(toCambodiaDatetimeLocalValue(instant)).toBe("2026-11-26T08:00");
+    expect(parseCambodiaDateTimeLocal("2026-11-26T08:00")?.toISOString()).toBe(
+      instant.toISOString(),
+    );
+  });
+
+  it("rejects empty or malformed values", () => {
+    expect(parseCambodiaDateTimeLocal("")).toBeNull();
+    expect(parseCambodiaDateTimeLocal("not-a-date")).toBeNull();
+    expect(toCambodiaDatetimeLocalValue(null)).toBe("");
   });
 });

@@ -52,3 +52,55 @@ export function startOfCambodiaDayFromParam(raw: string): Date {
 export function endOfCambodiaDayFromParam(raw: string): Date {
   return new Date(`${raw}T23:59:59.999+07:00`);
 }
+
+const DATETIME_LOCAL_RE =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
+
+/**
+ * Parse a `<input type="datetime-local">` value as Asia/Phnom_Penh wall time.
+ * Independent of the server/browser timezone (Vercel is UTC; admins may travel).
+ */
+export function parseCambodiaDateTimeLocal(
+  raw: string | null | undefined,
+): Date | null {
+  const value = raw?.trim();
+  if (!value) {
+    return null;
+  }
+  const match = DATETIME_LOCAL_RE.exec(value);
+  if (!match) {
+    return null;
+  }
+  const [, year, month, day, hour, minute, second = "00"] = match;
+  const date = new Date(
+    `${year}-${month}-${day}T${hour}:${minute}:${second}+07:00`,
+  );
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/**
+ * Format an absolute instant as `YYYY-MM-DDTHH:mm` in Asia/Phnom_Penh
+ * for `<input type="datetime-local">`.
+ */
+export function toCambodiaDatetimeLocalValue(
+  value: Date | string | number | null | undefined,
+): string {
+  if (value == null || value === "") {
+    return "";
+  }
+  const date = asDate(value);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: CAMBODIA_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+}

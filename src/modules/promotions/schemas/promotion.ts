@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 import { toMinor } from "@/shared/money/money";
+import {
+  parseCambodiaDateTimeLocal,
+  toCambodiaDatetimeLocalValue,
+} from "@/shared/time/format-cambodia";
 
 import { BUY_ONE_GET_ONE, isBuyOneGetOneType } from "../buy-one-get-one";
 
@@ -75,12 +79,9 @@ export const promotionFormSchema = z
 
 export type PromotionFormValues = z.infer<typeof promotionFormSchema>;
 
+/** Promotion schedule fields are Cambodia wall clock (Asia/Phnom_Penh). */
 function parseOptionalDate(value: string | undefined): Date | null {
-  if (!value?.trim()) {
-    return null;
-  }
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
+  return parseCambodiaDateTimeLocal(value);
 }
 
 function emptyToNull(value: string | undefined): string | null {
@@ -150,11 +151,7 @@ export function promotionFormDataToObject(formData: FormData) {
   };
 }
 
-/** datetime-local value from a Date (UTC→local for input display). */
+/** datetime-local value in Asia/Phnom_Penh (not server/browser local). */
 export function toDatetimeLocalValue(date: Date | null | undefined): string {
-  if (!date) {
-    return "";
-  }
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return toCambodiaDatetimeLocalValue(date);
 }
